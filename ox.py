@@ -1,11 +1,12 @@
 
 from blessed import Terminal
 from rich import print as rprint
-from rich.repr import rich_repr
 from rich.text import Text
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.console import Console
+# from cached_object import CachedObject
+import cached_object
 
 console = Console()
 
@@ -18,136 +19,10 @@ _term = Terminal()
 # Move to next type with {}
 
 
-class CachedObject:
-
-    def __init__(self, obj, name=None):
-        self.obj = obj
-        self.name = name
-        self.attribute_type = PUBLIC
-        self.public_attribute_index = 0
-        self.private_attribute_index = 0
-        self.public_attribute_window = 0
-        self.private_attribute_window = 0
-
-        self.public_attributes = sorted(
-            attr for attr in dir(self.obj) if not attr.startswith('_')
-        )
-        self.private_attributes = sorted(
-            attr for attr in dir(self.obj) if attr.startswith('_')
-        )
-        self.cached_public_attributes = []
-        self.cached_private_attributes = []
-
-    def cache_attributes(self):
-        self.cached_public_attributes = [
-            CachedObject(getattr(self.obj, attr), name=attr)
-            for attr in self.public_attributes
-        ]
-        self.cached_private_attributes = [
-            CachedObject(getattr(self.obj, attr), name=attr)
-            for attr in self.private_attributes
-        ]
-
-    def __getitem__(self, item):
-        return CachedObject(getattr(self.obj, item))
-
-    def __repr__(self):
-        return repr(self.obj)
-
-    @property
-    def public_attribute(self):
-        return self.cached_public_attributes[self.public_attribute_index]
-
-    @property
-    def private_attribute(self):
-        return self.cached_private_attributes[self.private_attribute_index]
-
-    def get_panel(self) -> Panel:
-        """ TODO """
-        if self.attribute_type == PUBLIC:
-            attribute_text = [
-                Text(attr.name, overflow="elipses", style="reverse") if attr.name == self.public_attribute.name
-                else Text(attr.name, overflow="elipses")
-                for attr in self.cached_public_attributes[self.public_attribute_window:]
-            ]
-            title = "[reverse]public[/reverse] - private"
-            footer = f"({self.public_attribute_index + 1}/{len(self.public_attributes)})"
-
-        elif self.attribute_type == PRIVATE:
-            attribute_text = [
-                Text(attr.name, overflow="elipses", style="reverse") if attr.name == self.private_attribute.name
-                else Text(attr.name, overflow="elipses")
-                for attr in self.cached_private_attributes[self.private_attribute_window:]
-            ]
-            title = "public - [reverse]private[/reverse]"
-            footer = f"({self.private_attribute_index + 1}/{len(self.private_attributes)})"
-
-        renderable_text = None
-        for t in attribute_text:
-            if not renderable_text:
-                # Start with an empty text object, all following Text objects will steal the styles from this one
-                renderable_text = Text("", overflow="elipses")
-            renderable_text += t + '\n'
-
-        panel = Panel(
-            renderable_text,
-            title=title,
-            footer=footer,
-            footer_align="right"
-        )
-
-        return panel
-
-    def move_down(self, panel_height):
-        """ Move the current selection down one """
-        if self.attribute_type == PUBLIC:
-            if self.public_attribute_index < len(self.cached_public_attributes) - 1:
-                self.public_attribute_index += 1
-                if self.public_attribute_index > self.public_attribute_window + panel_height:
-                    self.public_attribute_window += 1
-
-        elif self.attribute_type == PRIVATE:
-            if self.private_attribute_index < len(self.cached_private_attributes) - 1:
-                self.private_attribute_index += 1
-                if self.private_attribute_index > self.private_attribute_window + panel_height:
-                    self.private_attribute_window += 1
-
-
-    def move_up(self):
-        if self.attribute_type == PUBLIC:
-            if self.public_attribute_index > 0:
-                self.public_attribute_index -= 1
-                if self.public_attribute_index < self.public_attribute_window:
-                    self.public_attribute_window -= 1
-
-        elif self.attribute_type == PRIVATE:
-            if self.private_attribute_index > 0:
-                self.private_attribute_index -= 1
-                if self.private_attribute_index < self.private_attribute_window:
-                    self.private_attribute_window -= 1
-
-    def move_top(self):
-        if self.attribute_type == PUBLIC:
-            self.public_attribute_index = 0
-            self.public_attribute_window = 0
-
-        elif self.attribute_type == PRIVATE:
-            self.private_attribute_index = 0
-            self.private_attribute_window = 0
-
-    def move_bottom(self, panel_height):
-        if self.attribute_type == PUBLIC:
-            self.public_attribute_index = len(self.public_attributes) - 1
-            self.public_attribute_window = self.public_attribute_index - panel_height
-
-        elif self.attribute_type == PRIVATE:
-            self.private_attribute_index = len(self.private_attributes) - 1
-            self.private_attribute_window = self.private_attribute_index - panel_height
-
-
 class Explorer:
     def __init__(self, obj):
-        obj = CachedObject(obj)
+        obj = cached_object.CachedObject(obj)
+        # Figure out all the attributes of the current obj's attributes
         obj.cache_attributes()
         self.head_obj = obj
         self.current_obj = obj
@@ -196,11 +71,13 @@ class Explorer:
                 elif key == "\n":
                     if self.current_obj.attribute_type == PUBLIC:
                         self.obj_stack.append(self.current_obj)
-                        self.current_obj = self.current_obj.public_attribute
+                        self.current_obj = self.current_obj[self.current_obj.selected_public_attribute]
+                        self.current_obj.cache_attributes()
 
                     elif self.current_obj.attribute_type == PRIVATE:
                         self.obj_stack.append(self.current_obj)
-                        self.current_obj = self.current_obj.private_attribute
+                        self.current_obj = self.current_obj[self.current_obj.private_attribute]
+                        self.current_obj.cache_attributes()
 
                 # Escape
                 elif key == "\x1b" and self.obj_stack:
@@ -225,8 +102,10 @@ class Explorer:
             Layout(name="selected_obj_attributes")
         )
         layout["body"]["explorer"]["current_obj_attributes"].update(
-            self.current_obj.get_panel()
-            # self.get_current_obj_panel()
+            self.current_obj.get_current_obj_attr_panel()
+        )
+        layout["body"]["explorer"]["selected_obj_attributes"].update(
+            self.current_obj.get_selected_obj_attr_panel()
         )
         object_explorer = Panel(
             layout,
@@ -237,11 +116,12 @@ class Explorer:
         rprint(object_explorer, end='')
 
 
-
 def ox(obj):
     explorer = Explorer(obj)
     explorer.explore()
 
 
 if __name__ == "__main__":
-    ox(locals)
+    from importlib import reload
+    reload(cached_object)
+    ox(Explorer("hello"))
