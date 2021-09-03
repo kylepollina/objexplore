@@ -51,23 +51,19 @@ class CachedObject:
         return CachedObject(getattr(self.obj, item))
 
     @property
-    def selected_public_attribute(self):
+    def selected_public_attribute(self) -> str:
         return self.public_attributes[self.public_attribute_index]
 
     @property
-    def selected_private_attribute(self):
+    def selected_private_attribute(self) -> str:
         return self.private_attributes[self.private_attribute_index]
 
     @property
-    def selected_public_attr_cached(self):
+    def selected_public_attr_cached(self) -> "CachedObject":
         return self.cached_public_attributes[self.public_attribute_index]
 
     @property
-    def private_attribute(self):
-        return self.private_attributes[self.private_attribute_index]
-
-    @property
-    def selected_private_attr_cached(self):
+    def selected_private_attr_cached(self) -> "CachedObject":
         return self.cached_private_attributes[self.private_attribute_index]
 
     def get_current_obj_attr_panel(self) -> Panel:
@@ -83,7 +79,7 @@ class CachedObject:
 
         elif self.attribute_type == PRIVATE:
             attribute_text = [
-                Text(attr, overflow="elipses", style="reverse") if attr == self.private_attribute
+                Text(attr, overflow="elipses", style="reverse") if attr == self.selected_private_attribute
                 else Text(attr, overflow="elipses")
                 for attr in self.private_attributes[self.private_attribute_window:]
             ]
@@ -114,15 +110,14 @@ class CachedObject:
             selected_attr = self.selected_private_attr_cached
             title = self.selected_private_attribute
 
-        # text = Text("", end="\n")
-        text = ""
-        text += f"{len(selected_attr.public_attributes)} public attributes\n"
-        text += f"{len(selected_attr.private_attributes)} private attributes\n"
-        text += selected_attr.obj_type
+        # # text = Text("", end="\n")
+        # text = ""
+        # text += f"{len(selected_attr.public_attributes)} public attributes\n"
+        # text += f"{len(selected_attr.private_attributes)} private attributes\n"
+        # text += selected_attr.obj_type
 
         panel = Panel(
             Text(selected_attr.obj_type, overflow="elipses"),
-            # "[red]hello",
             title=title
         )
         return panel

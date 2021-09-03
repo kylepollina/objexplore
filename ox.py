@@ -3,6 +3,7 @@ from blessed import Terminal
 from rich import print as rprint
 from rich.text import Text
 from rich.layout import Layout
+from rich.repr import rich_repr
 from rich.panel import Panel
 from rich.console import Console
 # from cached_object import CachedObject
@@ -83,6 +84,9 @@ class Explorer:
                 elif key == "\x1b" and self.obj_stack:
                     self.current_obj = self.obj_stack.pop()
 
+                elif key == "b":
+                    breakpoint()
+
     def draw(self):
         print(self.term.home)
         layout = Layout()
@@ -91,7 +95,7 @@ class Explorer:
             Layout(name="body")
         )
 
-        layout["head"].update(Text(repr(self.current_obj), style="italic"))
+        layout["head"].update(self.current_obj.obj_type)
 
         layout["body"].split_row(
             Layout(name="explorer"),
@@ -101,11 +105,13 @@ class Explorer:
             Layout(name="current_obj_attributes"),
             Layout(name="selected_obj_attributes")
         )
+        current_obj_attributes = self.current_obj.get_current_obj_attr_panel()
         layout["body"]["explorer"]["current_obj_attributes"].update(
-            self.current_obj.get_current_obj_attr_panel()
+            current_obj_attributes
         )
+        selected_obj_attributes = self.current_obj.get_selected_obj_attr_panel()
         layout["body"]["explorer"]["selected_obj_attributes"].update(
-            self.current_obj.get_selected_obj_attr_panel()
+            selected_obj_attributes
         )
         object_explorer = Panel(
             layout,
@@ -124,4 +130,5 @@ def ox(obj):
 if __name__ == "__main__":
     from importlib import reload
     reload(cached_object)
-    ox(Explorer("hello"))
+    ex = Explorer("hello")
+    ox(ex)
