@@ -1,9 +1,14 @@
 
+import json
 from rich import print as rprint
-# from rich.repr import rich_repr
+from io import StringIO
 from rich.text import Text
 from rich.panel import Panel
 from rich.console import Console
+from rich.highlighter import ReprHighlighter
+from rich.pretty import Pretty
+
+highlighter = ReprHighlighter()
 
 
 PUBLIC = "PUBLIC"
@@ -14,57 +19,64 @@ console = Console()
 
 class CachedObject:
 
-    def __init__(self, obj, name=None):
+    def __init__(
+        self,
+        obj,
+        name=None,
+        parent_name=None
+    ):
         self.obj = obj
         self.name = name
+        self.parent_name = parent_name
         self.attribute_type = PUBLIC
         self.public_attribute_index = 0
         self.private_attribute_index = 0
         self.public_attribute_window = 0
         self.private_attribute_window = 0
 
-        self.public_attributes = sorted(
-            attr for attr in dir(self.obj) if not attr.startswith('_')
-        )
-        self.private_attributes = sorted(
-            attr for attr in dir(self.obj) if attr.startswith('_')
-        )
-        self.cached_public_attributes = []
-        self.cached_private_attributes = []
+        self.attrs = dir(self.obj)
+        if '__weakref__' in self.attrs:
+            # Ignore weakrefs
+            self.attrs.remove('__weakref__')
 
-        with console.capture() as capture:
-            console.print(type(self.obj))
+        self.plain_public_attributes = sorted(
+            attr for attr in self.attrs if not attr.startswith('_')
+        )
+        self.plain_private_attributes = sorted(
+            attr for attr in self.attrs if attr.startswith('_')
+        )
+        self.cached_attributes = {}
 
-        self.obj_type = capture.get()
+
+        self.preview = Pretty(self.obj)
 
     def cache_attributes(self):
-        self.cached_public_attributes = [
-            CachedObject(getattr(self.obj, attr), name=attr)
-            for attr in self.public_attributes
-        ]
-        self.cached_private_attributes = [
-            CachedObject(getattr(self.obj, attr), name=attr)
-            for attr in self.private_attributes
-        ]
+        if not self.cached_attributes:
+            for attr in self.attrs:
+                self.cached_attributes[attr] = CachedObject(getattr(self.obj, attr), name=attr, parent_name=self.display_name)
 
-    def __getitem__(self, item):
-        return CachedObject(getattr(self.obj, item))
+    def __getitem__(self, key):
+        return self.cached_attributes[key]
+
+    @property
+    def display_name(self):
+        return f"{self.parent_name}.{self.name}" if self.name else repr(self.obj)
 
     @property
     def selected_public_attribute(self) -> str:
-        return self.public_attributes[self.public_attribute_index]
+        return self.plain_public_attributes[self.public_attribute_index]
 
     @property
     def selected_private_attribute(self) -> str:
-        return self.private_attributes[self.private_attribute_index]
+        return self.plain_private_attributes[self.private_attribute_index]
 
     @property
-    def selected_public_attr_cached(self) -> "CachedObject":
-        return self.cached_public_attributes[self.public_attribute_index]
+    def selected_cached_attribute(self):
+        if self.attribute_type == PUBLIC:
+            return self[self.selected_public_attribute]
 
-    @property
-    def selected_private_attr_cached(self) -> "CachedObject":
-        return self.cached_private_attributes[self.private_attribute_index]
+        elif self.attribute_type == PRIVATE:
+            return self[self.selected_private_attribute]
 
     def get_current_obj_attr_panel(self) -> Panel:
         """ TODO """
@@ -72,19 +84,19 @@ class CachedObject:
             attribute_text = [
                 Text(attr, overflow="elipses", style="reverse") if attr == self.selected_public_attribute
                 else Text(attr, overflow="elipses")
-                for attr in self.public_attributes[self.public_attribute_window:]
+                for attr in self.plain_public_attributes[self.public_attribute_window:]
             ]
             title = "[reverse]public[/reverse] - private"
-            subtitle = f"({self.public_attribute_index + 1}/{len(self.public_attributes)})"
+            subtitle = f"({self.public_attribute_index + 1}/{len(self.plain_public_attributes)})"
 
         elif self.attribute_type == PRIVATE:
             attribute_text = [
                 Text(attr, overflow="elipses", style="reverse") if attr == self.selected_private_attribute
                 else Text(attr, overflow="elipses")
-                for attr in self.private_attributes[self.private_attribute_window:]
+                for attr in self.plain_private_attributes[self.private_attribute_window:]
             ]
             title = "public - [reverse]private[/reverse]"
-            subtitle = f"({self.private_attribute_index + 1}/{len(self.private_attributes)})"
+            subtitle = f"({self.private_attribute_index + 1}/{len(self.plain_private_attributes)})"
 
         renderable_text = None
         for t in attribute_text:
@@ -102,36 +114,16 @@ class CachedObject:
 
         return panel
 
-    def get_selected_obj_attr_panel(self) -> Panel:
-        if self.attribute_type == PUBLIC:
-            selected_attr = self.selected_public_attr_cached
-            title = self.selected_public_attribute
-        elif self.attribute_type == PRIVATE:
-            selected_attr = self.selected_private_attr_cached
-            title = self.selected_private_attribute
-
-        # # text = Text("", end="\n")
-        # text = ""
-        # text += f"{len(selected_attr.public_attributes)} public attributes\n"
-        # text += f"{len(selected_attr.private_attributes)} private attributes\n"
-        # text += selected_attr.obj_type
-
-        panel = Panel(
-            Text(selected_attr.obj_type, overflow="elipses"),
-            title=title
-        )
-        return panel
-
     def move_down(self, panel_height):
         """ Move the current selection down one """
         if self.attribute_type == PUBLIC:
-            if self.public_attribute_index < len(self.public_attributes) - 1:
+            if self.public_attribute_index < len(self.plain_public_attributes) - 1:
                 self.public_attribute_index += 1
                 if self.public_attribute_index > self.public_attribute_window + panel_height:
                     self.public_attribute_window += 1
 
         elif self.attribute_type == PRIVATE:
-            if self.private_attribute_index < len(self.private_attributes) - 1:
+            if self.private_attribute_index < len(self.plain_private_attributes) - 1:
                 self.private_attribute_index += 1
                 if self.private_attribute_index > self.private_attribute_window + panel_height:
                     self.private_attribute_window += 1
@@ -160,9 +152,9 @@ class CachedObject:
 
     def move_bottom(self, panel_height):
         if self.attribute_type == PUBLIC:
-            self.public_attribute_index = len(self.public_attributes) - 1
+            self.public_attribute_index = len(self.plain_public_attributes) - 1
             self.public_attribute_window = max(0, self.public_attribute_index - panel_height)
 
         elif self.attribute_type == PRIVATE:
-            self.private_attribute_index = len(self.private_attributes) - 1
+            self.private_attribute_index = len(self.plain_private_attributes) - 1
             self.private_attribute_window = max(0, self.private_attribute_index - panel_height)

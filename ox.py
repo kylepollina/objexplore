@@ -6,10 +6,12 @@ from rich.layout import Layout
 from rich.repr import rich_repr
 from rich.panel import Panel
 from rich.console import Console
-# from cached_object import CachedObject
+from rich.highlighter import ReprHighlighter
 import cached_object
 
 console = Console()
+
+highlighter = ReprHighlighter()
 
 PUBLIC = "PUBLIC"
 PRIVATE = "PRIVATE"
@@ -29,10 +31,6 @@ class Explorer:
         self.current_obj = obj
         self.obj_stack = []
         self.term = _term
-
-    @property
-    def private_attributes(self):
-        return self.current_obj.private_attributes
 
     @property
     def panel_height(self):
@@ -69,19 +67,23 @@ class Explorer:
                     self.current_obj.move_bottom(self.panel_height)
 
                 # Enter
-                elif key == "\n":
+                elif key in ["\n", "l"]:
                     if self.current_obj.attribute_type == PUBLIC:
-                        self.obj_stack.append(self.current_obj)
-                        self.current_obj = self.current_obj[self.current_obj.selected_public_attribute]
-                        self.current_obj.cache_attributes()
+                        new_cached_obj = self.current_obj[self.current_obj.selected_public_attribute]
+                        if new_cached_obj.obj and not callable(new_cached_obj.obj):
+                            self.obj_stack.append(self.current_obj)
+                            self.current_obj = new_cached_obj
+                            self.current_obj.cache_attributes()
 
                     elif self.current_obj.attribute_type == PRIVATE:
-                        self.obj_stack.append(self.current_obj)
-                        self.current_obj = self.current_obj[self.current_obj.private_attribute]
-                        self.current_obj.cache_attributes()
+                        new_cached_obj = self.current_obj[self.current_obj.selected_private_attribute]
+                        if new_cached_obj.obj and not callable(new_cached_obj.obj):
+                            self.obj_stack.append(self.current_obj)
+                            self.current_obj = new_cached_obj
+                            self.current_obj.cache_attributes()
 
                 # Escape
-                elif key == "\x1b" and self.obj_stack:
+                elif key in ["\x1b", "h"] and self.obj_stack:
                     self.current_obj = self.obj_stack.pop()
 
                 elif key == "b":
@@ -95,23 +97,22 @@ class Explorer:
             Layout(name="body")
         )
 
-        layout["head"].update(self.current_obj.obj_type)
+        # TODO use highlighter
+        layout["head"].update(highlighter(f"{self.current_obj.obj!r}"))
 
         layout["body"].split_row(
             Layout(name="explorer"),
             Layout(name="preview")
         )
-        layout["body"]["explorer"].split_row(
-            Layout(name="current_obj_attributes"),
-            Layout(name="selected_obj_attributes")
-        )
+        layout["body"]["preview"].ratio = 3
         current_obj_attributes = self.current_obj.get_current_obj_attr_panel()
-        layout["body"]["explorer"]["current_obj_attributes"].update(
+        layout["body"]["explorer"].update(
             current_obj_attributes
         )
-        selected_obj_attributes = self.current_obj.get_selected_obj_attr_panel()
-        layout["body"]["explorer"]["selected_obj_attributes"].update(
-            selected_obj_attributes
+        layout["body"]["preview"].update(
+            Panel(
+                self.current_obj.selected_cached_attribute.preview,
+            )
         )
         object_explorer = Panel(
             layout,
