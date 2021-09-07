@@ -1,5 +1,6 @@
 
 from blessed import Terminal
+from rich.pretty import Pretty
 from rich import print as rprint
 from rich.text import Text
 from rich.layout import Layout
@@ -90,35 +91,52 @@ class Explorer:
                     breakpoint()
 
     def draw(self):
-        print(self.term.home)
+        print(self.term.home, end="")
         layout = Layout()
-        layout.split_column(
-            Layout(name="head", size=1),
-            Layout(name="body")
-        )
 
-        # TODO use highlighter
-        layout["head"].update(highlighter(f"{self.current_obj.obj!r}"))
-
-        layout["body"].split_row(
+        layout.split_row(
             Layout(name="explorer"),
             Layout(name="preview")
         )
-        layout["body"]["preview"].ratio = 3
+        layout["preview"].ratio = 3
         current_obj_attributes = self.current_obj.get_current_obj_attr_panel()
-        layout["body"]["explorer"].update(
+        layout["explorer"].update(
             current_obj_attributes
         )
-        layout["body"]["preview"].update(
+        layout["preview"].split_column(
+            Layout(name="obj_info", size=3),
+            Layout(name="obj_value"),
+            Layout(name="obj_doc", size=15)
+        )
+        layout["preview"]["obj_info"].update(
+            Panel(
+                self.current_obj.selected_cached_attribute.typeof,
+                title="[u]type",
+                title_align="left",
+                style="white"
+            )
+        )
+        layout["preview"]["obj_value"].update(
             Panel(
                 self.current_obj.selected_cached_attribute.preview,
+                title="[u]value",
+                title_align="left",
+                style="white"
+            )
+        )
+        layout["preview"]["obj_doc"].update(
+            Panel(
+                Pretty(self.current_obj.selected_cached_attribute.obj.__doc__),
+                title="[green underline]docstring",
+                title_align="left",
+                style="white"
             )
         )
         object_explorer = Panel(
             layout,
-            padding=0,
-            title="Object Explorer",
-            height=self.term.height - 2
+            title=highlighter(f"{self.current_obj.obj!r}"),
+            height=self.term.height - 1,
+            style="blue"
         )
         rprint(object_explorer, end='')
 

@@ -47,7 +47,7 @@ class CachedObject:
         )
         self.cached_attributes = {}
 
-
+        self.typeof = highlighter(str(type(self.obj)))
         self.preview = Pretty(self.obj)
 
     def cache_attributes(self):
@@ -87,7 +87,7 @@ class CachedObject:
                 for attr in self.plain_public_attributes[self.public_attribute_window:]
             ]
             title = "[reverse]public[/reverse] - private"
-            subtitle = f"({self.public_attribute_index + 1}/{len(self.plain_public_attributes)})"
+            subtitle = f"[white]([/white][magenta]{self.public_attribute_index + 1}[/magenta][white]/[/white][magenta]{len(self.plain_public_attributes)}[/magenta][white])"
 
         elif self.attribute_type == PRIVATE:
             attribute_text = [
@@ -96,7 +96,7 @@ class CachedObject:
                 for attr in self.plain_private_attributes[self.private_attribute_window:]
             ]
             title = "public - [reverse]private[/reverse]"
-            subtitle = f"({self.private_attribute_index + 1}/{len(self.plain_private_attributes)})"
+            subtitle = f"[white]([/white][magenta]{self.private_attribute_index + 1}[/magenta][white]/[/white][magenta]{len(self.plain_private_attributes)}[/magenta][white])"
 
         renderable_text = None
         for t in attribute_text:
@@ -109,7 +109,8 @@ class CachedObject:
             renderable_text,
             title=title,
             subtitle=subtitle,
-            subtitle_align="right"
+            subtitle_align="right",
+            style="white"
         )
 
         return panel
