@@ -104,8 +104,8 @@ class Explorer:
             current_obj_attributes
         )
         layout["preview"].split_column(
-            Layout(name="obj_info", size=3),
             Layout(name="obj_value"),
+            Layout(name="obj_info", size=3),
             Layout(name="obj_doc", size=15)
         )
         layout["preview"]["obj_info"].update(
@@ -126,8 +126,8 @@ class Explorer:
         )
         layout["preview"]["obj_doc"].update(
             Panel(
-                Pretty(self.current_obj.selected_cached_attribute.obj.__doc__),
-                title="[green underline]docstring",
+                f"[green]{self.current_obj.selected_cached_attribute.obj.__doc__}" if self.current_obj.selected_cached_attribute.obj.__doc__ else Pretty(None),
+                title="[underline]docstring",
                 title_align="left",
                 style="white"
             )
