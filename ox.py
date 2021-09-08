@@ -50,10 +50,18 @@ class Explorer:
                 self.draw()
                 key = self.term.inkey()
 
+                if self.show_help:
+                    if key in ["?", "\x1b"]:
+                        self.show_help = False
+                    elif key == "f":
+                        with console.capture() as capture:
+                            console.print(self.help_text)
+                        str_out = capture.get()
+                        pydoc.pager(str_out)
+                    continue
+
                 if key == "?":
-                    self.show_help = not self.show_help
-                else:
-                    self.show_help = False
+                    self.show_help = True
 
                 # Switch between public and private attributes
                 if key in ("[", "]"):
@@ -135,86 +143,85 @@ class Explorer:
         )
         layout["preview"].ratio = 3
         current_obj_attributes = self.current_obj.get_current_obj_attr_panel()
-        layout["explorer"].update(
-            current_obj_attributes
-        )
+        layout["explorer"].update(current_obj_attributes)
         if self.main_view == DOCSTRING:
-            layout["preview"].update(
-                Panel(
-                    self.current_obj.selected_cached_attribute.docstring,
-                    title="[underline]docstring",
-                    title_align="left",
-                    subtitle="[dim]f:fullscreen d:toggle",
-                    subtitle_align="left",
-                    style="white"
-                )
-            )
+            layout["preview"].update(self.get_docstring_panel(fullscreen=True))
 
         elif self.main_view == VALUE:
-            layout["preview"].update(
-                Panel(
-                    self.current_obj.selected_cached_attribute.preview,
-                    title="[u]value",
-                    title_align="left",
-                    subtitle="[dim]f:fullscreen v:toggle",
-                    subtitle_align="left",
-                    style="white"
-                )
-            )
+            layout["preview"].update(self.get_value_panel())
 
         elif self.show_help:
-            layout["preview"].update(
-                Panel(
-                    "this is the help menu!",
-                    title="[u]help",
-                    title_align="left",
-                    style="magenta"
-                )
-            )
+            layout["preview"].update(self.get_help_panel())
 
         else:
             layout["preview"].split_column(
-                Layout(name="obj_value"),
-                Layout(name="obj_info", size=3),
-                Layout(name="obj_doc", size=15)
-            )
-            layout["preview"]["obj_info"].update(
-                Panel(
-                    self.current_obj.selected_cached_attribute.typeof,
-                    title="[u]type",
-                    title_align="left",
-                    style="white"
+                Layout(
+                    self.get_value_panel(),
+                    name="obj_value"
+                ),
+                Layout(
+                    self.get_type_panel(),
+                    name="obj_type",
+                    size=3
+                ),
+                Layout(
+                    self.get_docstring_panel(),
+                    name="obj_doc",
+                    size=15
                 )
             )
-            layout["preview"]["obj_value"].update(
-                Panel(
-                    self.current_obj.selected_cached_attribute.preview,
-                    title="[u]value",
-                    title_align="left",
-                    subtitle="[dim]f:fullscreen v:toggle",
-                    subtitle_align="left",
-                    style="white"
-                )
-            )
-            layout["preview"]["obj_doc"].update(
-                Panel(
-                    self.current_obj.selected_cached_attribute.docstring,
-                    title="[underline]docstring",
-                    title_align="left",
-                    subtitle="[dim]d:toggle",
-                    subtitle_align="left",
-                    style="white"
-                )
-            )
+
         object_explorer = Panel(
             layout,
             title=highlighter(f"{self.current_obj.obj!r}"),
-            subtitle="[red]q:quit[/red] [cyan]?:help[/]",
+            subtitle=f"[red]q:quit[/red] [cyan]?:{'exit ' if self.show_help else ''}help[/]",
             subtitle_align="left",
             height=self.term.height - 1,
             style="blue"
         )
         rprint(object_explorer, end='')
+
+    def get_docstring_panel(self, fullscreen=False):
+        return Panel(
+            self.current_obj.selected_cached_attribute.docstring,
+            title="[underline]docstring",
+            title_align="left",
+            subtitle=f"[dim]{'f:fullscreen ' if fullscreen else ''}d:toggle",
+            subtitle_align="right",
+            style="white"
+        )
+
+    def get_value_panel(self):
+        return Panel(
+            self.current_obj.selected_cached_attribute.preview,
+            title="[u]value",
+            title_align="left",
+            subtitle="[dim]f:fullscreen v:toggle",
+            subtitle_align="right",
+            style="white"
+        )
+
+    def get_type_panel(self):
+        return Panel(
+            self.current_obj.selected_cached_attribute.typeof,
+            title="[u]type",
+            title_align="left",
+            style="white"
+        )
+
+    def get_help_panel(self):
+            return Panel(
+                self.help_text,
+                title="[u]help",
+                title_align="left",
+                subtitle="[dim white]f:fullscreen ?exit help",
+                subtitle_align="right",
+                style="magenta"
+            )
+
+    @property
+    def help_text(self):
+        return "[magenta]This is the help page"
 
 def ox(obj):
     explorer = Explorer(obj)
