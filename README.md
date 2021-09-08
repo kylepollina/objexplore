@@ -6,10 +6,11 @@ An Interactive Python Object Explorer
 
 ## Install
 
-TODO 
 ```
 pip install objexplore
 ```
+
+or
 
 ```
 pip install git+https://github.com/kylepollina/objexplore
@@ -22,3 +23,6 @@ from objexplore import explore
 import pandas
 explore(pandas)
 ```
+
+## Keybindings
+TODO
