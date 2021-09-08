@@ -1,8 +1,11 @@
 
 import json
+import inspect
 from rich import print as rprint
 from io import StringIO
+from rich.syntax import Syntax
 from rich.text import Text
+from rich.box import SQUARE
 from rich.panel import Panel
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
@@ -22,8 +25,8 @@ class CachedObject:
     def __init__(
         self,
         obj,
-        name=None,
-        parent_name=None
+        name='',
+        parent_name=''
     ):
         self.obj = obj
         self.name = name
@@ -50,6 +53,11 @@ class CachedObject:
         self.typeof = highlighter(str(type(self.obj)))
         self.docstring = f"[green]{self.obj.__doc__}" if self.obj.__doc__ else Pretty(None)
         self.preview = Pretty(self.obj)
+        self._source = None
+
+    @property
+    def fullname(self):
+        return self.parent_name + '.' +  self.name
 
     def cache_attributes(self):
         if not self.cached_attributes:
@@ -58,6 +66,16 @@ class CachedObject:
 
     def __getitem__(self, key):
         return self.cached_attributes[key]
+
+    @property
+    def source(self):
+        if not self._source:
+            try:
+                self._source = Syntax(inspect.getsource(self.obj), "python", line_numbers=True, background_color="default")
+            except Exception as e:
+                self._source = "[red italic]Source code unavailable"
+
+        return self._source
 
     @property
     def display_name(self):
@@ -83,11 +101,11 @@ class CachedObject:
         """ TODO """
         if self.attribute_type == PUBLIC:
             attribute_text = [
-                Text(attr, overflow="elipses", style="reverse") if attr == self.selected_public_attribute
+                Text(attr, overflow="elipses", style=f"reverse") if attr == self.selected_public_attribute
                 else Text(attr, overflow="elipses")
                 for attr in self.plain_public_attributes[self.public_attribute_window:]
             ]
-            title = "[reverse]public[/reverse] - private"
+            title = "[u]public[/u] [dim]private[/dim]"
             subtitle = f"[white]([/white][magenta]{self.public_attribute_index + 1}[/magenta][white]/[/white][magenta]{len(self.plain_public_attributes)}[/magenta][white])"
 
         elif self.attribute_type == PRIVATE:
@@ -96,7 +114,7 @@ class CachedObject:
                 else Text(attr, overflow="elipses")
                 for attr in self.plain_private_attributes[self.private_attribute_window:]
             ]
-            title = "public - [reverse]private[/reverse]"
+            title = "[dim]public[/dim] [underline]private[/underline]"
             subtitle = f"[white]([/white][magenta]{self.private_attribute_index + 1}[/magenta][white]/[/white][magenta]{len(self.plain_private_attributes)}[/magenta][white])"
 
         renderable_text = None
@@ -108,6 +126,7 @@ class CachedObject:
 
         panel = Panel(
             renderable_text,
+            box=SQUARE,
             title=title,
             subtitle=subtitle,
             subtitle_align="right",

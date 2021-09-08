@@ -1,11 +1,10 @@
 
+from textwrap import dedent
 import pydoc
+from rich.box import SQUARE, DOUBLE
 from blessed import Terminal
-from rich.pretty import Pretty
 from rich import print as rprint
-from rich.text import Text
 from rich.layout import Layout
-from rich.repr import rich_repr
 from rich.panel import Panel
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
@@ -19,11 +18,13 @@ PUBLIC = "PUBLIC"
 PRIVATE = "PRIVATE"
 DOCSTRING = "DOCSTRING"
 VALUE = "VALUE"
+SOURCE = "SOURCE"
+KEYBINDINGS = "KEYBINDINGS"
+ABOUT = "ABOUT"
 _term = Terminal()
 
 # TODO methods filter
 # or just a type filter?
-# Move to next type with {}
 
 
 class Explorer:
@@ -37,6 +38,8 @@ class Explorer:
         self.term = _term
         self.main_view = None
         self.show_help = False
+        self.help_page = KEYBINDINGS
+        self.value_view = VALUE
 
     @property
     def panel_height(self):
@@ -58,6 +61,11 @@ class Explorer:
                             console.print(self.help_text)
                         str_out = capture.get()
                         pydoc.pager(str_out)
+                    elif key in ["{", "}"]:
+                        if self.help_page == KEYBINDINGS:
+                            self.help_page = ABOUT
+                        elif self.help_page == ABOUT:
+                            self.help_page = KEYBINDINGS
                     continue
 
                 if key == "?":
@@ -70,6 +78,15 @@ class Explorer:
 
                     elif self.current_obj.attribute_type == PRIVATE:
                         self.current_obj.attribute_type = PUBLIC
+
+                elif key in ["{", "}"]:
+                    if not callable(self.current_obj.selected_cached_attribute.obj):
+                        continue
+
+                    if self.value_view == VALUE:
+                        self.value_view = SOURCE
+                    elif self.value_view == SOURCE:
+                        self.value_view = VALUE
 
                 # move selected attribute down
                 elif key == "j":
@@ -96,7 +113,6 @@ class Explorer:
                     # Toggle value view
                     self.main_view = VALUE if self.main_view != VALUE else None
 
-
                 elif key == "f":
                     # Fullscreen
                     if self.main_view == DOCSTRING:
@@ -104,24 +120,29 @@ class Explorer:
                             console.print(self.current_obj.selected_cached_attribute.docstring)
                         str_out = capture.get()
                         pydoc.pager(str_out)
-                    else:
+                    elif self.main_view == VALUE or self.main_view is None:
                         with console.capture() as capture:
-                            console.print(self.current_obj.selected_cached_attribute.preview)
+                            console.print(self.value_panel_text)
                         str_out = capture.get()
                         pydoc.pager(str_out)
+
+                elif key == "p":
+                    rprint(self.current_obj.selected_cached_attribute.fullname)
+                    rprint(self.current_obj.selected_cached_attribute.obj)
+                    break
 
                 # Enter
                 elif key in ["\n", "l"]:
                     if self.current_obj.attribute_type == PUBLIC:
                         new_cached_obj = self.current_obj[self.current_obj.selected_public_attribute]
-                        if new_cached_obj.obj and not callable(new_cached_obj.obj):
+                        if new_cached_obj.obj is not None and not callable(new_cached_obj.obj):
                             self.obj_stack.append(self.current_obj)
                             self.current_obj = new_cached_obj
                             self.current_obj.cache_attributes()
 
                     elif self.current_obj.attribute_type == PRIVATE:
                         new_cached_obj = self.current_obj[self.current_obj.selected_private_attribute]
-                        if new_cached_obj.obj and not callable(new_cached_obj.obj):
+                        if new_cached_obj.obj is not None and not callable(new_cached_obj.obj):
                             self.obj_stack.append(self.current_obj)
                             self.current_obj = new_cached_obj
                             self.current_obj.cache_attributes()
@@ -173,8 +194,9 @@ class Explorer:
 
         object_explorer = Panel(
             layout,
+            box=SQUARE,
             title=highlighter(f"{self.current_obj.obj!r}"),
-            subtitle=f"[red]q:quit[/red] [cyan]?:{'exit ' if self.show_help else ''}help[/]",
+            subtitle=f"[red][u]q[/u]:quit[/red] [cyan][u]?[/u]:{'exit ' if self.show_help else ''}help[/]",
             subtitle_align="left",
             height=self.term.height - 1,
             style="blue"
@@ -184,44 +206,104 @@ class Explorer:
     def get_docstring_panel(self, fullscreen=False):
         return Panel(
             self.current_obj.selected_cached_attribute.docstring,
+            box=SQUARE,
             title="[underline]docstring",
             title_align="left",
-            subtitle=f"[dim]{'f:fullscreen ' if fullscreen else ''}d:toggle",
-            subtitle_align="right",
+            subtitle=f"[dim]{'[u]f[/u]:fullscreen ' if fullscreen else ''}[u]d[/u]:toggle",
+            subtitle_align="left",
             style="white"
         )
 
     def get_value_panel(self):
         return Panel(
-            self.current_obj.selected_cached_attribute.preview,
-            title="[u]value",
+            self.value_panel_text,
+            box=SQUARE,
+            title=(
+                "[u]value[/u]"
+                if not callable(self.current_obj.selected_cached_attribute.obj)
+                else (
+                    "[u]value[/u] [dim]source[/dim]"
+                    if self.value_view != SOURCE
+                    else "[dim]value[/dim] [u]source[/u]"
+                )
+            ),
             title_align="left",
-            subtitle="[dim]f:fullscreen v:toggle",
-            subtitle_align="right",
+            subtitle=f"[dim][u]f[/u]:fullscreen [u]v[/u]:toggle{' [u]{}[/u]:switch pane' if callable(self.current_obj.selected_cached_attribute.obj) else ''}",
+            subtitle_align="left",
             style="white"
+        )
+
+    @property
+    def value_panel_text(self):
+        return (
+            self.current_obj.selected_cached_attribute.preview
+            if not callable(self.current_obj.selected_cached_attribute.obj)
+            else (
+                self.current_obj.selected_cached_attribute.preview
+                if self.value_view == VALUE
+                else self.current_obj.selected_cached_attribute.source
+            )
         )
 
     def get_type_panel(self):
         return Panel(
             self.current_obj.selected_cached_attribute.typeof,
+            box=SQUARE,
             title="[u]type",
             title_align="left",
             style="white"
         )
 
     def get_help_panel(self):
-            return Panel(
-                self.help_text,
-                title="[u]help",
-                title_align="left",
-                subtitle="[dim white]f:fullscreen ?exit help",
-                subtitle_align="right",
-                style="magenta"
-            )
+        return Panel(
+            self.help_text,
+            box=SQUARE,
+            title=(
+                "help | [u]key bindings[/u] [dim]about"
+                if self.help_page == KEYBINDINGS
+                else "help | [dim]key bindings[/dim] [u]about"
+            ),
+            title_align="left",
+            subtitle="[dim white][u]f[/u]:fullscreen [u]{}[/u]:switch pane [u]?[/u]:exit help",
+            subtitle_align="left",
+            style="magenta"
+        )
 
     @property
     def help_text(self):
-        return "[magenta]This is the help page"
+        """ Return the text to be displayed on the help page """
+        if self.help_page == KEYBINDINGS:
+            return dedent(
+                """
+                [white]
+                      j - [cyan]down[/cyan]
+                      k - [cyan]up[/cyan]
+                l Enter - [cyan]explore selected attribute[/cyan]
+                  h Esc - [cyan]go back to parent object[/cyan]
+                    [ ] - [cyan]switch attribute type (public/private)[/cyan]
+                    { } - [cyan]switch pane[/cyan]
+                      v - [cyan]toggle full preview[/cyan]
+                      d - [cyan]toggle full docstring[/cyan]
+                      f - [cyan]open fullscreen view[/cyan]
+                      H - [cyan]open help page on selected attribute[/cyan]
+                      p - [cyan]exit and print value of selected attribute[/cyan]
+                      ? - [cyan]toggle help page[/cyan]
+                    q Q - [cyan]quit[/cyan]
+                """
+            ).strip()
+        elif self.help_page == ABOUT:
+            return dedent(
+                """
+                [white]
+                [u]Python Object Explorer[/u]
+                Author: [cyan]Kyle Pollina \[https://github.com/kylepollina][/cyan]
+                Version: [cyan]TODO[/cyan]
+                PyPI: [cyan]TODO[/cyan]
+                Source: [cyan]TODO[/cyan]
+                [yellow italic]Report Issue[/yellow italic]: [cyan]TODO[/cyan]
+                """
+            ).strip()
+
 
 def ox(obj):
     explorer = Explorer(obj)
@@ -230,6 +312,6 @@ def ox(obj):
 
 if __name__ == "__main__":
     from importlib import reload
+    import rich
     reload(cached_object)
-    ex = Explorer("hello")
-    ox(ex)
+    ox(rich)
