@@ -8,17 +8,17 @@ An Interactive Python Object Explorer
 
 TODO 
 ```
-pip install objex
+pip install objexplore
 ```
 
 ```
-pip install git+https://github.com/kylepollina/objex
+pip install git+https://github.com/kylepollina/objexplore
 ```
 
 ## Usage
 
 ```python
-from objex import ex
+from objexplore import explore
 import pandas
-ex(pandas)
+explore(pandas)
 ```

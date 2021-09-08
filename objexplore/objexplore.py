@@ -311,7 +311,7 @@ class Explorer:
         )
 
 
-def ex(obj):
+def explore(obj):
     """ Run the explorer on the given object """
     Explorer(obj).explore()
 
@@ -321,4 +321,4 @@ if __name__ == "__main__":
     import rich
     import pandas
     reload(cached_object)
-    ex(pandas)
+    explore(pandas)
