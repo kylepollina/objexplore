@@ -126,7 +126,6 @@ class CachedObject:
 
         panel = Panel(
             renderable_text,
-            box=SQUARE,
             title=title,
             subtitle=subtitle,
             subtitle_align="right",

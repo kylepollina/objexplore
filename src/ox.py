@@ -1,7 +1,7 @@
 
+from random import choice
 from textwrap import dedent
 import pydoc
-from rich.box import SQUARE, DOUBLE
 from blessed import Terminal
 from rich import print as rprint
 from rich.layout import Layout
@@ -41,13 +41,10 @@ class Explorer:
         self.help_page = KEYBINDINGS
         self.value_view = VALUE
 
-    @property
-    def panel_height(self):
-        return self.term.height - 8
-
     def explore(self):
         key = None
         print(self.term.clear, end='')
+
         with self.term.cbreak(), self.term.hidden_cursor():
             while key not in ('q', 'Q'):
                 self.draw()
@@ -151,9 +148,6 @@ class Explorer:
                 elif key in ["\x1b", "h"] and self.obj_stack:
                     self.current_obj = self.obj_stack.pop()
 
-                elif key == "b":
-                    breakpoint()
-
     def draw(self):
         print(self.term.home, end="")
         layout = Layout()
@@ -165,14 +159,15 @@ class Explorer:
         layout["preview"].ratio = 3
         current_obj_attributes = self.current_obj.get_current_obj_attr_panel()
         layout["explorer"].update(current_obj_attributes)
-        if self.main_view == DOCSTRING:
+
+        if self.show_help:
+            layout["preview"].update(self.get_help_panel())
+
+        elif self.main_view == DOCSTRING:
             layout["preview"].update(self.get_docstring_panel(fullscreen=True))
 
         elif self.main_view == VALUE:
             layout["preview"].update(self.get_value_panel())
-
-        elif self.show_help:
-            layout["preview"].update(self.get_help_panel())
 
         else:
             layout["preview"].split_column(
@@ -194,7 +189,6 @@ class Explorer:
 
         object_explorer = Panel(
             layout,
-            box=SQUARE,
             title=highlighter(f"{self.current_obj.obj!r}"),
             subtitle=f"[red][u]q[/u]:quit[/red] [cyan][u]?[/u]:{'exit ' if self.show_help else ''}help[/]",
             subtitle_align="left",
@@ -203,10 +197,13 @@ class Explorer:
         )
         rprint(object_explorer, end='')
 
+    @property
+    def panel_height(self):
+        return self.term.height - 8
+
     def get_docstring_panel(self, fullscreen=False):
         return Panel(
             self.current_obj.selected_cached_attribute.docstring,
-            box=SQUARE,
             title="[underline]docstring",
             title_align="left",
             subtitle=f"[dim]{'[u]f[/u]:fullscreen ' if fullscreen else ''}[u]d[/u]:toggle",
@@ -217,7 +214,6 @@ class Explorer:
     def get_value_panel(self):
         return Panel(
             self.value_panel_text,
-            box=SQUARE,
             title=(
                 "[u]value[/u]"
                 if not callable(self.current_obj.selected_cached_attribute.obj)
@@ -248,7 +244,6 @@ class Explorer:
     def get_type_panel(self):
         return Panel(
             self.current_obj.selected_cached_attribute.typeof,
-            box=SQUARE,
             title="[u]type",
             title_align="left",
             style="white"
@@ -257,7 +252,6 @@ class Explorer:
     def get_help_panel(self):
         return Panel(
             self.help_text,
-            box=SQUARE,
             title=(
                 "help | [u]key bindings[/u] [dim]about"
                 if self.help_page == KEYBINDINGS
@@ -295,14 +289,24 @@ class Explorer:
             return dedent(
                 """
                 [white]
-                [u]Python Object Explorer[/u]
+                [u]Objex[/u] Interactive Python Object Explorer
                 Author: [cyan]Kyle Pollina \[https://github.com/kylepollina][/cyan]
                 Version: [cyan]TODO[/cyan]
                 PyPI: [cyan]TODO[/cyan]
                 Source: [cyan]TODO[/cyan]
-                [yellow italic]Report Issue[/yellow italic]: [cyan]TODO[/cyan]
-                """
+                [yellow italic]Report an issue[/yellow italic]: [cyan]TODO[/cyan]
+
+                """ + self.random_quote()
             ).strip()
+
+    def random_quote(self):
+        return choice(
+            [
+                "[i]Have a nice day!![/i]",
+                "[i]You look rather dashing today![/i]",
+                "[i]:)[/i]"
+            ]
+        )
 
 
 def ox(obj):
