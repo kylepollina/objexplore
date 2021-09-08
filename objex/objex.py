@@ -309,13 +309,13 @@ class Explorer:
         )
 
 
-def ox(obj):
-    explorer = Explorer(obj)
-    explorer.explore()
+def ex(obj):
+    """ Run the explorer on the given object """
+    Explorer(obj).explore()
 
 
 if __name__ == "__main__":
     from importlib import reload
     import rich
     reload(cached_object)
-    ox(rich)
+    ex(rich)
