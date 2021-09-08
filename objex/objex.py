@@ -270,8 +270,10 @@ class Explorer:
             return dedent(
                 """
                 [white]
-                      j - [cyan]down[/cyan]
                       k - [cyan]up[/cyan]
+                      j - [cyan]down[/cyan]
+                      g - [cyan]go to top[/cyan]
+                      G - [cyan]go to bottom[/cyan]
                 l Enter - [cyan]explore selected attribute[/cyan]
                   h Esc - [cyan]go back to parent object[/cyan]
                     [ ] - [cyan]switch attribute type (public/private)[/cyan]
@@ -317,5 +319,6 @@ def ex(obj):
 if __name__ == "__main__":
     from importlib import reload
     import rich
+    import pandas
     reload(cached_object)
-    ex(rich)
+    ex(pandas)

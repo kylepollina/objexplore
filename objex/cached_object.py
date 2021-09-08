@@ -72,7 +72,7 @@ class CachedObject:
         if not self._source:
             try:
                 self._source = Syntax(inspect.getsource(self.obj), "python", line_numbers=True, background_color="default")
-            except Exception as e:
+            except Exception:
                 self._source = "[red italic]Source code unavailable"
 
         return self._source
