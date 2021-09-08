@@ -8,7 +8,7 @@ from rich.layout import Layout
 from rich.panel import Panel
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
-import cached_object
+from . import cached_object
 
 console = Console()
 
