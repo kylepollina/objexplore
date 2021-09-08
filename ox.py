@@ -1,4 +1,5 @@
 
+import pydoc
 from blessed import Terminal
 from rich.pretty import Pretty
 from rich import print as rprint
@@ -16,6 +17,8 @@ highlighter = ReprHighlighter()
 
 PUBLIC = "PUBLIC"
 PRIVATE = "PRIVATE"
+DOCSTRING = "DOCSTRING"
+VALUE = "VALUE"
 _term = Terminal()
 
 # TODO methods filter
@@ -32,6 +35,8 @@ class Explorer:
         self.current_obj = obj
         self.obj_stack = []
         self.term = _term
+        self.main_view = None
+        self.show_help = False
 
     @property
     def panel_height(self):
@@ -44,6 +49,11 @@ class Explorer:
             while key not in ('q', 'Q'):
                 self.draw()
                 key = self.term.inkey()
+
+                if key == "?":
+                    self.show_help = not self.show_help
+                else:
+                    self.show_help = False
 
                 # Switch between public and private attributes
                 if key in ("[", "]"):
@@ -66,6 +76,31 @@ class Explorer:
 
                 elif key == "G":
                     self.current_obj.move_bottom(self.panel_height)
+
+                elif key == "H":
+                    help(self.current_obj.selected_cached_attribute.obj)
+
+                elif key == "d":
+                    # Toggle docstring view
+                    self.main_view = DOCSTRING if self.main_view != DOCSTRING else None
+
+                elif key == "v":
+                    # Toggle value view
+                    self.main_view = VALUE if self.main_view != VALUE else None
+
+
+                elif key == "f":
+                    # Fullscreen
+                    if self.main_view == DOCSTRING:
+                        with console.capture() as capture:
+                            console.print(self.current_obj.selected_cached_attribute.docstring)
+                        str_out = capture.get()
+                        pydoc.pager(str_out)
+                    else:
+                        with console.capture() as capture:
+                            console.print(self.current_obj.selected_cached_attribute.preview)
+                        str_out = capture.get()
+                        pydoc.pager(str_out)
 
                 # Enter
                 elif key in ["\n", "l"]:
@@ -103,43 +138,83 @@ class Explorer:
         layout["explorer"].update(
             current_obj_attributes
         )
-        layout["preview"].split_column(
-            Layout(name="obj_value"),
-            Layout(name="obj_info", size=3),
-            Layout(name="obj_doc", size=15)
-        )
-        layout["preview"]["obj_info"].update(
-            Panel(
-                self.current_obj.selected_cached_attribute.typeof,
-                title="[u]type",
-                title_align="left",
-                style="white"
+        if self.main_view == DOCSTRING:
+            layout["preview"].update(
+                Panel(
+                    self.current_obj.selected_cached_attribute.docstring,
+                    title="[underline]docstring",
+                    title_align="left",
+                    subtitle="[dim]f:fullscreen d:toggle",
+                    subtitle_align="left",
+                    style="white"
+                )
             )
-        )
-        layout["preview"]["obj_value"].update(
-            Panel(
-                self.current_obj.selected_cached_attribute.preview,
-                title="[u]value",
-                title_align="left",
-                style="white"
+
+        elif self.main_view == VALUE:
+            layout["preview"].update(
+                Panel(
+                    self.current_obj.selected_cached_attribute.preview,
+                    title="[u]value",
+                    title_align="left",
+                    subtitle="[dim]f:fullscreen v:toggle",
+                    subtitle_align="left",
+                    style="white"
+                )
             )
-        )
-        layout["preview"]["obj_doc"].update(
-            Panel(
-                f"[green]{self.current_obj.selected_cached_attribute.obj.__doc__}" if self.current_obj.selected_cached_attribute.obj.__doc__ else Pretty(None),
-                title="[underline]docstring",
-                title_align="left",
-                style="white"
+
+        elif self.show_help:
+            layout["preview"].update(
+                Panel(
+                    "this is the help menu!",
+                    title="[u]help",
+                    title_align="left",
+                    style="magenta"
+                )
             )
-        )
+
+        else:
+            layout["preview"].split_column(
+                Layout(name="obj_value"),
+                Layout(name="obj_info", size=3),
+                Layout(name="obj_doc", size=15)
+            )
+            layout["preview"]["obj_info"].update(
+                Panel(
+                    self.current_obj.selected_cached_attribute.typeof,
+                    title="[u]type",
+                    title_align="left",
+                    style="white"
+                )
+            )
+            layout["preview"]["obj_value"].update(
+                Panel(
+                    self.current_obj.selected_cached_attribute.preview,
+                    title="[u]value",
+                    title_align="left",
+                    subtitle="[dim]f:fullscreen v:toggle",
+                    subtitle_align="left",
+                    style="white"
+                )
+            )
+            layout["preview"]["obj_doc"].update(
+                Panel(
+                    self.current_obj.selected_cached_attribute.docstring,
+                    title="[underline]docstring",
+                    title_align="left",
+                    subtitle="[dim]d:toggle",
+                    subtitle_align="left",
+                    style="white"
+                )
+            )
         object_explorer = Panel(
             layout,
             title=highlighter(f"{self.current_obj.obj!r}"),
+            subtitle="[red]q:quit[/red] [cyan]?:help[/]",
+            subtitle_align="left",
             height=self.term.height - 1,
             style="blue"
         )
         rprint(object_explorer, end='')
-
 
 def ox(obj):
     explorer = Explorer(obj)

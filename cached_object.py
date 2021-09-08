@@ -48,6 +48,7 @@ class CachedObject:
         self.cached_attributes = {}
 
         self.typeof = highlighter(str(type(self.obj)))
+        self.docstring = f"[green]{self.obj.__doc__}" if self.obj.__doc__ else Pretty(None)
         self.preview = Pretty(self.obj)
 
     def cache_attributes(self):
