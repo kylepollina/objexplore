@@ -1,4 +1,5 @@
 
+from typing import Optional
 import inspect
 from rich.syntax import Syntax
 from rich.text import Text
@@ -14,6 +15,8 @@ PUBLIC = "PUBLIC"
 PRIVATE = "PRIVATE"
 
 console = Console()
+
+# TODO fix bug if there is no public/private attributes
 
 
 class CachedObject:
@@ -69,7 +72,7 @@ class CachedObject:
                 self.cached_attributes[attr] = CachedObject(getattr(self.obj, attr), name=attr, parent_name=self.display_name)
 
     def __getitem__(self, key):
-        return self.cached_attributes[key]
+        return self.cached_attributes.get(key)
 
     def get_docstring(self, term, fullscreen=False):
         if fullscreen:
@@ -101,20 +104,16 @@ class CachedObject:
         return f"{self.parent_name}.{self.name}" if self.name else repr(self.obj)
 
     @property
-    def selected_public_attribute(self) -> str:
-        try:
+    def selected_public_attribute(self) -> Optional[str]:
+        if self.plain_public_attributes:
             return self.plain_public_attributes[self.public_attribute_index]
-        except:
-            breakpoint()
-            pass
+        return None
 
     @property
-    def selected_private_attribute(self) -> str:
-        try:
+    def selected_private_attribute(self) -> Optional[str]:
+        if self.plain_private_attributes:
             return self.plain_private_attributes[self.private_attribute_index]
-        except:
-            breakpoint()
-            pass
+        return None
 
     @property
     def selected_cached_attribute(self):

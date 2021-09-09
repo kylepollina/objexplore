@@ -155,6 +155,10 @@ class Explorer:
                 elif key in ["\x1b", "h"] and self.obj_stack:
                     self.current_obj = self.obj_stack.pop()
 
+                elif key == "b":
+                    breakpoint()
+                    pass
+
     def draw(self):
         print(self.term.home, end="")
         layout = Layout()
