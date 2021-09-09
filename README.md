@@ -1,4 +1,4 @@
-# Object
+# ObjExplore
 An Interactive Python Object Explorer
 
 ![screenshot](images/screenshot.png)

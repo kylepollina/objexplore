@@ -30,6 +30,8 @@ version = "0.9.2"
 
 # TODO methods filter
 # or just a type filter?
+# TODO fix pandas.IndexSlice / pandas.NA
+# TODO for list/set/dict/tuple do length in info panel
 
 
 class Explorer:
@@ -235,10 +237,10 @@ class Explorer:
 
     def value_panel_text(self, fullscreen=False):
         return (
-            self.current_obj.selected_cached_attribute.preview
+            self.current_obj.selected_cached_attribute.get_preview(self.term, fullscreen)
             if not callable(self.current_obj.selected_cached_attribute.obj)
             else (
-                self.current_obj.selected_cached_attribute.preview
+                self.current_obj.selected_cached_attribute.get_preview(self.term, fullscreen)
                 if self.value_view == VALUE
                 else self.current_obj.selected_cached_attribute.get_source(self.term, fullscreen)
             )

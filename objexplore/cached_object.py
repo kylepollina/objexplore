@@ -47,12 +47,17 @@ class CachedObject:
         self.cached_attributes = {}
 
         self.typeof = highlighter(str(type(self.obj)))
-        self.docstring = self.obj.__doc__ if self.obj.__doc__ else "[magenta italic]None"
-        self.preview = Pretty(self.obj)
+        self.docstring = inspect.getdoc(self.obj) or "[magenta italic]None"
         try:
             self._source = inspect.getsource(self.obj)
         except Exception:
             self._source = None
+
+    def get_preview(self, term, fullscreen=False):
+        if fullscreen:
+            return Pretty(self.obj)
+        else:
+            return Pretty(self.obj, max_length=term.height)
 
     @property
     def fullname(self):
@@ -97,11 +102,19 @@ class CachedObject:
 
     @property
     def selected_public_attribute(self) -> str:
-        return self.plain_public_attributes[self.public_attribute_index]
+        try:
+            return self.plain_public_attributes[self.public_attribute_index]
+        except:
+            breakpoint()
+            pass
 
     @property
     def selected_private_attribute(self) -> str:
-        return self.plain_private_attributes[self.private_attribute_index]
+        try:
+            return self.plain_private_attributes[self.private_attribute_index]
+        except:
+            breakpoint()
+            pass
 
     @property
     def selected_cached_attribute(self):
