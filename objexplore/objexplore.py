@@ -130,10 +130,8 @@ class Explorer:
                         str_out = capture.get()
                         pydoc.pager(str_out)
 
-                elif key == "p":
-                    rprint(self.current_obj.selected_cached_attribute.fullname)
-                    rprint(self.current_obj.selected_cached_attribute.obj)
-                    break
+                elif key == "r":
+                    return self.current_obj.selected_cached_attribute.obj
 
                 # Enter
                 elif key in ["\n", "l"]:
@@ -324,4 +322,4 @@ class Explorer:
 
 def explore(obj):
     """ Run the explorer on the given object """
-    Explorer(obj).explore()
+    return Explorer(obj).explore()
