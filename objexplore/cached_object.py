@@ -1,11 +1,7 @@
 
-import json
 import inspect
-from rich import print as rprint
-from io import StringIO
 from rich.syntax import Syntax
 from rich.text import Text
-from rich.box import SQUARE
 from rich.panel import Panel
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
@@ -51,13 +47,16 @@ class CachedObject:
         self.cached_attributes = {}
 
         self.typeof = highlighter(str(type(self.obj)))
-        self.docstring = f"[green]{self.obj.__doc__}" if self.obj.__doc__ else Pretty(None)
+        self.docstring = self.obj.__doc__ if self.obj.__doc__ else "[magenta italic]None"
         self.preview = Pretty(self.obj)
-        self._source = None
+        try:
+            self._source = inspect.getsource(self.obj)
+        except Exception:
+            self._source = None
 
     @property
     def fullname(self):
-        return self.parent_name + '.' +  self.name
+        return self.parent_name + '.' + self.name
 
     def cache_attributes(self):
         if not self.cached_attributes:
@@ -67,15 +66,30 @@ class CachedObject:
     def __getitem__(self, key):
         return self.cached_attributes[key]
 
-    @property
-    def source(self):
-        if not self._source:
-            try:
-                self._source = Syntax(inspect.getsource(self.obj), "python", line_numbers=True, background_color="default")
-            except Exception:
-                self._source = "[red italic]Source code unavailable"
+    def get_docstring(self, term, fullscreen=False):
+        if fullscreen:
+            return self.docstring
+        else:
+            return '\n'.join(self.docstring.splitlines()[:term.height])
 
-        return self._source
+    def get_source(self, term, fullscreen=False):
+        if not self._source:
+            return "[red italic]Source code unavailable"
+        if fullscreen:
+            return Syntax(
+                self._source,
+                "python",
+                line_numbers=True,
+                background_color="default"
+            )
+        else:
+            return Syntax(
+                self._source,
+                "python",
+                line_numbers=True,
+                line_range=[0, term.height],
+                background_color="default"
+            )
 
     @property
     def display_name(self):
@@ -99,21 +113,42 @@ class CachedObject:
 
     def get_current_obj_attr_panel(self) -> Panel:
         """ TODO """
+        # TODO dim if callable?
         if self.attribute_type == PUBLIC:
-            attribute_text = [
-                Text(attr, overflow="elipses", style=f"reverse") if attr == self.selected_public_attribute
-                else Text(attr, overflow="elipses")
-                for attr in self.plain_public_attributes[self.public_attribute_window:]
-            ]
+            attribute_text = []
+            for attr in self.plain_public_attributes[self.public_attribute_window:]:
+                obj = getattr(self.obj, attr)
+                if callable(obj) or obj is None:
+                    style = "dim italic"
+                else:
+                    style = ""
+
+                if attr == self.selected_public_attribute:
+                    style += " reverse"
+
+                attribute_text.append(
+                    Text(attr, overflow="elipses", style=style)
+                )
+
             title = "[u]public[/u] [dim]private[/dim]"
             subtitle = f"[white]([/white][magenta]{self.public_attribute_index + 1}[/magenta][white]/[/white][magenta]{len(self.plain_public_attributes)}[/magenta][white])"
 
         elif self.attribute_type == PRIVATE:
-            attribute_text = [
-                Text(attr, overflow="elipses", style="reverse") if attr == self.selected_private_attribute
-                else Text(attr, overflow="elipses")
-                for attr in self.plain_private_attributes[self.private_attribute_window:]
-            ]
+            attribute_text = []
+            for attr in self.plain_private_attributes[self.private_attribute_window:]:
+                obj = getattr(self.obj, attr)
+                if callable(obj) or obj is None:
+                    style = "dim italic"
+                else:
+                    style = ""
+
+                if attr == self.selected_private_attribute:
+                    style += " reverse"
+
+                attribute_text.append(
+                    Text(attr, overflow="elipses", style=style)
+                )
+
             title = "[dim]public[/dim] [underline]private[/underline]"
             subtitle = f"[white]([/white][magenta]{self.private_attribute_index + 1}[/magenta][white]/[/white][magenta]{len(self.plain_private_attributes)}[/magenta][white])"
 

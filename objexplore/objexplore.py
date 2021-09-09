@@ -1,13 +1,16 @@
 
+import asyncio
+import pydoc
 from random import choice
 from textwrap import dedent
-import pydoc
+
 from blessed import Terminal
 from rich import print as rprint
-from rich.layout import Layout
-from rich.panel import Panel
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
+from rich.layout import Layout
+from rich.panel import Panel
+
 from . import cached_object
 
 console = Console()
@@ -22,6 +25,8 @@ SOURCE = "SOURCE"
 KEYBINDINGS = "KEYBINDINGS"
 ABOUT = "ABOUT"
 _term = Terminal()
+
+version = "0.9.1"
 
 # TODO methods filter
 # or just a type filter?
@@ -119,7 +124,7 @@ class Explorer:
                         pydoc.pager(str_out)
                     elif self.main_view == VALUE or self.main_view is None:
                         with console.capture() as capture:
-                            console.print(self.value_panel_text)
+                            console.print(self.value_panel_text(fullscreen=True))
                         str_out = capture.get()
                         pydoc.pager(str_out)
 
@@ -154,9 +159,8 @@ class Explorer:
 
         layout.split_row(
             Layout(name="explorer"),
-            Layout(name="preview")
+            Layout(name="preview", ratio=3)
         )
-        layout["preview"].ratio = 3
         current_obj_attributes = self.current_obj.get_current_obj_attr_panel()
         layout["explorer"].update(current_obj_attributes)
 
@@ -203,7 +207,7 @@ class Explorer:
 
     def get_docstring_panel(self, fullscreen=False):
         return Panel(
-            self.current_obj.selected_cached_attribute.docstring,
+            self.current_obj.selected_cached_attribute.get_docstring(self.term, fullscreen),
             title="[underline]docstring",
             title_align="left",
             subtitle=f"[dim]{'[u]f[/u]:fullscreen ' if fullscreen else ''}[u]d[/u]:toggle",
@@ -213,7 +217,7 @@ class Explorer:
 
     def get_value_panel(self):
         return Panel(
-            self.value_panel_text,
+            self.value_panel_text(),
             title=(
                 "[u]value[/u]"
                 if not callable(self.current_obj.selected_cached_attribute.obj)
@@ -229,15 +233,14 @@ class Explorer:
             style="white"
         )
 
-    @property
-    def value_panel_text(self):
+    def value_panel_text(self, fullscreen=False):
         return (
             self.current_obj.selected_cached_attribute.preview
             if not callable(self.current_obj.selected_cached_attribute.obj)
             else (
                 self.current_obj.selected_cached_attribute.preview
                 if self.value_view == VALUE
-                else self.current_obj.selected_cached_attribute.source
+                else self.current_obj.selected_cached_attribute.get_source(self.term, fullscreen)
             )
         )
 
@@ -289,14 +292,14 @@ class Explorer:
             ).strip()
         elif self.help_page == ABOUT:
             return dedent(
-                """
+                f"""
                 [white]
-                [u]Objex[/u] Interactive Python Object Explorer
-                Author: [cyan]Kyle Pollina \[https://github.com/kylepollina][/cyan]
-                Version: [cyan]TODO[/cyan]
-                PyPI: [cyan]TODO[/cyan]
-                Source: [cyan]TODO[/cyan]
-                [yellow italic]Report an issue[/yellow italic]: [cyan]TODO[/cyan]
+                [u]Objexplore[/u] Interactive Python Object Explorer
+                Author: [cyan]Kyle Pollina[/cyan]
+                Version: [cyan]{version}[/cyan]
+                PyPI: [cyan]https://pypi.org/project/objexplore[/cyan]
+                Source: [cyan]https://github.com/kylepollina/objexplore[/cyan]
+                [yellow italic]Report an issue[/yellow italic]: [cyan]https://github.com/kylepollina/objexplore/issues[/cyan]
 
                 """ + self.random_quote()
             ).strip()
@@ -306,7 +309,9 @@ class Explorer:
             [
                 "[i]Have a nice day!![/i]",
                 "[i]You look rather dashing today![/i]",
-                "[i]:)[/i]"
+                "[i]:)[/i]",
+                "[i]:earth_africa:[/i]",
+                "[i]<3[/i]",
             ]
         )
 
@@ -314,11 +319,3 @@ class Explorer:
 def explore(obj):
     """ Run the explorer on the given object """
     Explorer(obj).explore()
-
-
-if __name__ == "__main__":
-    from importlib import reload
-    import rich
-    import pandas
-    reload(cached_object)
-    explore(pandas)
