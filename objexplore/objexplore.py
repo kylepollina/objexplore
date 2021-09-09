@@ -26,7 +26,7 @@ KEYBINDINGS = "KEYBINDINGS"
 ABOUT = "ABOUT"
 _term = Terminal()
 
-version = "0.9.1"
+version = "0.9.2"
 
 # TODO methods filter
 # or just a type filter?
