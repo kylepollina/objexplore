@@ -53,7 +53,6 @@ class Explorer:
         self.obj_stack = []
         self.term = _term
         self.main_view = None
-        self.show_help = False
         self.help_page = KEYBINDINGS
         self.value_view = VALUE
 
@@ -183,28 +182,24 @@ class Explorer:
             breakpoint()
             pass
 
-    def draw(self):
-        print(self.term.home, end="")
-        layout = Layout()
-
-        layout.split_row(
-            Layout(name="explorer"),
-            Layout(name="preview", ratio=3)
-        )
+    def get_explorer_layout(self) -> Layout:
         current_obj_attributes = self.current_obj.get_current_obj_attr_panel()
-        layout["explorer"].update(current_obj_attributes)
+        return Layout(current_obj_attributes)
 
-        if self.show_help:
-            layout["preview"].update(self.get_help_panel())
+    def get_preview_layout(self) -> Layout:
+        if self.help_layout.visible:
+            # TODO make this not so spaghetti
+            return Layout(self.get_help_panel(), ratio=3)
 
         elif self.main_view == DOCSTRING:
-            layout["preview"].update(self.get_docstring_panel(fullscreen=True))
+            return Layout(self.get_docstring_panel(fullscreen=True), ratio=3)
 
         elif self.main_view == VALUE:
-            layout["preview"].update(self.get_value_panel())
+            return Layout(self.get_value_panel(), ratio=3)
 
         else:
-            layout["preview"].split_column(
+            layout = Layout(ratio=3)
+            layout.split_column(
                 Layout(
                     self.get_value_panel(),
                     name="obj_value"
@@ -220,11 +215,22 @@ class Explorer:
                     size=15
                 )
             )
+            return layout
+
+    def draw(self):
+        print(self.term.home, end="")
+        layout = Layout()
+
+        layout.split_row(
+            self.get_explorer_layout(),
+            self.get_preview_layout()
+        )
+
 
         object_explorer = Panel(
             layout,
             title=highlighter(f"{self.current_obj.obj!r}"),
-            subtitle=f"[red][u]q[/u]:quit[/red] [cyan][u]?[/u]:{'exit ' if self.show_help else ''}help[/]",
+            subtitle=f"[red][u]q[/u]:quit[/red] [cyan][u]?[/u]:{'exit ' if self.help_layout.visible else ''}help[/]",
             subtitle_align="left",
             height=self.term.height - 1,
             style="blue"
