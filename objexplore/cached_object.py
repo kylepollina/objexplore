@@ -54,12 +54,11 @@ class CachedObject:
 
         self.typeof: Text = highlighter(str(type(self.obj)))
         self.docstring: str = inspect.getdoc(self.obj) or "[magenta italic]None"
-        self._source: str
 
         try:
             self._source = inspect.getsource(self.obj)
         except Exception:
-            self._source = "[red italic]Source code unavailable"
+            self._source = None
 
     def cache_attributes(self):
         """ Create a CachedObject for each attribute of the self.obj """

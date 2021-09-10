@@ -1,9 +1,6 @@
 
-import asyncio
 from typing import Any
 import pydoc
-from random import choice
-from textwrap import dedent
 
 from blessed import Terminal
 from rich import print as rprint
@@ -13,6 +10,7 @@ from rich.layout import Layout
 from rich.panel import Panel
 
 from . import cached_object
+from .help_layout import HelpLayout, HelpState
 
 console = Console()
 
@@ -36,10 +34,6 @@ version = "0.9.2"
 # TODO show object stack as a panel
 
 
-class HelpState:
-    keybindings, about = 0, 1
-
-
 class Explorer:
     """ Explorer class used to interactively explore Python Objects """
 
@@ -56,8 +50,7 @@ class Explorer:
         self.help_page = KEYBINDINGS
         self.value_view = VALUE
 
-        self.help_layout = Layout(visible=False)
-        self.help_layout.state = HelpState.keybindings
+        self.help_layout = HelpLayout(version, visible=False, ratio=3)
 
     def explore(self):
         """ Open the interactive explorer """
@@ -75,10 +68,7 @@ class Explorer:
 
     def process_key_event(self, key: str):
 
-        # Toggle help page
-        if not self.help_layout.visible and key == "?":
-            self.help_layout.visible = True
-
+        # Help page ###########################################################
         if self.help_layout.visible:
             # Close help page
             if key in ["?", "\x1b"]:
@@ -99,6 +89,11 @@ class Explorer:
                     self.help_layout.state = HelpState.keybindings
 
             return
+
+        if self.help_layout.visible is False and key == "?":
+            self.help_layout.visible = True
+            return
+        #######################################################################
 
         # Switch between public and private attributes
         if key in ("[", "]"):
@@ -188,8 +183,7 @@ class Explorer:
 
     def get_preview_layout(self) -> Layout:
         if self.help_layout.visible:
-            # TODO make this not so spaghetti
-            return Layout(self.get_help_panel(), ratio=3)
+            return self.help_layout()
 
         elif self.main_view == DOCSTRING:
             return Layout(self.get_docstring_panel(fullscreen=True), ratio=3)
@@ -225,7 +219,6 @@ class Explorer:
             self.get_explorer_layout(),
             self.get_preview_layout()
         )
-
 
         object_explorer = Panel(
             layout,
@@ -292,69 +285,6 @@ class Explorer:
             title="[u]type",
             title_align="left",
             style="white"
-        )
-
-    def get_help_panel(self):
-        return Panel(
-            self.help_text,
-            title=(
-                "help | [u]key bindings[/u] [dim]about"
-                if self.help_page == KEYBINDINGS
-                else "help | [dim]key bindings[/dim] [u]about"
-            ),
-            title_align="left",
-            subtitle="[dim white][u]f[/u]:fullscreen [u]{}[/u]:switch pane [u]?[/u]:exit help",
-            subtitle_align="left",
-            style="magenta"
-        )
-
-    @property
-    def help_text(self):
-        """ Return the text to be displayed on the help page """
-        if self.help_page == KEYBINDINGS:
-            return dedent(
-                """
-                [white]
-                      k - [cyan]up[/cyan]
-                      j - [cyan]down[/cyan]
-                      g - [cyan]go to top[/cyan]
-                      G - [cyan]go to bottom[/cyan]
-                l Enter - [cyan]explore selected attribute[/cyan]
-                  h Esc - [cyan]go back to parent object[/cyan]
-                    [ ] - [cyan]switch attribute type (public/private)[/cyan]
-                    { } - [cyan]switch pane[/cyan]
-                      v - [cyan]toggle full preview[/cyan]
-                      d - [cyan]toggle full docstring[/cyan]
-                      f - [cyan]open fullscreen view[/cyan]
-                      H - [cyan]open help page on selected attribute[/cyan]
-                      p - [cyan]exit and print value of selected attribute[/cyan]
-                      ? - [cyan]toggle help page[/cyan]
-                    q Q - [cyan]quit[/cyan]
-                """
-            ).strip()
-        elif self.help_page == ABOUT:
-            return dedent(
-                f"""
-                [white]
-                [u]Objexplore[/u] Interactive Python Object Explorer
-                Author: [cyan]Kyle Pollina[/cyan]
-                Version: [cyan]{version}[/cyan]
-                PyPI: [cyan]https://pypi.org/project/objexplore[/cyan]
-                Source: [cyan]https://github.com/kylepollina/objexplore[/cyan]
-                [yellow italic]Report an issue[/yellow italic]: [cyan]https://github.com/kylepollina/objexplore/issues[/cyan]
-
-                """ + self.random_quote()
-            ).strip()
-
-    def random_quote(self):
-        return choice(
-            [
-                "[i]Have a nice day!![/i]",
-                "[i]You look rather dashing today![/i]",
-                "[i]:)[/i]",
-                "[i]:earth_africa:[/i]",
-                "[i]<3[/i]",
-            ]
         )
 
 
