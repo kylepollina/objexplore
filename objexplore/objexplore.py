@@ -3,13 +3,15 @@ import pydoc
 from typing import Any, Optional
 
 from blessed import Terminal
+from rich.text import Text
 from rich import print as rprint
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
 from rich.layout import Layout
 from rich.panel import Panel
+from dataclasses import dataclass
 
-from . import cached_object
+from .cached_object import CachedObject
 from .help_layout import HelpLayout, HelpState
 
 console = Console()
@@ -21,8 +23,6 @@ PRIVATE = "PRIVATE"
 DOCSTRING = "DOCSTRING"
 VALUE = "VALUE"
 SOURCE = "SOURCE"
-KEYBINDINGS = "KEYBINDINGS"
-ABOUT = "ABOUT"
 _term = Terminal()
 
 version = "0.9.2"
@@ -34,11 +34,134 @@ version = "0.9.2"
 # TODO show object stack as a panel
 
 
+class ExplorerState:
+    public, private = 0, 1
+
+
+class ExplorerLayout(Layout):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.state = ExplorerState.public
+        # the highlighted/selected index attr
+        self.public_index = 0
+        self.private_index = 0
+        # the top shown attribute if we are scrolled down
+        self.public_window = 0
+        self.private_window = 0
+
+    def __call__(self, cached_obj: CachedObject) -> Layout:
+        if self.state == ExplorerState.public:
+            attribute_text = []
+            for attr in cached_obj.plain_public_attributes[self.public_window:]:
+                obj = getattr(cached_obj.obj, attr)
+                if callable(obj) or obj is None:
+                    style = "dim italic"
+                else:
+                    style = ""
+
+                if attr == cached_obj.plain_public_attributes[self.public_index]:
+                    style += " reverse"
+
+                attribute_text.append(
+                    Text(attr, overflow="elipses", style=style)
+                )
+
+            title = "[u]public[/u] [dim]private[/dim]"
+            subtitle = f"[white]([/white][magenta]{self.public_index + 1}[/magenta][white]/[/white][magenta]{len(cached_obj.plain_public_attributes)}[/magenta][white])"
+
+        elif self.state == ExplorerState.private:
+            attribute_text = []
+            for attr in cached_obj.plain_private_attributes[self.private_window:]:
+                obj = getattr(cached_obj.obj, attr)
+                if callable(obj) or obj is None:
+                    style = "dim italic"
+                else:
+                    style = ""
+
+                if attr == cached_obj.selected_private_attribute:
+                    style += " reverse"
+
+                attribute_text.append(
+                    Text(attr, overflow="elipses", style=style)
+                )
+
+            title = "[dim]public[/dim] [underline]private[/underline]"
+            subtitle = f"[white]([/white][magenta]{self.private_index + 1}[/magenta][white]/[/white][magenta]{len(cached_obj.plain_private_attributes)}[/magenta][white])"
+
+        renderable_text = None
+        for t in attribute_text:
+            if not renderable_text:
+                # Start with an empty text object, all following Text objects will steal the styles from this one
+                renderable_text = Text("", overflow="elipses")
+            renderable_text += t + '\n'
+
+        panel = Panel(
+            renderable_text,
+            title=title,
+            subtitle=subtitle,
+            subtitle_align="right",
+            style="white"
+        )
+        self.update(panel)
+        return self
+
+    def move_down(self, panel_height: int, cached_obj: CachedObject):
+        """ Move the current selection down one """
+        if self.state == ExplorerState.public:
+            if self.public_index < len(cached_obj.plain_public_attributes) - 1:
+                self.public_index += 1
+                if self.public_index > self.public_window + panel_height:
+                    self.public_window += 1
+
+        elif self.state == ExplorerState.private:
+            if self.private_index < len(cached_obj.plain_private_attributes) - 1:
+                self.private_index += 1
+                if self.private_index > self.private_window + panel_height:
+                    self.private_window += 1
+
+    def move_up(self):
+        if self.attribute_type == PUBLIC:
+            if self.public_attribute_index > 0:
+                self.public_attribute_index -= 1
+                if self.public_attribute_index < self.public_attribute_window:
+                    self.public_attribute_window -= 1
+
+        elif self.attribute_type == PRIVATE:
+            if self.private_attribute_index > 0:
+                self.private_attribute_index -= 1
+                if self.private_attribute_index < self.private_attribute_window:
+                    self.private_attribute_window -= 1
+
+    def move_top(self):
+        if self.attribute_type == PUBLIC:
+            self.public_attribute_index = 0
+            self.public_attribute_window = 0
+
+        elif self.attribute_type == PRIVATE:
+            self.private_attribute_index = 0
+            self.private_attribute_window = 0
+
+    def move_bottom(self, panel_height):
+        if self.attribute_type == PUBLIC:
+            self.public_attribute_index = len(self.plain_public_attributes) - 1
+            self.public_attribute_window = max(0, self.public_attribute_index - panel_height)
+
+        elif self.attribute_type == PRIVATE:
+            self.private_attribute_index = len(self.plain_private_attributes) - 1
+            self.private_attribute_window = max(0, self.private_attribute_index - panel_height)
+
+
+@dataclass
+class StackFrame:
+    cached_obj: CachedObject
+    explorer_layout: ExplorerLayout
+
+
 class Explorer:
     """ Explorer class used to interactively explore Python Objects """
 
     def __init__(self, obj: Any):
-        obj = cached_object.CachedObject(obj, dotpath=repr(obj))
+        obj = CachedObject(obj, dotpath=repr(obj))
         # Figure out all the attributes of the current obj's attributes
         obj.cache_attributes()
 
@@ -47,10 +170,10 @@ class Explorer:
         self.obj_stack = []
         self.term = _term
         self.main_view = None
-        self.help_page = KEYBINDINGS
         self.value_view = VALUE
 
         self.help_layout = HelpLayout(version, visible=False, ratio=3)
+        self.explorer_layout = ExplorerLayout()
 
     def explore(self) -> Optional[Any]:
         """ Open the interactive explorer """
@@ -119,17 +242,17 @@ class Explorer:
 
         # move selected attribute down
         elif key == "j":
-            self.current_obj.move_down(self.panel_height)
+            self.explorer_layout.move_down(self.panel_height, self.current_obj)
 
         # move selected attribute up
         elif key == "k":
-            self.current_obj.move_up()
+            self.explorer_layout.move_up(self.current_obj)
 
         elif key == "g":
-            self.current_obj.move_top()
+            self.explorer_layout.move_top()
 
         elif key == "G":
-            self.current_obj.move_bottom(self.panel_height)
+            self.explorer_layout.move_bottom(self.panel_height)
 
         elif key == "H":
             help(self.current_obj.selected_cached_attribute.obj)
@@ -184,8 +307,7 @@ class Explorer:
             pass
 
     def get_explorer_layout(self) -> Layout:
-        current_obj_attributes = self.current_obj.get_current_obj_attr_panel()
-        return Layout(current_obj_attributes)
+        return self.explorer_layout(self.current_obj)
 
     def get_preview_layout(self) -> Layout:
         if self.help_layout.visible:
