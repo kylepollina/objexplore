@@ -79,7 +79,6 @@ class CachedObject:
     def fullname(self):
         return self.parent_name + '.' + self.name
 
-
     def __getitem__(self, key):
         return self.cached_attributes[key]
 

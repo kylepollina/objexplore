@@ -1,6 +1,6 @@
 
-from typing import Any
 import pydoc
+from typing import Any, Optional
 
 from blessed import Terminal
 from rich import print as rprint
@@ -52,7 +52,7 @@ class Explorer:
 
         self.help_layout = HelpLayout(version, visible=False, ratio=3)
 
-    def explore(self):
+    def explore(self) -> Optional[Any]:
         """ Open the interactive explorer """
 
         key = None
@@ -64,9 +64,14 @@ class Explorer:
             while key not in ('q', 'Q'):
                 self.draw()
                 key = self.term.inkey()
-                self.process_key_event(key)
+                res = self.process_key_event(key)
 
-    def process_key_event(self, key: str):
+                # If the object is returned as a response the close the explorer and return the selected object
+                if res:
+                    return res
+
+    def process_key_event(self, key: str) -> Optional[Any]:
+        """ Process the incoming key """
 
         # Help page ###########################################################
         if self.help_layout.visible:
@@ -129,16 +134,16 @@ class Explorer:
         elif key == "H":
             help(self.current_obj.selected_cached_attribute.obj)
 
+        # Toggle docstring view
         elif key == "d":
-            # Toggle docstring view
             self.main_view = DOCSTRING if self.main_view != DOCSTRING else None
 
+        # Toggle value view
         elif key == "v":
-            # Toggle value view
             self.main_view = VALUE if self.main_view != VALUE else None
 
+        # Fullscreen
         elif key == "f":
-            # Fullscreen
             if self.main_view == DOCSTRING:
                 with console.capture() as capture:
                     console.print(self.current_obj.selected_cached_attribute.docstring)
@@ -150,6 +155,7 @@ class Explorer:
                 str_out = capture.get()
                 pydoc.pager(str_out)
 
+        # Return selected object
         elif key == "r":
             return self.current_obj.selected_cached_attribute.obj
 
@@ -222,6 +228,7 @@ class Explorer:
 
         object_explorer = Panel(
             layout,
+            # TODO truncate if a huuge object like a dict of all emojis
             title=highlighter(f"{self.current_obj.obj!r}"),
             subtitle=f"[red][u]q[/u]:quit[/red] [cyan][u]?[/u]:{'exit ' if self.help_layout.visible else ''}help[/]",
             subtitle_align="left",

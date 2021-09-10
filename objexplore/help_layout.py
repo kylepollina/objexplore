@@ -1,6 +1,7 @@
 
-from textwrap import dedent
 from random import choice
+from textwrap import dedent
+
 from rich.layout import Layout
 from rich.panel import Panel
 
