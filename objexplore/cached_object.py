@@ -61,7 +61,7 @@ class CachedObject:
         except Exception:
             self._source = "[red italic]Source code unavailable"
 
-    def cache_attributes(self) -> None:
+    def cache_attributes(self):
         """ Create a CachedObject for each attribute of the self.obj """
         if not self.cached_attributes:
             for attr in self.plain_attrs:

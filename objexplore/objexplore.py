@@ -1,5 +1,6 @@
 
 import asyncio
+from typing import Any
 import pydoc
 from random import choice
 from textwrap import dedent
@@ -38,10 +39,11 @@ version = "0.9.2"
 class Explorer:
     """ Explorer class used to interactively explore Python Objects """
 
-    def __init__(self, obj):
+    def __init__(self, obj: Any):
         obj = cached_object.CachedObject(obj, dotpath=repr(obj))
         # Figure out all the attributes of the current obj's attributes
         obj.cache_attributes()
+
         self.head_obj = obj
         self.current_obj = obj
         self.obj_stack = []
@@ -51,114 +53,122 @@ class Explorer:
         self.help_page = KEYBINDINGS
         self.value_view = VALUE
 
+        self.help_layout = Layout(visible=False)
+
     def explore(self):
+        """ Open the interactive explorer """
+
         key = None
+
+        # Clear the screen
         print(self.term.clear, end='')
 
         with self.term.cbreak(), self.term.hidden_cursor():
             while key not in ('q', 'Q'):
                 self.draw()
                 key = self.term.inkey()
+                self.process_key_event(key)
 
-                if self.show_help:
-                    if key in ["?", "\x1b"]:
-                        self.show_help = False
-                    elif key == "f":
-                        with console.capture() as capture:
-                            console.print(self.help_text)
-                        str_out = capture.get()
-                        pydoc.pager(str_out)
-                    elif key in ["{", "}"]:
-                        if self.help_page == KEYBINDINGS:
-                            self.help_page = ABOUT
-                        elif self.help_page == ABOUT:
-                            self.help_page = KEYBINDINGS
-                    continue
+    def process_key_event(self, key: str):
+        if self.show_help:
+            if key in ["?", "\x1b"]:
+                self.show_help = False
+            elif key == "f":
+                with console.capture() as capture:
+                    console.print(self.help_text)
+                str_out = capture.get()
+                pydoc.pager(str_out)
+            elif key in ["{", "}"]:
+                if self.help_page == KEYBINDINGS:
+                    self.help_page = ABOUT
+                elif self.help_page == ABOUT:
+                    self.help_page = KEYBINDINGS
+            return
 
-                if key == "?":
-                    self.show_help = True
+        if key == "?":
+            self.show_help = True
 
-                # Switch between public and private attributes
-                if key in ("[", "]"):
-                    if self.current_obj.attribute_type == PUBLIC:
-                        self.current_obj.attribute_type = PRIVATE
+        # Switch between public and private attributes
+        if key in ("[", "]"):
+            if self.current_obj.attribute_type == PUBLIC:
+                self.current_obj.attribute_type = PRIVATE
 
-                    elif self.current_obj.attribute_type == PRIVATE:
-                        self.current_obj.attribute_type = PUBLIC
+            elif self.current_obj.attribute_type == PRIVATE:
+                self.current_obj.attribute_type = PUBLIC
 
-                elif key in ["{", "}"]:
-                    if not callable(self.current_obj.selected_cached_attribute.obj):
-                        continue
+        elif key in ["{", "}"]:
+            if not callable(self.current_obj.selected_cached_attribute.obj):
+                return
 
-                    if self.value_view == VALUE:
-                        self.value_view = SOURCE
-                    elif self.value_view == SOURCE:
-                        self.value_view = VALUE
+            if self.value_view == VALUE:
+                self.value_view = SOURCE
+            elif self.value_view == SOURCE:
+                self.value_view = VALUE
 
-                # move selected attribute down
-                elif key == "j":
-                    self.current_obj.move_down(self.panel_height)
+        # move selected attribute down
+        elif key == "j":
+            self.current_obj.move_down(self.panel_height)
 
-                # move selected attribute up
-                elif key == "k":
-                    self.current_obj.move_up()
+        # move selected attribute up
+        elif key == "k":
+            self.current_obj.move_up()
 
-                elif key == "g":
-                    self.current_obj.move_top()
+        elif key == "g":
+            self.current_obj.move_top()
 
-                elif key == "G":
-                    self.current_obj.move_bottom(self.panel_height)
+        elif key == "G":
+            self.current_obj.move_bottom(self.panel_height)
 
-                elif key == "H":
-                    help(self.current_obj.selected_cached_attribute.obj)
+        elif key == "H":
+            help(self.current_obj.selected_cached_attribute.obj)
 
-                elif key == "d":
-                    # Toggle docstring view
-                    self.main_view = DOCSTRING if self.main_view != DOCSTRING else None
+        elif key == "d":
+            # Toggle docstring view
+            self.main_view = DOCSTRING if self.main_view != DOCSTRING else None
 
-                elif key == "v":
-                    # Toggle value view
-                    self.main_view = VALUE if self.main_view != VALUE else None
+        elif key == "v":
+            # Toggle value view
+            self.main_view = VALUE if self.main_view != VALUE else None
 
-                elif key == "f":
-                    # Fullscreen
-                    if self.main_view == DOCSTRING:
-                        with console.capture() as capture:
-                            console.print(self.current_obj.selected_cached_attribute.docstring)
-                        str_out = capture.get()
-                        pydoc.pager(str_out)
-                    elif self.main_view == VALUE or self.main_view is None:
-                        with console.capture() as capture:
-                            console.print(self.value_panel_text(fullscreen=True))
-                        str_out = capture.get()
-                        pydoc.pager(str_out)
+        elif key == "f":
+            # Fullscreen
+            if self.main_view == DOCSTRING:
+                with console.capture() as capture:
+                    console.print(self.current_obj.selected_cached_attribute.docstring)
+                str_out = capture.get()
+                pydoc.pager(str_out)
+            elif self.main_view == VALUE or self.main_view is None:
+                with console.capture() as capture:
+                    console.print(self.value_panel_text(fullscreen=True))
+                str_out = capture.get()
+                pydoc.pager(str_out)
 
-                elif key == "r":
-                    return self.current_obj.selected_cached_attribute.obj
+        elif key == "r":
+            return self.current_obj.selected_cached_attribute.obj
 
-                # Enter
-                elif key in ["\n", "l"]:
-                    if self.current_obj.attribute_type == PUBLIC:
-                        new_cached_obj = self.current_obj[self.current_obj.selected_public_attribute]
-                        if new_cached_obj.obj is not None and not callable(new_cached_obj.obj):
-                            self.obj_stack.append(self.current_obj)
-                            self.current_obj = new_cached_obj
-                            self.current_obj.cache_attributes()
+        # Enter
+        elif key in ["\n", "l"]:
+            if self.current_obj.attribute_type == PUBLIC:
+                new_cached_obj = self.current_obj[self.current_obj.selected_public_attribute]
+                if new_cached_obj.obj is not None and not callable(new_cached_obj.obj):
+                    self.obj_stack.append(self.current_obj)
+                    self.current_obj = new_cached_obj
+                    self.current_obj.cache_attributes()
 
-                    elif self.current_obj.attribute_type == PRIVATE:
-                        new_cached_obj = self.current_obj[self.current_obj.selected_private_attribute]
-                        if new_cached_obj.obj is not None and not callable(new_cached_obj.obj):
-                            self.obj_stack.append(self.current_obj)
-                            self.current_obj = new_cached_obj
-                            self.current_obj.cache_attributes()
+            elif self.current_obj.attribute_type == PRIVATE:
+                new_cached_obj = self.current_obj[self.current_obj.selected_private_attribute]
+                if new_cached_obj.obj is not None and not callable(new_cached_obj.obj):
+                    self.obj_stack.append(self.current_obj)
+                    self.current_obj = new_cached_obj
+                    self.current_obj.cache_attributes()
 
-                # Escape
-                elif key in ["\x1b", "h"] and self.obj_stack:
-                    self.current_obj = self.obj_stack.pop()
+        # Escape
+        elif key in ["\x1b", "h"] and self.obj_stack:
+            self.current_obj = self.obj_stack.pop()
 
-                elif key == "b":
-                    breakpoint()
-                    pass
+        elif key == "b":
+            breakpoint()
+            pass
 
     def draw(self):
         print(self.term.home, end="")
