@@ -32,11 +32,14 @@ version = "0.9.2"
 # or just a type filter?
 # TODO fix pandas.IndexSlice / pandas.NA
 # TODO for list/set/dict/tuple do length in info panel
+# TODO show object stack as a panel
 
 
 class Explorer:
+    """ Explorer class used to interactively explore Python Objects """
+
     def __init__(self, obj):
-        obj = cached_object.CachedObject(obj)
+        obj = cached_object.CachedObject(obj, dotpath=repr(obj))
         # Figure out all the attributes of the current obj's attributes
         obj.cache_attributes()
         self.head_obj = obj
@@ -224,7 +227,7 @@ class Explorer:
             self.value_panel_text(),
             title=(
                 "[u]value[/u]"
-                if not callable(self.current_obj.selected_cached_attribute.obj)
+                if not self.current_obj.selected_cached_attribute or not callable(self.current_obj.selected_cached_attribute.obj)
                 else (
                     "[u]value[/u] [dim]source[/dim]"
                     if self.value_view != SOURCE
@@ -232,21 +235,27 @@ class Explorer:
                 )
             ),
             title_align="left",
-            subtitle=f"[dim][u]f[/u]:fullscreen [u]v[/u]:toggle{' [u]{}[/u]:switch pane' if callable(self.current_obj.selected_cached_attribute.obj) else ''}",
+            subtitle=f"[dim][u]f[/u]:fullscreen [u]v[/u]:toggle{' [u]{}[/u]:switch pane' if self.current_obj.selected_cached_attribute and callable(self.current_obj.selected_cached_attribute.obj) else ''}",
             subtitle_align="left",
             style="white"
         )
 
     def value_panel_text(self, fullscreen=False):
-        return (
-            self.current_obj.selected_cached_attribute.get_preview(self.term, fullscreen)
-            if not callable(self.current_obj.selected_cached_attribute.obj)
-            else (
+        # sometimes the current obj will have no public/private attributes in which selected_cached_attribute
+        # will be `None`
+        if self.current_obj.selected_cached_attribute:
+            return (
                 self.current_obj.selected_cached_attribute.get_preview(self.term, fullscreen)
-                if self.value_view == VALUE
-                else self.current_obj.selected_cached_attribute.get_source(self.term, fullscreen)
+                if not callable(self.current_obj.selected_cached_attribute.obj)
+                else (
+                    self.current_obj.selected_cached_attribute.get_preview(self.term, fullscreen)
+                    if self.value_view == VALUE
+                    else self.current_obj.selected_cached_attribute.get_source(self.term, fullscreen)
+                )
             )
-        )
+        # if that is the case then return an empty string
+        else:
+            return ""
 
     def get_type_panel(self):
         return Panel(

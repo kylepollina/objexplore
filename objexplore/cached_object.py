@@ -1,5 +1,5 @@
 
-from typing import Optional
+from typing import Optional, Dict, Any
 import inspect
 from rich.syntax import Syntax
 from rich.text import Text
@@ -14,6 +14,8 @@ highlighter = ReprHighlighter()
 PUBLIC = "PUBLIC"
 PRIVATE = "PRIVATE"
 
+# TODO should contain functions to get type/docstring/source of selected attribute
+
 console = Console()
 
 # TODO fix bug if there is no public/private attributes
@@ -24,39 +26,51 @@ class CachedObject:
     def __init__(
         self,
         obj,
-        name='',
-        parent_name=''
+        dotpath,
     ):
-        self.obj = obj
-        self.name = name
-        self.parent_name = parent_name
+        self.obj: Any = obj
+        self.dotpath: str = dotpath
         self.attribute_type = PUBLIC
         self.public_attribute_index = 0
         self.private_attribute_index = 0
         self.public_attribute_window = 0
         self.private_attribute_window = 0
 
-        self.attrs = dir(self.obj)
-        if '__weakref__' in self.attrs:
+        self.plain_attrs = dir(self.obj)
+
+        if '__weakref__' in self.plain_attrs:
             # Ignore weakrefs
-            self.attrs.remove('__weakref__')
+            self.plain_attrs.remove('__weakref__')
 
         self.plain_public_attributes = sorted(
-            attr for attr in self.attrs if not attr.startswith('_')
+            attr for attr in self.plain_attrs if not attr.startswith('_')
         )
         self.plain_private_attributes = sorted(
-            attr for attr in self.attrs if attr.startswith('_')
+            attr for attr in self.plain_attrs if attr.startswith('_')
         )
-        self.cached_attributes = {}
 
-        self.typeof = highlighter(str(type(self.obj)))
-        self.docstring = inspect.getdoc(self.obj) or "[magenta italic]None"
+        # Key:val pair of attribute name and the cached object associated with it
+        self.cached_attributes: Dict[str, CachedObject] = {}
+
+        self.typeof: Text = highlighter(str(type(self.obj)))
+        self.docstring: str = inspect.getdoc(self.obj) or "[magenta italic]None"
+        self._source: str
+
         try:
             self._source = inspect.getsource(self.obj)
         except Exception:
-            self._source = None
+            self._source = "[red italic]Source code unavailable"
 
-    def get_preview(self, term, fullscreen=False):
+    def cache_attributes(self) -> None:
+        """ Create a CachedObject for each attribute of the self.obj """
+        if not self.cached_attributes:
+            for attr in self.plain_attrs:
+                self.cached_attributes[attr] = CachedObject(
+                    getattr(self.obj, attr),
+                    dotpath=f'{self.dotpath}.{attr}'
+                )
+
+    def get_preview(self, term, fullscreen=False) -> Pretty:
         if fullscreen:
             return Pretty(self.obj)
         else:
@@ -66,13 +80,9 @@ class CachedObject:
     def fullname(self):
         return self.parent_name + '.' + self.name
 
-    def cache_attributes(self):
-        if not self.cached_attributes:
-            for attr in self.attrs:
-                self.cached_attributes[attr] = CachedObject(getattr(self.obj, attr), name=attr, parent_name=self.display_name)
 
     def __getitem__(self, key):
-        return self.cached_attributes.get(key)
+        return self.cached_attributes[key]
 
     def get_docstring(self, term, fullscreen=False):
         if fullscreen:
@@ -117,10 +127,10 @@ class CachedObject:
 
     @property
     def selected_cached_attribute(self):
-        if self.attribute_type == PUBLIC:
+        if self.attribute_type == PUBLIC and self.selected_public_attribute:
             return self[self.selected_public_attribute]
 
-        elif self.attribute_type == PRIVATE:
+        elif self.attribute_type == PRIVATE and self.selected_private_attribute:
             return self[self.selected_private_attribute]
 
     def get_current_obj_attr_panel(self) -> Panel:
