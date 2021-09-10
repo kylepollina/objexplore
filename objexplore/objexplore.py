@@ -36,6 +36,10 @@ version = "0.9.2"
 # TODO show object stack as a panel
 
 
+class HelpState:
+    keybindings, about = 0, 1
+
+
 class Explorer:
     """ Explorer class used to interactively explore Python Objects """
 
@@ -54,6 +58,7 @@ class Explorer:
         self.value_view = VALUE
 
         self.help_layout = Layout(visible=False)
+        self.help_layout.state = HelpState.keybindings
 
     def explore(self):
         """ Open the interactive explorer """
@@ -70,23 +75,31 @@ class Explorer:
                 self.process_key_event(key)
 
     def process_key_event(self, key: str):
-        if self.show_help:
+
+        # Toggle help page
+        if not self.help_layout.visible and key == "?":
+            self.help_layout.visible = True
+
+        if self.help_layout.visible:
+            # Close help page
             if key in ["?", "\x1b"]:
-                self.show_help = False
+                self.help_layout.visible = False
+
+            # Fullscreen
             elif key == "f":
                 with console.capture() as capture:
                     console.print(self.help_text)
                 str_out = capture.get()
                 pydoc.pager(str_out)
-            elif key in ["{", "}"]:
-                if self.help_page == KEYBINDINGS:
-                    self.help_page = ABOUT
-                elif self.help_page == ABOUT:
-                    self.help_page = KEYBINDINGS
-            return
 
-        if key == "?":
-            self.show_help = True
+            # Switch panes
+            elif key in ["{", "}"]:
+                if self.help_layout.state == HelpState.keybindings:
+                    self.help_layout.state = HelpState.about
+                elif self.help_layout.state == HelpState.about:
+                    self.help_layout.state = HelpState.keybindings
+
+            return
 
         # Switch between public and private attributes
         if key in ("[", "]"):
