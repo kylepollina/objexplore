@@ -21,12 +21,12 @@ class HelpLayout(Layout):
             Panel(
                 self.text,
                 title=(
-                    "help | [u]key bindings[/u] [dim]about"
+                    "[i white]help[/i white] | [u]key bindings[/u] [dim]about"
                     if self.state == HelpState.keybindings
-                    else "help | [dim]key bindings[/dim] [u]about"
+                    else "[i white]help[/i white] | [dim]key bindings[/dim] [u]about"
                 ),
                 title_align="left",
-                subtitle="[dim white][u]f[/u]:fullscreen [u]{}[/u]:switch pane [u]?[/u]:exit help",
+                subtitle="[dim white][u]f[/u]:fullscreen [u][][/u]:switch pane [u]?[/u]:exit help",
                 subtitle_align="left",
                 style="magenta"
             )

@@ -27,6 +27,7 @@ version = "0.9.2"
 # TODO fix pandas.IndexSlice / pandas.NA
 # TODO for list/set/dict/tuple do length in info panel
 # TODO show object stack as a panel
+# TODO q to close help menu?
 
 
 class PreviewState:
@@ -162,11 +163,14 @@ class Explorer:
                 pydoc.pager(str_out)
 
             # Switch panes
-            elif key in ["{", "}"]:
+            elif key in ["{", "}", "[", "]"]:
                 if self.help_layout.state == HelpState.keybindings:
                     self.help_layout.state = HelpState.about
                 elif self.help_layout.state == HelpState.about:
                     self.help_layout.state = HelpState.keybindings
+
+            else:
+                self.help_layout.visible = False
 
             return
 

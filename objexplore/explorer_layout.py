@@ -47,7 +47,7 @@ class ExplorerLayout(Layout):
                     Text(attr, overflow="elipses", style=style)
                 )
 
-            title = "attrs | [u]public[/u] [dim]private[/dim]"
+            title = "[i][cyan]dir[/cyan]()[/i] | [u]public[/u] [dim]private[/dim]"
             subtitle = f"[white]([/white][magenta]{self.public_index + 1}[/magenta][white]/[/white][magenta]{len(cached_obj.plain_public_attributes)}[/magenta][white])"
 
         elif self.state == ExplorerState.private:
@@ -66,7 +66,7 @@ class ExplorerLayout(Layout):
                     Text(attr, overflow="elipses", style=style)
                 )
 
-            title = "attrs | [dim]public[/dim] [underline]private[/underline]"
+            title = "[i][cyan]dir[/cyan]()[/i] | [dim]public[/dim] [underline]private[/underline]"
             subtitle = f"[white]([/white][magenta]{self.private_index + 1}[/magenta][white]/[/white][magenta]{len(cached_obj.plain_private_attributes)}[/magenta][white])"
 
         renderable_text = None
