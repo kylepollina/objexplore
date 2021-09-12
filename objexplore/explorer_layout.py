@@ -21,6 +21,15 @@ class ExplorerLayout(Layout):
         self.public_window = 0
         self.private_window = 0
 
+    def get_selected_cached_obj(self, cached_obj) -> CachedObject:
+        if self.state == ExplorerState.public:
+            attr = cached_obj.plain_public_attributes[self.public_index]
+            return cached_obj[attr]
+
+        elif self.state == ExplorerState.private:
+            attr = cached_obj.plain_private_attributes[self.private_index]
+            return cached_obj[attr]
+
     def __call__(self, cached_obj: CachedObject) -> Layout:
         if self.state == ExplorerState.public:
             attribute_text = []
@@ -38,7 +47,7 @@ class ExplorerLayout(Layout):
                     Text(attr, overflow="elipses", style=style)
                 )
 
-            title = "[u]public[/u] [dim]private[/dim]"
+            title = "attrs | [u]public[/u] [dim]private[/dim]"
             subtitle = f"[white]([/white][magenta]{self.public_index + 1}[/magenta][white]/[/white][magenta]{len(cached_obj.plain_public_attributes)}[/magenta][white])"
 
         elif self.state == ExplorerState.private:
@@ -57,7 +66,7 @@ class ExplorerLayout(Layout):
                     Text(attr, overflow="elipses", style=style)
                 )
 
-            title = "[dim]public[/dim] [underline]private[/underline]"
+            title = "attrs | [dim]public[/dim] [underline]private[/underline]"
             subtitle = f"[white]([/white][magenta]{self.private_index + 1}[/magenta][white]/[/white][magenta]{len(cached_obj.plain_private_attributes)}[/magenta][white])"
 
         renderable_text = None
