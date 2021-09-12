@@ -82,11 +82,6 @@ class CachedObject:
     def __getitem__(self, key):
         return self.cached_attributes[key]
 
-    def get_docstring(self, term, fullscreen=False):
-        if fullscreen:
-            return self.docstring
-        else:
-            return '\n'.join(self.docstring.splitlines()[:term.height])
 
     def get_source(self, term, fullscreen=False):
         if not self._source:
