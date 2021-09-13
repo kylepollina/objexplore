@@ -10,18 +10,16 @@ class ExplorerState:
     public, private = 0, 1
 
 
-class ExplorerLayout(Layout):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.state = ExplorerState.public
-        # the highlighted/selected index attr
-        self.public_index = 0
-        self.private_index = 0
-        # the top shown attribute if we are scrolled down
-        self.public_window = 0
-        self.private_window = 0
 
-    def get_selected_cached_obj(self, cached_obj) -> CachedObject:
+class ExplorerLayout(Layout):
+    def __init__(self, cached_obj: CachedObject, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cached_obj = cached_obj
+        self.state = ExplorerState.public
+        self.public_index = self.private_index = 0
+        self.public_window = self.private_window = 0
+
+    def selected_cached_object(self, cached_obj) -> CachedObject:
         if self.state == ExplorerState.public:
             attr = cached_obj.plain_public_attributes[self.public_index]
             return cached_obj[attr]
@@ -30,7 +28,17 @@ class ExplorerLayout(Layout):
             attr = cached_obj.plain_private_attributes[self.private_index]
             return cached_obj[attr]
 
-    def __call__(self, cached_obj: CachedObject) -> Layout:
+    def update_selected_cached_object(self):
+        if self.state == ExplorerState.public and self.cached_obj.plain_public_attributes:
+            attr = self.cached_obj.plain_public_attributes[self.public_index]
+            self.cached_obj.selected_cached_obj = self.cached_obj[attr]
+            pass
+
+        elif self.state == ExplorerState.private and self.cached_obj.plain_private_attributes:
+            attr = self.cached_obj.plain_private_attributes[self.private_index]
+            self.cached_obj.selected_cached_obj = self.cached_obj[attr]
+
+    def __call__(self, cached_obj: CachedObject, term_width: int) -> Layout:
         if self.state == ExplorerState.public:
             attribute_text = []
             for attr in cached_obj.plain_public_attributes[self.public_window:]:
@@ -47,7 +55,7 @@ class ExplorerLayout(Layout):
                     Text(attr, overflow="elipses", style=style)
                 )
 
-            title = "[i][cyan]dir[/cyan]()[/i] | [u]public[/u] [dim]private[/dim]"
+            title = "[i][cyan]dir[/cyan]()[/i] | public [dim]private[/dim]"
             subtitle = f"[white]([/white][magenta]{self.public_index + 1}[/magenta][white]/[/white][magenta]{len(cached_obj.plain_public_attributes)}[/magenta][white])"
 
         elif self.state == ExplorerState.private:
@@ -66,14 +74,16 @@ class ExplorerLayout(Layout):
                     Text(attr, overflow="elipses", style=style)
                 )
 
-            title = "[i][cyan]dir[/cyan]()[/i] | [dim]public[/dim] [underline]private[/underline]"
+            title = "[i][cyan]dir[/cyan]()[/i] | [dim]public[/dim] private"
             subtitle = f"[white]([/white][magenta]{self.private_index + 1}[/magenta][white]/[/white][magenta]{len(cached_obj.plain_private_attributes)}[/magenta][white])"
 
-        renderable_text = None
+        # If terminal is too small don't show the 'dir()' part of the title
+        if term_width / 4 < 28:
+            title = title.split('|')[-1].strip()
+
+        # Start with an empty text object, all following Text objects will steal the styles from this one
+        renderable_text = Text("", overflow="elipses")
         for t in attribute_text:
-            if not renderable_text:
-                # Start with an empty text object, all following Text objects will steal the styles from this one
-                renderable_text = Text("", overflow="elipses")
             renderable_text += t + '\n'
 
         panel = Panel(
@@ -86,19 +96,6 @@ class ExplorerLayout(Layout):
         self.update(panel)
         return self
 
-    def move_down(self, panel_height: int, cached_obj: CachedObject):
-        """ Move the current selection down one """
-        if self.state == ExplorerState.public:
-            if self.public_index < len(cached_obj.plain_public_attributes) - 1:
-                self.public_index += 1
-                if self.public_index > self.public_window + panel_height:
-                    self.public_window += 1
-
-        elif self.state == ExplorerState.private:
-            if self.private_index < len(cached_obj.plain_private_attributes) - 1:
-                self.private_index += 1
-                if self.private_index > self.private_window + panel_height:
-                    self.private_window += 1
 
     def move_up(self):
         """ Move the current selection up one """
@@ -113,6 +110,22 @@ class ExplorerLayout(Layout):
                 self.private_index -= 1
                 if self.private_index < self.private_window:
                     self.private_window -= 1
+        self.update_selected_cached_object()
+
+    def move_down(self, panel_height: int, cached_obj: CachedObject):
+        """ Move the current selection down one """
+        if self.state == ExplorerState.public:
+            if self.public_index < len(cached_obj.plain_public_attributes) - 1:
+                self.public_index += 1
+                if self.public_index > self.public_window + panel_height:
+                    self.public_window += 1
+
+        elif self.state == ExplorerState.private:
+            if self.private_index < len(cached_obj.plain_private_attributes) - 1:
+                self.private_index += 1
+                if self.private_index > self.private_window + panel_height:
+                    self.private_window += 1
+        self.update_selected_cached_object()
 
     def move_top(self):
         if self.state == ExplorerState.public:
@@ -122,6 +135,7 @@ class ExplorerLayout(Layout):
         elif self.state == ExplorerState.private:
             self.private_index = 0
             self.private_window = 0
+        self.update_selected_cached_object()
 
     def move_bottom(self, panel_height: int, cached_obj: CachedObject):
         if self.state == ExplorerState.public:
@@ -131,3 +145,4 @@ class ExplorerLayout(Layout):
         elif self.state == ExplorerState.private:
             self.private_index = len(cached_obj.plain_private_attributes) - 1
             self.private_window = max(0, cached_obj.private_attribute_index - panel_height)
+        self.update_selected_cached_object()

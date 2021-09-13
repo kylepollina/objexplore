@@ -1,5 +1,6 @@
 
 import pydoc
+import signal
 from typing import Any, Optional, List
 
 from blessed import Terminal
@@ -13,6 +14,7 @@ from dataclasses import dataclass
 from .cached_object import CachedObject
 from .explorer_layout import ExplorerLayout, ExplorerState
 from .help_layout import HelpLayout, HelpState
+from .preview_layout import PreviewLayout, PreviewState, ValueState
 
 console = Console()
 
@@ -30,77 +32,6 @@ version = "0.9.2"
 # TODO q to close help menu?
 
 
-class PreviewState:
-    all, docstring, value, source = range(4)
-
-
-class PreviewLayout(Layout):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.state = PreviewState.all
-
-    def __call__(self, cached_obj, term_height: int) -> Layout:
-        if self.state == PreviewState.docstring:
-            return Layout(
-                self.get_docstring_panel(
-                    cached_obj=cached_obj,
-                    term_height=term_height,
-                    fullscreen=True
-                ),
-                ratio=3
-            )
-
-        elif self.state == PreviewState.value:
-            return Layout(self.get_value_panel(cached_obj), ratio=3)
-
-        else:
-            layout = Layout(ratio=3)
-            layout.split_column(
-                Layout(
-                    self.get_value_panel(cached_obj),
-                    name="obj_value"
-                ),
-                Layout(
-                    self.get_type_panel(cached_obj),
-                    name="obj_type",
-                    size=3
-                ),
-                Layout(
-                    self.get_docstring_panel(cached_obj),
-                    name="obj_doc",
-                    size=15
-                )
-            )
-            return layout
-
-    def get_value_panel(self, cached_obj: CachedObject):
-        return Panel("value")
-
-    def get_type_panel(self, cached_obj: CachedObject) -> Panel:
-        return Panel("type")
-
-    def get_docstring_panel(self, cached_obj: CachedObject, term_height: Optional[int] = None, fullscreen: bool = False) -> Panel:
-        """ Build the docstring panel """
-        title="[underline]docstring"
-        docstring = '\n'.join(cached_obj.docstring.splitlines()[:term_height])
-        if fullscreen:
-            return Panel(
-                docstring,
-                title=title,
-                subtitle="[dim][u]f[/u]:fullscreen [u]d[/u]:toggle",
-                subtitle_align="left",
-                style="white",
-            )
-        else:
-            # Only need to show the lines of the docstring that would be visible by
-            # the terminal
-            return Panel(
-                docstring,
-                title=title,
-                subtitle="[dim][u]d[/u]:toggle",
-                subtitle_align="left",
-                style="white"
-            )
 
 
 @dataclass
@@ -114,19 +45,22 @@ class Explorer:
     """ Explorer class used to interactively explore Python Objects """
 
     def __init__(self, obj: Any):
-        obj = CachedObject(obj, dotpath=repr(obj))
+        cached_obj = CachedObject(obj, dotpath=repr(obj))
         # Figure out all the attributes of the current obj's attributes
-        obj.cache_attributes()
+        cached_obj.cache_attributes()
 
-        self.head_obj = obj
-        self.cached_obj = obj
+        # self.head_obj = cached_obj
+        self.cached_obj = cached_obj
         self.stack: List[StackFrame] = []
         self.term = _term
         self.main_view = None
 
         self.help_layout = HelpLayout(version, visible=False, ratio=3)
-        self.explorer_layout = ExplorerLayout()
+        self.explorer_layout = ExplorerLayout(cached_obj=cached_obj)
         self.preview_layout = PreviewLayout()
+
+        # Run self.draw() whenever the win change signal is caught
+        signal.signal(signal.SIGWINCH, self.draw)
 
     def explore(self) -> Optional[Any]:
         """ Open the interactive explorer """
@@ -188,13 +122,13 @@ class Explorer:
                 self.explorer_layout.state = ExplorerState.public
 
         elif key in ["{", "}"]:
-            if not callable(self.cached_obj.selected_cached_attribute.obj):
+            if not callable(self.cached_obj.selected_cached_obj.obj):
                 return
 
-            if self.preview_layout.state == PreviewState.value:
-                self.preview_layout.state = PreviewState.source
-            elif self.preview_layout.state == PreviewState.source:
-                self.preview_layout.state = PreviewState.value
+            if self.preview_layout.value_state == ValueState.repr:
+                self.preview_layout.value_state = ValueState.source
+            elif self.preview_layout.value_state == ValueState.source:
+                self.preview_layout.value_state = ValueState.repr
 
         # move selected attribute down
         elif key == "j":
@@ -211,21 +145,21 @@ class Explorer:
             self.explorer_layout.move_bottom(self.panel_height, self.cached_obj)
 
         elif key == "H":
-            help(self.cached_obj.selected_cached_attribute.obj)
+            help(self.cached_obj.selected_cached_obj.obj)
 
         # Toggle docstring view
         elif key == "d":
-            self.main_view = PreviewState.docstring if self.main_view != PreviewState.docstring else None
+            self.preview_layout.state = PreviewState.docstring if self.preview_layout.state != PreviewState.docstring else PreviewState.all
 
         # Toggle value view
         elif key == "v":
-            self.main_view = PreviewState.value if self.main_view != PreviewState.value else None
+            self.preview_layout.state = PreviewState.value if self.preview_layout.state != PreviewState.value else PreviewState.all
 
         # Fullscreen
         elif key == "f":
             if self.main_view == PreviewState.docstring:
                 with console.capture() as capture:
-                    console.print(self.cached_obj.selected_cached_attribute.docstring)
+                    console.print(self.cached_obj.selected_cached_obj.docstring)
                 str_out = capture.get()
                 pydoc.pager(str_out)
             elif self.main_view == PreviewState.value or self.main_view is None:
@@ -236,11 +170,11 @@ class Explorer:
 
         # Return selected object
         elif key == "r":
-            return self.cached_obj.selected_cached_attribute.obj
+            return self.cached_obj.selected_cached_obj.obj
 
         # Enter
         elif key in ["\n", "l"]:
-            new_cached_obj = self.explorer_layout.get_selected_cached_obj(self.cached_obj)
+            new_cached_obj = self.cached_obj.selected_cached_obj
             if new_cached_obj.obj is not None and not callable(new_cached_obj.obj):
                 self.stack.append(
                     StackFrame(
@@ -249,7 +183,7 @@ class Explorer:
                         preview_layout=self.preview_layout
                     )
                 )
-                self.explorer_layout = ExplorerLayout()
+                self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
                 self.cached_obj = new_cached_obj
                 self.cached_obj.cache_attributes()
 
@@ -265,18 +199,18 @@ class Explorer:
             pass
 
     def get_explorer_layout(self) -> Layout:
-        return self.explorer_layout(self.cached_obj)
+        return self.explorer_layout(self.cached_obj, term_width=self.term.width)
 
     def get_preview_layout(self) -> Layout:
         if self.help_layout.visible:
             return self.help_layout()
         else:
             return self.preview_layout(
-                cached_obj=self.cached_obj,
+                cached_obj=self.cached_obj.selected_cached_obj,
                 term_height=self.term.height
             )
 
-    def draw(self):
+    def draw(self, *args):
         print(self.term.home, end="")
         layout = Layout()
 
@@ -299,49 +233,6 @@ class Explorer:
     @property
     def panel_height(self):
         return self.term.height - 8
-
-    def get_value_panel(self):
-        return Panel(
-            self.value_panel_text(),
-            title=(
-                "[u]value[/u]"
-                if not self.cached_obj.selected_cached_attribute or not callable(self.cached_obj.selected_cached_attribute.obj)
-                else (
-                    "[u]value[/u] [dim]source[/dim]"
-                    if self.preview_layout.state != PreviewState.source
-                    else "[dim]value[/dim] [u]source[/u]"
-                )
-            ),
-            title_align="left",
-            subtitle=f"[dim][u]f[/u]:fullscreen [u]v[/u]:toggle{' [u]{}[/u]:switch pane' if self.cached_obj.selected_cached_attribute and callable(self.cached_obj.selected_cached_attribute.obj) else ''}",
-            subtitle_align="left",
-            style="white"
-        )
-
-    def value_panel_text(self, fullscreen=False):
-        # sometimes the current obj will have no public/private attributes in which selected_cached_attribute
-        # will be `None`
-        if self.cached_obj.selected_cached_attribute:
-            return (
-                self.cached_obj.selected_cached_attribute.get_preview(self.term, fullscreen)
-                if not callable(self.cached_obj.selected_cached_attribute.obj)
-                else (
-                    self.cached_obj.selected_cached_attribute.get_preview(self.term, fullscreen)
-                    if self.preview_layout.state == PreviewState.value
-                    else self.cached_obj.selected_cached_attribute.get_source(self.term, fullscreen)
-                )
-            )
-        # if that is the case then return an empty string
-        else:
-            return ""
-
-    def get_type_panel(self):
-        return Panel(
-            self.cached_obj.selected_cached_attribute.typeof,
-            title="[u]type",
-            title_align="left",
-            style="white"
-        )
 
 
 def explore(obj):

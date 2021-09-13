@@ -1,12 +1,14 @@
 
-from typing import Optional, Dict, Any
 import inspect
-from rich.syntax import Syntax
-from rich.text import Text
-from rich.panel import Panel
+from typing import Any, Dict, Optional
+
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
+from rich.panel import Panel
 from rich.pretty import Pretty
+from rich.syntax import Syntax
+from rich.text import Text
+
 
 highlighter = ReprHighlighter()
 
@@ -25,12 +27,11 @@ class CachedObject:
 
     def __init__(
         self,
-        obj,
-        dotpath,
+        obj: Any,
+        dotpath: str,
     ):
-        self.obj: Any = obj
-        self.dotpath: str = dotpath
-        self.attribute_type = PUBLIC
+        self.obj = obj
+        self.dotpath = dotpath
         self.public_attribute_index = 0
         self.private_attribute_index = 0
         self.public_attribute_window = 0
@@ -51,6 +52,7 @@ class CachedObject:
 
         # Key:val pair of attribute name and the cached object associated with it
         self.cached_attributes: Dict[str, CachedObject] = {}
+        self.selected_cached_obj: Optional[CachedObject] = None
 
         self.typeof: Text = highlighter(str(type(self.obj)))
         self.docstring: str = inspect.getdoc(self.obj) or "[magenta italic]None"
@@ -69,11 +71,11 @@ class CachedObject:
                     dotpath=f'{self.dotpath}.{attr}'
                 )
 
-    def get_preview(self, term, fullscreen=False) -> Pretty:
-        if fullscreen:
-            return Pretty(self.obj)
+        # Set the default selected cached attribute
+        if self.plain_public_attributes:
+            self.selected_cached_obj = self.cached_attributes[self.plain_public_attributes[0]]
         else:
-            return Pretty(self.obj, max_length=term.height)
+            self.selected_cached_obj = self.cached_attributes[self.plain_private_attributes[0]]
 
     @property
     def fullname(self):
@@ -105,23 +107,3 @@ class CachedObject:
     @property
     def display_name(self):
         return f"{self.parent_name}.{self.name}" if self.name else repr(self.obj)
-
-    @property
-    def selected_public_attribute(self) -> Optional[str]:
-        if self.plain_public_attributes:
-            return self.plain_public_attributes[self.public_attribute_index]
-        return None
-
-    @property
-    def selected_private_attribute(self) -> Optional[str]:
-        if self.plain_private_attributes:
-            return self.plain_private_attributes[self.private_attribute_index]
-        return None
-
-    @property
-    def selected_cached_attribute(self):
-        if self.attribute_type == PUBLIC and self.selected_public_attribute:
-            return self[self.selected_public_attribute]
-
-        elif self.attribute_type == PRIVATE and self.selected_private_attribute:
-            return self[self.selected_private_attribute]
