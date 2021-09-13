@@ -48,7 +48,7 @@ class HelpLayout(Layout):
                   h Esc - [cyan]go back to parent object[/cyan]
                     [ ] - [cyan]switch attribute type (public/private)[/cyan]
                     { } - [cyan]switch pane[/cyan]
-                      v - [cyan]toggle full preview[/cyan]
+                      p - [cyan]toggle full preview[/cyan]
                       d - [cyan]toggle full docstring[/cyan]
                       f - [cyan]open fullscreen view[/cyan]
                       H - [cyan]open help page on selected attribute[/cyan]

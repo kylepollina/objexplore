@@ -31,6 +31,7 @@ class CachedObject:
         dotpath: str,
     ):
         self.obj = obj
+        self.is_callable = callable(obj)
         self.dotpath = dotpath
         self.public_attribute_index = 0
         self.private_attribute_index = 0
@@ -85,9 +86,13 @@ class CachedObject:
         return self.cached_attributes[key]
 
 
-    def get_source(self, term, fullscreen=False):
+    def get_source(self, term_height: Optional[int] = None, fullscreen: bool = False):
+        if not fullscreen and not term_height:
+            raise ValueError("Need a terminal height")
+
         if not self._source:
             return "[red italic]Source code unavailable"
+
         if fullscreen:
             return Syntax(
                 self._source,
@@ -100,7 +105,7 @@ class CachedObject:
                 self._source,
                 "python",
                 line_numbers=True,
-                line_range=[0, term.height],
+                line_range=[0, term_height],
                 background_color="default"
             )
 

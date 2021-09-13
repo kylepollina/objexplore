@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from .cached_object import CachedObject
 from .explorer_layout import ExplorerLayout, ExplorerState
 from .help_layout import HelpLayout, HelpState
-from .overview_layout import OverviewLayout, OverviewState, ValueState
+from .overview_layout import OverviewLayout, OverviewState, PreviewState
 
 console = Console()
 
@@ -30,8 +30,6 @@ version = "0.9.2"
 # TODO for list/set/dict/tuple do length in info panel
 # TODO show object stack as a panel
 # TODO q to close help menu?
-
-
 
 
 @dataclass
@@ -92,7 +90,7 @@ class Explorer:
             # Fullscreen
             elif key == "f":
                 with console.capture() as capture:
-                    console.print(self.help_text)
+                    console.print(self.help_layout.text)
                 str_out = capture.get()
                 pydoc.pager(str_out)
 
@@ -125,10 +123,10 @@ class Explorer:
             if not callable(self.cached_obj.selected_cached_obj.obj):
                 return
 
-            if self.overview_layout.value_state == ValueState.repr:
-                self.overview_layout.value_state = ValueState.source
-            elif self.overview_layout.value_state == ValueState.source:
-                self.overview_layout.value_state = ValueState.repr
+            if self.overview_layout.preview_state == PreviewState.repr:
+                self.overview_layout.preview_state = PreviewState.source
+            elif self.overview_layout.preview_state == PreviewState.source:
+                self.overview_layout.preview_state = PreviewState.repr
 
         # move selected attribute down
         elif key == "j":
@@ -152,21 +150,25 @@ class Explorer:
             self.overview_layout.state = OverviewState.docstring if self.overview_layout.state != OverviewState.docstring else OverviewState.all
 
         # Toggle value view
-        elif key == "v":
+        elif key == "p":
             self.overview_layout.state = OverviewState.value if self.overview_layout.state != OverviewState.value else OverviewState.all
 
         # Fullscreen
         elif key == "f":
-            if self.main_view == OverviewState.docstring:
-                with console.capture() as capture:
-                    console.print(self.cached_obj.selected_cached_obj.docstring)
-                str_out = capture.get()
-                pydoc.pager(str_out)
-            elif self.main_view == OverviewState.value or self.main_view is None:
-                with console.capture() as capture:
-                    console.print(self.value_panel_text(fullscreen=True))
-                str_out = capture.get()
-                pydoc.pager(str_out)
+            if self.overview_layout.state == OverviewState.docstring:
+                printable = self.cached_obj.selected_cached_obj.docstring
+
+            elif self.overview_layout.preview_state == PreviewState.repr:
+                printable = self.cached_obj.selected_cached_obj.obj
+
+            elif self.overview_layout.preview_state == PreviewState.source:
+                printable = self.cached_obj.selected_cached_obj.get_source(term_height=self.term.height)
+
+            with console.capture() as capture:
+                console.print(printable)
+
+            str_out = capture.get()
+            pydoc.pager(str_out)
 
         # Return selected object
         elif key == "r":
@@ -207,7 +209,8 @@ class Explorer:
         else:
             return self.overview_layout(
                 cached_obj=self.cached_obj.selected_cached_obj,
-                term_height=self.term.height
+                term_height=self.term.height,
+                console=console
             )
 
     def draw(self, *args):
