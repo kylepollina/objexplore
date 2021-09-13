@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from .cached_object import CachedObject
 from .explorer_layout import ExplorerLayout, ExplorerState
 from .help_layout import HelpLayout, HelpState
-from .preview_layout import PreviewLayout, PreviewState, ValueState
+from .overview_layout import OverviewLayout, OverviewState, ValueState
 
 console = Console()
 
@@ -38,7 +38,7 @@ version = "0.9.2"
 class StackFrame:
     cached_obj: CachedObject
     explorer_layout: ExplorerLayout
-    preview_layout: PreviewLayout
+    overview_layout: OverviewLayout
 
 
 class Explorer:
@@ -57,7 +57,7 @@ class Explorer:
 
         self.help_layout = HelpLayout(version, visible=False, ratio=3)
         self.explorer_layout = ExplorerLayout(cached_obj=cached_obj)
-        self.preview_layout = PreviewLayout()
+        self.overview_layout = OverviewLayout()
 
         # Run self.draw() whenever the win change signal is caught
         signal.signal(signal.SIGWINCH, self.draw)
@@ -125,10 +125,10 @@ class Explorer:
             if not callable(self.cached_obj.selected_cached_obj.obj):
                 return
 
-            if self.preview_layout.value_state == ValueState.repr:
-                self.preview_layout.value_state = ValueState.source
-            elif self.preview_layout.value_state == ValueState.source:
-                self.preview_layout.value_state = ValueState.repr
+            if self.overview_layout.value_state == ValueState.repr:
+                self.overview_layout.value_state = ValueState.source
+            elif self.overview_layout.value_state == ValueState.source:
+                self.overview_layout.value_state = ValueState.repr
 
         # move selected attribute down
         elif key == "j":
@@ -149,20 +149,20 @@ class Explorer:
 
         # Toggle docstring view
         elif key == "d":
-            self.preview_layout.state = PreviewState.docstring if self.preview_layout.state != PreviewState.docstring else PreviewState.all
+            self.overview_layout.state = OverviewState.docstring if self.overview_layout.state != OverviewState.docstring else OverviewState.all
 
         # Toggle value view
         elif key == "v":
-            self.preview_layout.state = PreviewState.value if self.preview_layout.state != PreviewState.value else PreviewState.all
+            self.overview_layout.state = OverviewState.value if self.overview_layout.state != OverviewState.value else OverviewState.all
 
         # Fullscreen
         elif key == "f":
-            if self.main_view == PreviewState.docstring:
+            if self.main_view == OverviewState.docstring:
                 with console.capture() as capture:
                     console.print(self.cached_obj.selected_cached_obj.docstring)
                 str_out = capture.get()
                 pydoc.pager(str_out)
-            elif self.main_view == PreviewState.value or self.main_view is None:
+            elif self.main_view == OverviewState.value or self.main_view is None:
                 with console.capture() as capture:
                     console.print(self.value_panel_text(fullscreen=True))
                 str_out = capture.get()
@@ -180,7 +180,7 @@ class Explorer:
                     StackFrame(
                         cached_obj=self.cached_obj,
                         explorer_layout=self.explorer_layout,
-                        preview_layout=self.preview_layout
+                        overview_layout=self.overview_layout
                     )
                 )
                 self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
@@ -192,7 +192,7 @@ class Explorer:
             frame: StackFrame = self.stack.pop()
             self.cached_obj = frame.cached_obj
             self.explorer_layout = frame.explorer_layout
-            self.preview_layout = frame.preview_layout
+            self.overview_layout = frame.overview_layout
 
         elif key == "b":
             breakpoint()
@@ -201,11 +201,11 @@ class Explorer:
     def get_explorer_layout(self) -> Layout:
         return self.explorer_layout(self.cached_obj, term_width=self.term.width)
 
-    def get_preview_layout(self) -> Layout:
+    def get_overview_layout(self) -> Layout:
         if self.help_layout.visible:
             return self.help_layout()
         else:
-            return self.preview_layout(
+            return self.overview_layout(
                 cached_obj=self.cached_obj.selected_cached_obj,
                 term_height=self.term.height
             )
@@ -216,7 +216,7 @@ class Explorer:
 
         layout.split_row(
             self.get_explorer_layout(),
-            self.get_preview_layout()
+            self.get_overview_layout()
         )
 
         object_explorer = Panel(

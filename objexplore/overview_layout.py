@@ -6,21 +6,21 @@ from rich.layout import Layout
 from .cached_object import CachedObject
 
 
-class PreviewState:
+class OverviewState:
     all, docstring, value = range(3)
 
 class ValueState:
     repr, source = range(2)
 
 
-class PreviewLayout(Layout):
+class OverviewLayout(Layout):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.state = PreviewState.all
+        self.state = OverviewState.all
         self.value_state = ValueState.repr
 
     def __call__(self, cached_obj: CachedObject, term_height: int) -> Layout:
-        if self.state == PreviewState.docstring:
+        if self.state == OverviewState.docstring:
             return Layout(
                 self.get_docstring_panel(
                     cached_obj=cached_obj,
@@ -30,7 +30,7 @@ class PreviewLayout(Layout):
                 ratio=3
             )
 
-        elif self.state == PreviewState.value:
+        elif self.state == OverviewState.value:
             return Layout(self.get_value_panel(cached_obj, term_height), ratio=3)
 
         else:
@@ -59,9 +59,9 @@ class PreviewLayout(Layout):
         elif self.value_state == ValueState.source:
             title="[i]preview[/i] | [dim][cyan]repr[/cyan]()[/dim] source"
 
-        if self.state == PreviewState.all:
+        if self.state == OverviewState.all:
             renderable = Pretty(cached_obj.obj, max_length=term_height // 3)
-        elif self.state == PreviewState.value:
+        elif self.state == OverviewState.value:
             renderable = Pretty(cached_obj.obj, max_length=term_height - 8)
 
         return Panel(
@@ -70,52 +70,6 @@ class PreviewLayout(Layout):
             title_align="left",
             style="white"
         )
-
-        # return Panel(
-        #     "hello",
-        #     title="[i]preview[/i] | [dim]value source",
-        #     title_align="left",
-        #     subtitle="[dim][u]v[/u]:toggle [u]{}[/u]:switch pane",
-        #     subtitle_align="left",
-        #     style="white"
-        # )
-
-
-    # def get_value_panel(self):
-    #     return Panel(
-    #         self.value_panel_text(),
-    #         title=(
-    #             "[u]value[/u]"
-    #             if not self.cached_obj.selected_cached_obj or not callable(self.cached_obj.selected_cached_obj.obj)
-    #             else (
-    #                 "[u]value[/u] [dim]source[/dim]"
-    #                 if self.preview_layout.state != PreviewState.source
-    #                 else "[dim]value[/dim] [u]source[/u]"
-    #             )
-    #         ),
-    #         title_align="left",
-    #         subtitle=f"[dim][u]f[/u]:fullscreen [u]v[/u]:toggle{' [u]{}[/u]:switch pane' if self.cached_obj.selected_cached_obj and callable(self.cached_obj.selected_cached_obj.obj) else ''}",
-    #         subtitle_align="left",
-    #         style="white"
-    #     )
-
-    # def value_panel_text(self, fullscreen=False):
-    #     # sometimes the current obj will have no public/private attributes in which selected_cached_obj
-    #     # will be `None`
-    #     if self.cached_obj.selected_cached_obj:
-    #         return (
-    #             self.cached_obj.selected_cached_obj.get_preview(self.term, fullscreen)
-    #             if not callable(self.cached_obj.selected_cached_obj.obj)
-    #             else (
-    #                 self.cached_obj.selected_cached_obj.get_preview(self.term, fullscreen)
-    #                 if self.preview_layout.state == PreviewState.value
-    #                 else self.cached_obj.selected_cached_obj.get_source(self.term, fullscreen)
-    #             )
-    #         )
-    #     # if that is the case then return an empty string
-    #     else:
-    #         return ""
-
 
     def get_type_panel(self, cached_obj: CachedObject):
         return Panel(
