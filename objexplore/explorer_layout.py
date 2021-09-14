@@ -57,7 +57,7 @@ class ExplorerLayout(Layout):
             title = "[i][cyan]dir[/cyan]()[/i] | [u]public[/u] [dim]private[/dim]"
             subtitle = (
                 f"[white]([/white][magenta]{self.public_index + 1 if cached_obj.plain_public_attributes else 0}"
-                "[/magenta][white]/[/white][magenta]{len(cached_obj.plain_public_attributes)}[/magenta][white])"
+                f"[/magenta][white]/[/white][magenta]{len(cached_obj.plain_public_attributes)}[/magenta][white])"
             )
 
         elif self.state == ExplorerState.private:
@@ -79,7 +79,7 @@ class ExplorerLayout(Layout):
             title = "[i][cyan]dir[/cyan]()[/i] | [dim]public[/dim] [u]private[/u]"
             subtitle = (
                 f"[white]([/white][magenta]{self.private_index + 1}"
-                "[/magenta][white]/[/white][magenta]{len(cached_obj.plain_private_attributes)}[/magenta][white])"
+                f"[/magenta][white]/[/white][magenta]{len(cached_obj.plain_private_attributes)}[/magenta][white])"
             )
 
         # If terminal is too small don't show the 'dir()' part of the title

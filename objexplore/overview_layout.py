@@ -70,11 +70,11 @@ class OverviewLayout(Layout):
             else:
                 pass
 
-            subtitle = "[dim][u]f[/u]:fullscreen [u]p[/u]:toggle [u]{}[/u]:switch pane"
+            subtitle = "[dim][u]p[/u]:toggle [u]f[/u]:fullscreen [u]{}[/u]:switch pane"
 
         else:
             title = "[i]preview[/i] | [u][cyan]repr[/cyan]()[/u]"
-            subtitle = "[dim][u]f[/u]:fullscreen [u]p[/u]:toggle"
+            subtitle = "[dim][u]p[/u]:toggle [u]f[/u]:fullscreen"
             renderable = cached_obj.obj
 
             if self.state == OverviewState.all:
@@ -108,7 +108,7 @@ class OverviewLayout(Layout):
                 docstring,
                 title=title,
                 title_align="left",
-                subtitle="[dim][u]f[/u]:fullscreen [u]d[/u]:toggle",
+                subtitle="[dim][u]d[/u]:toggle [u]f[/u]:fullscreen",
                 subtitle_align="left",
                 style="white",
             )
