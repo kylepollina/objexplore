@@ -16,12 +16,6 @@ from .explorer_layout import ExplorerLayout, ExplorerState
 from .help_layout import HelpLayout, HelpState
 from .overview_layout import OverviewLayout, OverviewState, PreviewState
 
-console = Console()
-
-highlighter = ReprHighlighter()
-
-_term = Terminal()
-
 version = "0.9.2"
 
 # TODO methods filter
@@ -30,6 +24,7 @@ version = "0.9.2"
 # TODO for list/set/dict/tuple do length in info panel
 # TODO show object stack as a panel
 # TODO q to close help menu?
+# TODO empty overview layouts for when there are 0 public attributes
 
 
 @dataclass
@@ -48,11 +43,11 @@ class Explorer:
         cached_obj.cache_attributes()
 
         # self.head_obj = cached_obj
-        self.cached_obj = cached_obj
+        self.cached_obj: CachedObject = cached_obj
         self.stack: List[StackFrame] = []
-        self.term = _term
-        self.main_view = None
-
+        self.term = Terminal()
+        self.console = Console()
+        self.highlighter = ReprHighlighter()
         self.help_layout = HelpLayout(version, visible=False, ratio=3)
         self.explorer_layout = ExplorerLayout(cached_obj=cached_obj)
         self.overview_layout = OverviewLayout()
@@ -89,8 +84,8 @@ class Explorer:
 
             # Fullscreen
             elif key == "f":
-                with console.capture() as capture:
-                    console.print(self.help_layout.text)
+                with self.console.capture() as capture:
+                    self.console.print(self.help_layout.text)
                 str_out = capture.get()
                 pydoc.pager(str_out)
 
@@ -162,10 +157,10 @@ class Explorer:
                 printable = self.cached_obj.selected_cached_obj.obj
 
             elif self.overview_layout.preview_state == PreviewState.source:
-                printable = self.cached_obj.selected_cached_obj.get_source(term_height=self.term.height)
+                printable = self.cached_obj.selected_cached_obj.get_source(fullscreen=True)
 
-            with console.capture() as capture:
-                console.print(printable)
+            with self.console.capture() as capture:
+                self.console.print(printable)
 
             str_out = capture.get()
             pydoc.pager(str_out)
@@ -210,7 +205,7 @@ class Explorer:
             return self.overview_layout(
                 cached_obj=self.cached_obj.selected_cached_obj,
                 term_height=self.term.height,
-                console=console
+                console=self.console
             )
 
     def draw(self, *args):
@@ -222,11 +217,16 @@ class Explorer:
             self.get_overview_layout()
         )
 
+        title = self.highlighter(repr(self.cached_obj.obj))
+        title.overflow = "elipses"
+
         object_explorer = Panel(
             layout,
-            # TODO truncate if a huuge object like a dict of all emojis
-            title=highlighter(f"{self.cached_obj.obj!r}"),
-            subtitle=f"[red][u]q[/u]:quit[/red] [cyan][u]?[/u]:{'exit ' if self.help_layout.visible else ''}help[/]",
+            title=title,
+            subtitle=(
+                "[red][u]q[/u]:quit[/red] [cyan][u]?[/u]:"
+                f"{'exit ' if self.help_layout.visible else ''}help[/]"
+            ),
             subtitle_align="left",
             height=self.term.height - 1,
             style="blue"

@@ -10,7 +10,6 @@ class ExplorerState:
     public, private = 0, 1
 
 
-
 class ExplorerLayout(Layout):
     def __init__(self, cached_obj: CachedObject, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -56,7 +55,10 @@ class ExplorerLayout(Layout):
                 )
 
             title = "[i][cyan]dir[/cyan]()[/i] | [u]public[/u] [dim]private[/dim]"
-            subtitle = f"[white]([/white][magenta]{self.public_index + 1}[/magenta][white]/[/white][magenta]{len(cached_obj.plain_public_attributes)}[/magenta][white])"
+            subtitle = (
+                f"[white]([/white][magenta]{self.public_index + 1 if cached_obj.plain_public_attributes else 0}"
+                "[/magenta][white]/[/white][magenta]{len(cached_obj.plain_public_attributes)}[/magenta][white])"
+            )
 
         elif self.state == ExplorerState.private:
             attribute_text = []
@@ -75,7 +77,10 @@ class ExplorerLayout(Layout):
                 )
 
             title = "[i][cyan]dir[/cyan]()[/i] | [dim]public[/dim] [u]private[/u]"
-            subtitle = f"[white]([/white][magenta]{self.private_index + 1}[/magenta][white]/[/white][magenta]{len(cached_obj.plain_private_attributes)}[/magenta][white])"
+            subtitle = (
+                f"[white]([/white][magenta]{self.private_index + 1}"
+                "[/magenta][white]/[/white][magenta]{len(cached_obj.plain_private_attributes)}[/magenta][white])"
+            )
 
         # If terminal is too small don't show the 'dir()' part of the title
         if term_width / 4 < 28:
@@ -96,7 +101,6 @@ class ExplorerLayout(Layout):
         )
         self.update(panel)
         return self
-
 
     def move_up(self):
         """ Move the current selection up one """
@@ -145,5 +149,5 @@ class ExplorerLayout(Layout):
 
         elif self.state == ExplorerState.private:
             self.private_index = len(cached_obj.plain_private_attributes) - 1
-            self.private_window = max(0, cached_obj.private_attribute_index - panel_height)
+            self.private_window = max(0, self.private_index - panel_height)
         self.update_selected_cached_object()
