@@ -1,8 +1,7 @@
-# ObjExplore
 
 ![logo](images/logo.png)
 
-An Interactive Python Object Explorer
+Objexplore is an interactive Python object explorer. Use it while debugging, or exploring a new library, or whatever!
 
 ![screenshot](images/screenshot.png)
 
