@@ -15,7 +15,7 @@ from .explorer_layout import ExplorerLayout, ExplorerState
 from .help_layout import HelpLayout, HelpState
 from .overview_layout import OverviewLayout, OverviewState, PreviewState
 
-version = "0.9.2"
+version = "0.9.3"
 
 # TODO methods filter
 # or just a type filter?

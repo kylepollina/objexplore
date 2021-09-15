@@ -51,7 +51,7 @@ class HelpLayout(Layout):
                       d - [cyan]toggle full docstring[/cyan]
                       f - [cyan]open fullscreen view[/cyan]
                       H - [cyan]open help page on selected attribute[/cyan]
-                      p - [cyan]exit and print value of selected attribute[/cyan]
+                      r - [cyan]return the selected object[/cyan]
                       ? - [cyan]toggle help page[/cyan]
                     q Q - [cyan]quit[/cyan]
                 """
