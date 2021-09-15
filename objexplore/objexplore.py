@@ -59,6 +59,7 @@ class Explorer:
         """ Open the interactive explorer """
 
         key = None
+        res = None
 
         # Clear the screen
         print(self.term.clear, end='')
@@ -71,9 +72,10 @@ class Explorer:
 
                 # If the object is returned as a response the close the explorer and return the selected object
                 if res:
-                    return res
+                    break
+        return res
 
-    def process_key_event(self, key: str) -> Optional[Any]:
+    def process_key_event(self, key: str) -> Any:
         """ Process the incoming key """
 
         # Help page ###########################################################
@@ -218,7 +220,7 @@ class Explorer:
         )
 
         title = self.highlighter(repr(self.cached_obj.obj))
-        title.overflow = "elipses"
+        title.overflow = "ellipsis"
 
         object_explorer = Panel(
             layout,

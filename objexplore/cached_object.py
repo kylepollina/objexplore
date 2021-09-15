@@ -1,11 +1,9 @@
 
 import inspect
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
-from rich.panel import Panel
-from rich.pretty import Pretty
 from rich.syntax import Syntax
 from rich.text import Text
 
@@ -53,7 +51,8 @@ class CachedObject:
 
         # Key:val pair of attribute name and the cached object associated with it
         self.cached_attributes: Dict[str, CachedObject] = {}
-        self.selected_cached_obj: Optional[CachedObject] = None
+
+        self.selected_cached_obj: CachedObject
 
         self.typeof: Text = highlighter(str(type(self.obj)))
         self.docstring: str = inspect.getdoc(self.obj) or "[magenta italic]None"
@@ -61,7 +60,7 @@ class CachedObject:
         try:
             self._source = inspect.getsource(self.obj)
         except Exception:
-            self._source = None
+            self._source = ""
 
     def cache_attributes(self):
         """ Create a CachedObject for each attribute of the self.obj """
@@ -85,8 +84,7 @@ class CachedObject:
     def __getitem__(self, key):
         return self.cached_attributes[key]
 
-
-    def get_source(self, term_height: Optional[int] = None, fullscreen: bool = False):
+    def get_source(self, term_height: int = 0, fullscreen: bool = False):
         if not fullscreen and not term_height:
             raise ValueError("Need a terminal height")
 
@@ -105,7 +103,7 @@ class CachedObject:
                 self._source,
                 "python",
                 line_numbers=True,
-                line_range=[0, term_height],
+                line_range=(0, term_height),
                 background_color="default"
             )
 

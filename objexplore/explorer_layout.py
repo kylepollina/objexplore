@@ -23,7 +23,7 @@ class ExplorerLayout(Layout):
             attr = cached_obj.plain_public_attributes[self.public_index]
             return cached_obj[attr]
 
-        elif self.state == ExplorerState.private:
+        else:  # ExplorerState.private
             attr = cached_obj.plain_private_attributes[self.private_index]
             return cached_obj[attr]
 
@@ -51,7 +51,7 @@ class ExplorerLayout(Layout):
                     style += " reverse"
 
                 attribute_text.append(
-                    Text(attr, overflow="elipses", style=style)
+                    Text(attr, overflow="ellipsis", style=style)
                 )
 
             title = "[i][cyan]dir[/cyan]()[/i] | [u]public[/u] [dim]private[/dim]"
@@ -73,7 +73,7 @@ class ExplorerLayout(Layout):
                     style += " reverse"
 
                 attribute_text.append(
-                    Text(attr, overflow="elipses", style=style)
+                    Text(attr, overflow="ellipsis", style=style)
                 )
 
             title = "[i][cyan]dir[/cyan]()[/i] | [dim]public[/dim] [u]private[/u]"
@@ -87,7 +87,7 @@ class ExplorerLayout(Layout):
             title = title.split('|')[-1].strip()
 
         # Start with an empty text object, all following Text objects will steal the styles from this one
-        renderable_text = Text("", overflow="elipses")
+        renderable_text = Text("", overflow="ellipsis")
         for t in attribute_text:
             renderable_text += t + '\n'
 
