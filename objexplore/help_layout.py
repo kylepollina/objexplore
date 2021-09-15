@@ -1,4 +1,3 @@
-
 from random import choice
 from textwrap import dedent
 
@@ -28,7 +27,7 @@ class HelpLayout(Layout):
                 title_align="left",
                 subtitle="[dim white][u]f[/u]:fullscreen [u][][/u]:switch pane [u]?[/u]:exit help",
                 subtitle_align="left",
-                style="magenta"
+                style="magenta",
             )
         )
         return self
@@ -59,7 +58,8 @@ class HelpLayout(Layout):
             ).strip()
 
         elif self.state == HelpState.about:
-            return f"""
+            return (
+                f"""
 [white]       _     _                 _
   ___ | |__ (_) _____  ___ __ | | ___  _ __ ___
  / _ \| '_ \| |/ _ \ \/ / '_ \| |/ _ \| '__/ _ \\
@@ -72,7 +72,9 @@ Author:          [cyan]Kyle Pollina[/cyan]
 Version:         [cyan]{self.version}[/cyan]
 PyPI:            [cyan]https://pypi.org/project/objexplore[/cyan]
 Source:          [cyan]https://github.com/kylepollina/objexplore[/cyan][yellow italic]
-Report an issue[/yellow italic]: [cyan]https://github.com/kylepollina/objexplore/issues[/cyan]\n\n""" + self.random_quote()
+Report an issue[/yellow italic]: [cyan]https://github.com/kylepollina/objexplore/issues[/cyan]\n\n"""
+                + self.random_quote()
+            )
 
     def random_quote(self):
         return choice(

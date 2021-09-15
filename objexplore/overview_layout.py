@@ -1,4 +1,3 @@
-
 from typing import Optional
 from rich.panel import Panel
 from rich.pretty import Pretty
@@ -8,6 +7,7 @@ from .cached_object import CachedObject
 
 class OverviewState:
     all, docstring, value = range(3)
+
 
 class PreviewState:
     repr, source = range(2)
@@ -26,9 +26,9 @@ class OverviewLayout(Layout):
                     cached_obj=cached_obj,
                     console=console,
                     term_height=term_height,
-                    fullscreen=True
+                    fullscreen=True,
                 ),
-                ratio=3
+                ratio=3,
             )
 
         elif self.state == OverviewState.value:
@@ -37,19 +37,12 @@ class OverviewLayout(Layout):
         else:
             layout = Layout(ratio=3)
             layout.split_column(
-                Layout(
-                    self.get_value_panel(cached_obj, term_height),
-                    name="obj_value"
-                ),
-                Layout(
-                    self.get_type_panel(cached_obj),
-                    name="obj_type",
-                    size=3
-                ),
+                Layout(self.get_value_panel(cached_obj, term_height), name="obj_value"),
+                Layout(self.get_type_panel(cached_obj), name="obj_type", size=3),
                 Layout(
                     self.get_docstring_panel(cached_obj, console),
                     name="obj_doc",
-                )
+                ),
             )
             return layout
 
@@ -60,9 +53,13 @@ class OverviewLayout(Layout):
                 renderable = cached_obj.obj
 
                 if self.state == OverviewState.all:
-                    renderable = Pretty(renderable, max_length=(max((term_height - 6) // 2 - 7, 1)))
+                    renderable = Pretty(
+                        renderable, max_length=(max((term_height - 6) // 2 - 7, 1))
+                    )
                 else:
-                    renderable = Pretty(renderable, max_length=(max(term_height - 9, 1)))
+                    renderable = Pretty(
+                        renderable, max_length=(max(term_height - 9, 1))
+                    )
 
             elif self.preview_state == PreviewState.source:
                 title = "[i]preview[/i] | [dim][cyan]repr[/cyan]()[/dim] [u]source[/u]"
@@ -78,7 +75,9 @@ class OverviewLayout(Layout):
             renderable = cached_obj.obj
 
             if self.state == OverviewState.all:
-                renderable = Pretty(renderable, max_length=(max((term_height - 6) // 2 - 7, 1)))
+                renderable = Pretty(
+                    renderable, max_length=(max((term_height - 6) // 2 - 7, 1))
+                )
             else:
                 renderable = Pretty(renderable, max_length=(max(term_height - 9, 1)))
 
@@ -88,7 +87,7 @@ class OverviewLayout(Layout):
             title_align="left",
             subtitle=subtitle,
             subtitle_align="left",
-            style="white"
+            style="white",
         )
 
     def get_type_panel(self, cached_obj: CachedObject):
@@ -96,14 +95,22 @@ class OverviewLayout(Layout):
             cached_obj.typeof,
             title="[i]info[/i] | [u][cyan]type[/cyan]()[/u]",
             title_align="left",
-            style="white"
+            style="white",
         )
 
-    def get_docstring_panel(self, cached_obj: CachedObject, console, term_height: Optional[int] = None, fullscreen: bool = False) -> Panel:
+    def get_docstring_panel(
+        self,
+        cached_obj: CachedObject,
+        console,
+        term_height: Optional[int] = None,
+        fullscreen: bool = False,
+    ) -> Panel:
         """ Build the docstring panel """
         # TODO improve docstring rendering speed, appears to be a bottleneck
         title = "[i]docstring"
-        docstring = console.render_str('\n'.join(cached_obj.docstring.splitlines()[:term_height]))
+        docstring = console.render_str(
+            "\n".join(cached_obj.docstring.splitlines()[:term_height])
+        )
         if fullscreen:
             return Panel(
                 docstring,
@@ -122,5 +129,5 @@ class OverviewLayout(Layout):
                 title_align="left",
                 subtitle="[dim][u]d[/u]:toggle",
                 subtitle_align="left",
-                style="white"
+                style="white",
             )

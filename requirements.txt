@@ -1,3 +1,4 @@
 blessed==1.17.12
 rich==10.9.0
 mypy==0.910
+black==20.8b1

@@ -1,4 +1,3 @@
-
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.text import Text
@@ -28,19 +27,25 @@ class ExplorerLayout(Layout):
             return cached_obj[attr]
 
     def update_selected_cached_object(self):
-        if self.state == ExplorerState.public and self.cached_obj.plain_public_attributes:
+        if (
+            self.state == ExplorerState.public
+            and self.cached_obj.plain_public_attributes
+        ):
             attr = self.cached_obj.plain_public_attributes[self.public_index]
             self.cached_obj.selected_cached_obj = self.cached_obj[attr]
             pass
 
-        elif self.state == ExplorerState.private and self.cached_obj.plain_private_attributes:
+        elif (
+            self.state == ExplorerState.private
+            and self.cached_obj.plain_private_attributes
+        ):
             attr = self.cached_obj.plain_private_attributes[self.private_index]
             self.cached_obj.selected_cached_obj = self.cached_obj[attr]
 
     def __call__(self, cached_obj: CachedObject, term_width: int) -> Layout:
         if self.state == ExplorerState.public:
             attribute_text = []
-            for attr in cached_obj.plain_public_attributes[self.public_window:]:
+            for attr in cached_obj.plain_public_attributes[self.public_window :]:
                 obj = getattr(cached_obj.obj, attr)
                 if callable(obj) or obj is None:
                     style = "dim italic"
@@ -50,9 +55,7 @@ class ExplorerLayout(Layout):
                 if attr == cached_obj.plain_public_attributes[self.public_index]:
                     style += " reverse"
 
-                attribute_text.append(
-                    Text(attr, overflow="ellipsis", style=style)
-                )
+                attribute_text.append(Text(attr, overflow="ellipsis", style=style))
 
             title = "[i][cyan]dir[/cyan]()[/i] | [u]public[/u] [dim]private[/dim]"
             subtitle = (
@@ -62,7 +65,7 @@ class ExplorerLayout(Layout):
 
         elif self.state == ExplorerState.private:
             attribute_text = []
-            for attr in cached_obj.plain_private_attributes[self.private_window:]:
+            for attr in cached_obj.plain_private_attributes[self.private_window :]:
                 obj = getattr(cached_obj.obj, attr)
                 if callable(obj) or obj is None:
                     style = "dim italic"
@@ -72,9 +75,7 @@ class ExplorerLayout(Layout):
                 if attr == cached_obj.plain_private_attributes[self.private_index]:
                     style += " reverse"
 
-                attribute_text.append(
-                    Text(attr, overflow="ellipsis", style=style)
-                )
+                attribute_text.append(Text(attr, overflow="ellipsis", style=style))
 
             title = "[i][cyan]dir[/cyan]()[/i] | [dim]public[/dim] [u]private[/u]"
             subtitle = (
@@ -84,12 +85,12 @@ class ExplorerLayout(Layout):
 
         # If terminal is too small don't show the 'dir()' part of the title
         if term_width / 4 < 28:
-            title = title.split('|')[-1].strip()
+            title = title.split("|")[-1].strip()
 
         # Start with an empty text object, all following Text objects will steal the styles from this one
         renderable_text = Text("", overflow="ellipsis")
         for t in attribute_text:
-            renderable_text += t + '\n'
+            renderable_text += t + "\n"
 
         panel = Panel(
             renderable_text,
@@ -97,7 +98,7 @@ class ExplorerLayout(Layout):
             title_align="right",
             subtitle=subtitle,
             subtitle_align="right",
-            style="white"
+            style="white",
         )
         self.update(panel)
         return self

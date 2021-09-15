@@ -1,4 +1,3 @@
-
 import pydoc
 import signal
 from typing import Any, Optional, List
@@ -62,10 +61,10 @@ class Explorer:
         res = None
 
         # Clear the screen
-        print(self.term.clear, end='')
+        print(self.term.clear, end="")
 
         with self.term.cbreak(), self.term.hidden_cursor():
-            while key not in ('q', 'Q'):
+            while key not in ("q", "Q"):
                 self.draw()
                 key = self.term.inkey()
                 res = self.process_key_event(key)
@@ -144,11 +143,19 @@ class Explorer:
 
         # Toggle docstring view
         elif key == "d":
-            self.overview_layout.state = OverviewState.docstring if self.overview_layout.state != OverviewState.docstring else OverviewState.all
+            self.overview_layout.state = (
+                OverviewState.docstring
+                if self.overview_layout.state != OverviewState.docstring
+                else OverviewState.all
+            )
 
         # Toggle value view
         elif key == "p":
-            self.overview_layout.state = OverviewState.value if self.overview_layout.state != OverviewState.value else OverviewState.all
+            self.overview_layout.state = (
+                OverviewState.value
+                if self.overview_layout.state != OverviewState.value
+                else OverviewState.all
+            )
 
         # Fullscreen
         elif key == "f":
@@ -159,7 +166,9 @@ class Explorer:
                 printable = self.cached_obj.selected_cached_obj.obj
 
             elif self.overview_layout.preview_state == PreviewState.source:
-                printable = self.cached_obj.selected_cached_obj.get_source(fullscreen=True)
+                printable = self.cached_obj.selected_cached_obj.get_source(
+                    fullscreen=True
+                )
 
             with self.console.capture() as capture:
                 self.console.print(printable)
@@ -179,7 +188,7 @@ class Explorer:
                     StackFrame(
                         cached_obj=self.cached_obj,
                         explorer_layout=self.explorer_layout,
-                        overview_layout=self.overview_layout
+                        overview_layout=self.overview_layout,
                     )
                 )
                 self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
@@ -207,17 +216,14 @@ class Explorer:
             return self.overview_layout(
                 cached_obj=self.cached_obj.selected_cached_obj,
                 term_height=self.term.height,
-                console=self.console
+                console=self.console,
             )
 
     def draw(self, *args):
         print(self.term.home, end="")
         layout = Layout()
 
-        layout.split_row(
-            self.get_explorer_layout(),
-            self.get_overview_layout()
-        )
+        layout.split_row(self.get_explorer_layout(), self.get_overview_layout())
 
         title = self.highlighter(repr(self.cached_obj.obj))
         title.overflow = "ellipsis"
@@ -231,9 +237,9 @@ class Explorer:
             ),
             subtitle_align="left",
             height=self.term.height - 1,
-            style="blue"
+            style="blue",
         )
-        rprint(object_explorer, end='')
+        rprint(object_explorer, end="")
 
     @property
     def panel_height(self):
