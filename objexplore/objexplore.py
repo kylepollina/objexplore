@@ -1,14 +1,15 @@
 import pydoc
 import signal
-from typing import Any, Optional, List
+from dataclasses import dataclass
+from typing import Any, List, Optional
 
+import blessed
 from blessed import Terminal
 from rich import print as rprint
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
 from rich.layout import Layout
 from rich.panel import Panel
-from dataclasses import dataclass
 
 from .cached_object import CachedObject
 from .explorer_layout import ExplorerLayout, ExplorerState
@@ -27,6 +28,7 @@ version = "0.9.3"
 
 @dataclass
 class StackFrame:
+    """ Datastructure to store a frame in the object stack """
     cached_obj: CachedObject
     explorer_layout: ExplorerLayout
     overview_layout: OverviewLayout
@@ -73,14 +75,16 @@ class Explorer:
                     break
         return res
 
-    def process_key_event(self, key: str) -> Any:
+    def process_key_event(self, key: blessed.keyboard.Keystroke) -> Any:
         """ Process the incoming key """
 
         # Help page ###########################################################
+
         if self.help_layout.visible:
             # Close help page
-            if key in ["?", "\x1b"]:
+            if key in ("?", "\x1b"):
                 self.help_layout.visible = False
+                return
 
             # Fullscreen
             elif key == "f":
@@ -88,23 +92,66 @@ class Explorer:
                     self.console.print(self.help_layout.text)
                 str_out = capture.get()
                 pydoc.pager(str_out)
+                return
 
             # Switch panes
-            elif key in ["{", "}", "[", "]"]:
+            elif key in ("{", "}", "[", "]"):
                 if self.help_layout.state == HelpState.keybindings:
                     self.help_layout.state = HelpState.about
                 elif self.help_layout.state == HelpState.about:
                     self.help_layout.state = HelpState.keybindings
+                return
 
-            else:
+            elif key in ("j", "k") or key.code in (self.term.KEY_UP, self.term.KEY_DOWN):
+                # Continue on and process these keys as normal
                 self.help_layout.visible = False
 
-            return
+            else:
+                return
 
         if self.help_layout.visible is False and key == "?":
             self.help_layout.visible = True
             return
-        #######################################################################
+
+        # Navigation ##########################################################
+
+        # move selected attribute down
+        elif key == "j" or key.code == self.term.KEY_DOWN:
+            self.explorer_layout.move_down(self.panel_height, self.cached_obj)
+
+        # move selected attribute up
+        elif key == "k" or key.code == self.term.KEY_UP:
+            self.explorer_layout.move_up()
+
+        # Enter
+        elif key in ("\n", "l") or key.code == self.term.KEY_RIGHT:
+            new_cached_obj = self.cached_obj.selected_cached_obj
+            if new_cached_obj.obj is not None and not callable(new_cached_obj.obj):
+                self.stack.append(
+                    StackFrame(
+                        cached_obj=self.cached_obj,
+                        explorer_layout=self.explorer_layout,
+                        overview_layout=self.overview_layout,
+                    )
+                )
+                self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
+                self.cached_obj = new_cached_obj
+                self.cached_obj.cache_attributes()
+
+        # Escape
+        elif (key in ("\x1b", "h") or key.code == self.term.KEY_LEFT) and self.stack:
+            frame: StackFrame = self.stack.pop()
+            self.cached_obj = frame.cached_obj
+            self.explorer_layout = frame.explorer_layout
+            self.overview_layout = frame.overview_layout
+
+        elif key == "g":
+            self.explorer_layout.move_top()
+
+        elif key == "G":
+            self.explorer_layout.move_bottom(self.panel_height, self.cached_obj)
+
+        # View ################################################################
 
         # Switch between public and private attributes
         if key in ("[", "]"):
@@ -114,7 +161,7 @@ class Explorer:
             elif self.explorer_layout.state == ExplorerState.private:
                 self.explorer_layout.state = ExplorerState.public
 
-        elif key in ["{", "}"]:
+        elif key in ("{", "}"):
             if not callable(self.cached_obj.selected_cached_obj.obj):
                 return
 
@@ -122,23 +169,6 @@ class Explorer:
                 self.overview_layout.preview_state = PreviewState.source
             elif self.overview_layout.preview_state == PreviewState.source:
                 self.overview_layout.preview_state = PreviewState.repr
-
-        # move selected attribute down
-        elif key == "j":
-            self.explorer_layout.move_down(self.panel_height, self.cached_obj)
-
-        # move selected attribute up
-        elif key == "k":
-            self.explorer_layout.move_up()
-
-        elif key == "g":
-            self.explorer_layout.move_top()
-
-        elif key == "G":
-            self.explorer_layout.move_bottom(self.panel_height, self.cached_obj)
-
-        elif key == "H":
-            help(self.cached_obj.selected_cached_obj.obj)
 
         # Toggle docstring view
         elif key == "d":
@@ -175,31 +205,14 @@ class Explorer:
             str_out = capture.get()
             pydoc.pager(str_out)
 
+        elif key == "H":
+            help(self.cached_obj.selected_cached_obj.obj)
+
+        # Other ################################################################
+
         # Return selected object
         elif key == "r":
             return self.cached_obj.selected_cached_obj.obj
-
-        # Enter
-        elif key in ["\n", "l"]:
-            new_cached_obj = self.cached_obj.selected_cached_obj
-            if new_cached_obj.obj is not None and not callable(new_cached_obj.obj):
-                self.stack.append(
-                    StackFrame(
-                        cached_obj=self.cached_obj,
-                        explorer_layout=self.explorer_layout,
-                        overview_layout=self.overview_layout,
-                    )
-                )
-                self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
-                self.cached_obj = new_cached_obj
-                self.cached_obj.cache_attributes()
-
-        # Escape
-        elif key in ["\x1b", "h"] and self.stack:
-            frame: StackFrame = self.stack.pop()
-            self.cached_obj = frame.cached_obj
-            self.explorer_layout = frame.explorer_layout
-            self.overview_layout = frame.overview_layout
 
         elif key == "b":
             breakpoint()
@@ -219,6 +232,7 @@ class Explorer:
             )
 
     def draw(self, *args):
+        """ Draw the application. the *args argument is due to resize events and are unused """
         print(self.term.home, end="")
         layout = Layout()
 
@@ -245,6 +259,6 @@ class Explorer:
         return self.term.height - 8
 
 
-def explore(obj):
+def explore(obj: Any) -> Any:
     """ Run the explorer on the given object """
     return Explorer(obj).explore()
