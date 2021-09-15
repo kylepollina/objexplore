@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
@@ -25,10 +25,10 @@ class CachedObject:
         self.obj = obj
         self.is_callable = callable(obj)
         self.dotpath = dotpath
-        self.public_attribute_index = 0
-        self.private_attribute_index = 0
-        self.public_attribute_window = 0
-        self.private_attribute_window = 0
+        self.selected_cached_obj: CachedObject
+
+        self.typeof: Text = highlighter(str(type(self.obj)))
+        self.docstring: str = inspect.getdoc(self.obj) or "[magenta italic]None"
 
         self.plain_attrs = dir(self.obj)
 
@@ -42,14 +42,8 @@ class CachedObject:
         self.plain_private_attributes = sorted(
             attr for attr in self.plain_attrs if attr.startswith("_")
         )
-
         # Key:val pair of attribute name and the cached object associated with it
         self.cached_attributes: Dict[str, CachedObject] = {}
-
-        self.selected_cached_obj: CachedObject
-
-        self.typeof: Text = highlighter(str(type(self.obj)))
-        self.docstring: str = inspect.getdoc(self.obj) or "[magenta italic]None"
 
         try:
             self._source = inspect.getsource(self.obj)
@@ -74,14 +68,12 @@ class CachedObject:
                 self.plain_private_attributes[0]
             ]
 
-    @property
-    def fullname(self):
-        return self.parent_name + "." + self.name
-
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> "CachedObject":
         return self.cached_attributes[key]
 
-    def get_source(self, term_height: int = 0, fullscreen: bool = False):
+    def get_source(
+        self, term_height: int = 0, fullscreen: bool = False
+    ) -> Union[Syntax, str]:
         if not fullscreen and not term_height:
             raise ValueError("Need a terminal height")
 
@@ -102,5 +94,5 @@ class CachedObject:
             )
 
     @property
-    def display_name(self):
+    def display_name(self) -> str:
         return f"{self.parent_name}.{self.name}" if self.name else repr(self.obj)
