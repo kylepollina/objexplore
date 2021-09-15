@@ -1,4 +1,7 @@
 # ObjExplore
+
+![logo](images/logo.png)
+
 An Interactive Python Object Explorer
 
 ![screenshot](images/screenshot.png)
@@ -28,6 +31,3 @@ explore(pandas)
 - Dictionary explorer TODO
 - List/Set explorer TODO
 - DataFrame explorer TODO
-
-## Keybindings
-TODO
