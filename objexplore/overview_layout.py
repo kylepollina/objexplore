@@ -101,6 +101,7 @@ class OverviewLayout(Layout):
 
     def get_docstring_panel(self, cached_obj: CachedObject, console, term_height: Optional[int] = None, fullscreen: bool = False) -> Panel:
         """ Build the docstring panel """
+        # TODO improve docstring rendering speed, appears to be a bottleneck
         title = "[i]docstring"
         docstring = console.render_str('\n'.join(cached_obj.docstring.splitlines()[:term_height]))
         if fullscreen:
