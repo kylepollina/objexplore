@@ -19,7 +19,6 @@ version = "0.9.2"
 
 # TODO methods filter
 # or just a type filter?
-# TODO fix pandas.IndexSlice / pandas.NA
 # TODO for list/set/dict/tuple do length in info panel
 # TODO show object stack as a panel
 # TODO q to close help menu?

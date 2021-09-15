@@ -13,11 +13,7 @@ highlighter = ReprHighlighter()
 PUBLIC = "PUBLIC"
 PRIVATE = "PRIVATE"
 
-# TODO should contain functions to get type/docstring/source of selected attribute
-
 console = Console()
-
-# TODO fix bug if there is no public/private attributes
 
 
 class CachedObject:
