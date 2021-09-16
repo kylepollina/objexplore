@@ -7,9 +7,9 @@ import blessed
 from blessed import Terminal
 from rich import print as rprint
 from rich.console import Console
-from rich.highlighter import ReprHighlighter
 from rich.layout import Layout
 from rich.panel import Panel
+from rich.tree import Tree
 
 from .cached_object import CachedObject
 from .explorer_layout import ExplorerLayout, ExplorerState
@@ -21,8 +21,6 @@ version = "0.9.3"
 # TODO methods filter
 # or just a type filter?
 # TODO for list/set/dict/tuple do length in info panel
-# TODO show object stack as a panel
-# TODO q to close help menu?
 # TODO empty overview layouts for when there are 0 public attributes
 
 
@@ -36,19 +34,78 @@ class StackFrame:
 
 
 class StackLayout(Layout):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, head_obj: CachedObject, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.stack = List[StackFrame]
+        self.head_obj = head_obj
+        self.stack: List[StackFrame] = []
+        self.index = 0
+        self.window = 0
 
     def append(self, stack_frame: StackFrame):
         self.stack.append(stack_frame)
 
-    def pop(self) -> StackFrame:
-        return self.stack.pop()
+    def pop(self) -> Optional[StackFrame]:
+        if len(self.stack) > 1:
+            return self.stack.pop()
+
+    def __getitem__(self, item):
+        return self.stack[item]
+
+    def set_visible(self):
+        self.visible = True
+        self.index = len(self.stack) - 1
 
     def __call__(self) -> Layout:
-        self.update("hello world")
+        stack_tree = None
+
+        for index, stack_frame in enumerate(self.stack):
+            if index == self.index:
+                style = "reverse"
+            else:
+                style = "none"
+
+            if not stack_tree:
+                label = stack_frame.cached_obj.repr
+                label.style = style
+                stack_tree = Tree(label)
+                continue
+
+            stack_tree.add(
+                stack_frame.cached_obj.attr_name
+                + ": "
+                + str(stack_frame.cached_obj.typeof),
+                style=style,
+            )
+
+        self.update(
+            Panel(
+                stack_tree,
+                title="\[stack]",
+                title_align="right",
+                subtitle="[dim][u]j[/u]:down [u]k[/u]:up [u]enter[/u]:select",
+                subtitle_align="right",
+                style="bright_blue",
+            )
+        )
         return self
+
+    def move_up(self):
+        if self.index > 0:
+            self.index -= 1
+            if self.index < self.window:
+                self.window -= 1
+
+    def move_down(self, panel_height: int):
+        if self.index < len(self.stack) - 1:
+            self.index += 1
+            if self.index > self.window + panel_height:
+                self.window += 1
+
+    def select(self):
+        self.stack = self.stack[: self.index + 1]
+        stack_frame = self.stack.pop()
+        self.visible = False
+        return stack_frame.cached_obj
 
 
 class Explorer:
@@ -61,13 +118,20 @@ class Explorer:
 
         # self.head_obj = cached_obj
         self.cached_obj: CachedObject = cached_obj
-        self.stack = StackLayout(visible=False)
         self.term = Terminal()
         self.console = Console()
-        self.highlighter = ReprHighlighter()
+        self.stack = StackLayout(head_obj=self.cached_obj, visible=False)
         self.help_layout = HelpLayout(version, visible=False, ratio=3)
         self.explorer_layout = ExplorerLayout(cached_obj=cached_obj)
         self.overview_layout = OverviewLayout()
+
+        self.stack.append(
+            StackFrame(
+                cached_obj=self.cached_obj,
+                explorer_layout=self.explorer_layout,
+                overview_layout=self.overview_layout,
+            )
+        )
 
         # Run self.draw() whenever the win change signal is caught
         signal.signal(signal.SIGWINCH, self.draw)
@@ -135,24 +199,38 @@ class Explorer:
 
         # Navigation ##########################################################
 
-        elif key == "o" and self.stack.visible:
-            self.stack.visible = False
-
-        elif key == "o" and not self.stack.visible:
-            self.stack.visible = True
-
-        # move selected attribute down
-        elif key == "j" or key.code == self.term.KEY_DOWN:
-            self.explorer_layout.move_down(self.panel_height, self.cached_obj)
+        if self.stack.visible and (
+            key not in ("o", "j", "k", "\n")
+            and key.code
+            not in (self.term.KEY_UP, self.term.KEY_DOWN, self.term.KEY_RIGHT)
+        ):
+            return
 
         # move selected attribute up
         elif key == "k" or key.code == self.term.KEY_UP:
-            self.explorer_layout.move_up()
+            if self.stack.visible:
+                self.stack.move_up()
+            else:
+                self.explorer_layout.move_up()
+
+        # move selected attribute down
+        elif key == "j" or key.code == self.term.KEY_DOWN:
+            if self.stack.visible:
+                self.stack.move_down(self.panel_height)
+            else:
+                self.explorer_layout.move_down(self.panel_height, self.cached_obj)
 
         # Enter
         elif key in ("\n", "l") or key.code == self.term.KEY_RIGHT:
-            new_cached_obj = self.cached_obj.selected_cached_obj
+            if self.stack.visible:
+                new_cached_obj = self.stack.select()
+            else:
+                new_cached_obj = self.cached_obj.selected_cached_obj
+
             if new_cached_obj.obj is not None and not callable(new_cached_obj.obj):
+                self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
+                self.cached_obj = new_cached_obj
+                self.cached_obj.cache_attributes()
                 self.stack.append(
                     StackFrame(
                         cached_obj=self.cached_obj,
@@ -160,16 +238,13 @@ class Explorer:
                         overview_layout=self.overview_layout,
                     )
                 )
-                self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
-                self.cached_obj = new_cached_obj
-                self.cached_obj.cache_attributes()
 
         # Escape
         elif (key in ("\x1b", "h") or key.code == self.term.KEY_LEFT) and self.stack:
-            frame: StackFrame = self.stack.pop()
-            self.cached_obj = frame.cached_obj
-            self.explorer_layout = frame.explorer_layout
-            self.overview_layout = frame.overview_layout
+            self.stack.pop()
+            self.cached_obj = self.stack[-1].cached_obj
+            self.explorer_layout = self.stack[-1].explorer_layout
+            self.overview_layout = self.stack[-1].overview_layout
 
         elif key == "g":
             self.explorer_layout.move_top()
@@ -179,8 +254,14 @@ class Explorer:
 
         # View ################################################################
 
+        if key == "o" and self.stack.visible:
+            self.stack.visible = False
+
+        elif key == "o" and not self.stack.visible:
+            self.stack.set_visible()
+
         # Switch between public and private attributes
-        if key in ("[", "]"):
+        elif key in ("[", "]"):
             if self.explorer_layout.state == ExplorerState.public:
                 self.explorer_layout.state = ExplorerState.private
 
@@ -272,15 +353,15 @@ class Explorer:
 
         layout.split_row(self.get_explorer_layout(), self.get_overview_layout())
 
-        title = self.highlighter(repr(self.cached_obj.obj))
-        title.overflow = "ellipsis"
+        title = self.cached_obj.repr
 
         object_explorer = Panel(
             layout,
             title=title,
             subtitle=(
-                "[red][u]q[/u]:quit[/red] [cyan][u]?[/u]:"
-                f"{'exit ' if self.help_layout.visible else ''}help[/]"
+                "[red][u]q[/u]:quit[/red] "
+                f"[cyan][u]?[/u]:{'exit ' if self.help_layout.visible else ''}help[/] "
+                "[white][dim][u]o[/u]:toggle stack view[/dim]"
             ),
             subtitle_align="left",
             height=self.term.height - 1,

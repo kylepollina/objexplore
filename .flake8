@@ -3,3 +3,4 @@
 ignore =
     E501,   # line too long
     W605,   # Invalid escape sequence
+    W503,   # Line break before binary operator

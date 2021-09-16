@@ -20,17 +20,23 @@ class CachedObject:
     def __init__(
         self,
         obj: Any,
-        dotpath: str,
+        dotpath: str = '',
+        attr_name=None,
     ):
         self.obj = obj
-        self.is_callable = callable(obj)
         self.dotpath = dotpath
+        self.attr_name = attr_name
+        self.is_callable = callable(obj)
         self.selected_cached_obj: CachedObject
 
         self.typeof: Text = highlighter(str(type(self.obj)))
         self.docstring: str = inspect.getdoc(self.obj) or "[magenta italic]None"
 
         self.plain_attrs = dir(self.obj)
+
+        self.repr = highlighter(repr(self.obj))
+        self.repr.overflow = "ellipsis"
+
 
         if "__weakref__" in self.plain_attrs:
             # Ignore weakrefs
@@ -55,7 +61,7 @@ class CachedObject:
         if not self.cached_attributes:
             for attr in self.plain_attrs:
                 self.cached_attributes[attr] = CachedObject(
-                    getattr(self.obj, attr), dotpath=f"{self.dotpath}.{attr}"
+                    getattr(self.obj, attr), dotpath=f"{self.dotpath}.{attr}", attr_name=attr
                 )
 
         # Set the default selected cached attribute
