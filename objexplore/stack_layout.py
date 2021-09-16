@@ -90,5 +90,4 @@ class StackLayout(Layout):
     def select(self):
         self.stack = self.stack[: self.index + 1]
         stack_frame = self.stack.pop()
-        self.visible = False
         return stack_frame.cached_obj
