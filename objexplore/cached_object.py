@@ -20,7 +20,7 @@ class CachedObject:
     def __init__(
         self,
         obj: Any,
-        dotpath: str = '',
+        dotpath: str = "",
         attr_name=None,
     ):
         self.obj = obj
@@ -36,7 +36,6 @@ class CachedObject:
 
         self.repr = highlighter(repr(self.obj))
         self.repr.overflow = "ellipsis"
-
 
         if "__weakref__" in self.plain_attrs:
             # Ignore weakrefs
@@ -61,7 +60,9 @@ class CachedObject:
         if not self.cached_attributes:
             for attr in self.plain_attrs:
                 self.cached_attributes[attr] = CachedObject(
-                    getattr(self.obj, attr), dotpath=f"{self.dotpath}.{attr}", attr_name=attr
+                    getattr(self.obj, attr),
+                    dotpath=f"{self.dotpath}.{attr}",
+                    attr_name=attr,
                 )
 
         # Set the default selected cached attribute
