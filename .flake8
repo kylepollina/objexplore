@@ -2,5 +2,7 @@
 [flake8]
 ignore =
     E501,   # line too long
+    E203,   # Whitepsace before ':'
     W605,   # Invalid escape sequence
     W503,   # Line break before binary operator
+
