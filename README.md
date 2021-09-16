@@ -32,3 +32,6 @@ explore(pandas)
 - Dictionary explorer TODO
 - List/Set explorer TODO
 - DataFrame explorer TODO
+
+## Contributing
+Contributions welcome!
