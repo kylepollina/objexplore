@@ -29,6 +29,7 @@ version = "0.9.3"
 @dataclass
 class StackFrame:
     """ Datastructure to store a frame in the object stack """
+
     cached_obj: CachedObject
     explorer_layout: ExplorerLayout
     overview_layout: OverviewLayout
@@ -102,7 +103,10 @@ class Explorer:
                     self.help_layout.state = HelpState.keybindings
                 return
 
-            elif key in ("j", "k") or key.code in (self.term.KEY_UP, self.term.KEY_DOWN):
+            elif key in ("j", "k") or key.code in (
+                self.term.KEY_UP,
+                self.term.KEY_DOWN,
+            ):
                 # Continue on and process these keys as normal
                 self.help_layout.visible = False
 
