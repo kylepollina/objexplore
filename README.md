@@ -3,6 +3,8 @@
 
 Objexplore is an interactive Python object explorer. Use it while debugging, or exploring a new library, or whatever!
 
+![cibuild](https://github.com/kylepollina/objexplore/actions/workflows/python-app.yml/badge.svg)
+
 ![screenshot](images/screenshot.png)
 
 
