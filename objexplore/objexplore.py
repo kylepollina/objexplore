@@ -34,6 +34,22 @@ class StackFrame:
     overview_layout: OverviewLayout
 
 
+class StackLayout(Layout):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.stack = List[StackFrame]
+
+    def append(self, stack_frame: StackFrame):
+        self.stack.append(stack_frame)
+
+    def pop(self) -> StackFrame:
+        return self.stack.pop()
+
+    def __call__(self) -> Layout:
+        self.update("hello world")
+        return self
+
+
 class Explorer:
     """ Explorer class used to interactively explore Python Objects """
 
@@ -44,7 +60,7 @@ class Explorer:
 
         # self.head_obj = cached_obj
         self.cached_obj: CachedObject = cached_obj
-        self.stack: List[StackFrame] = []
+        self.stack = StackLayout(visible=False)
         self.term = Terminal()
         self.console = Console()
         self.highlighter = ReprHighlighter()
@@ -114,6 +130,12 @@ class Explorer:
             return
 
         # Navigation ##########################################################
+
+        elif key == "o" and self.stack.visible:
+            self.stack.visible = False
+
+        elif key == "o" and not self.stack.visible:
+            self.stack.visible = True
 
         # move selected attribute down
         elif key == "j" or key.code == self.term.KEY_DOWN:
@@ -219,7 +241,15 @@ class Explorer:
             pass
 
     def get_explorer_layout(self) -> Layout:
-        return self.explorer_layout(self.cached_obj, term_width=self.term.width)
+        if self.stack.visible:
+            layout = Layout()
+            layout.split_column(
+                self.explorer_layout(self.cached_obj, term_width=self.term.width),
+                self.stack(),
+            )
+            return layout
+        else:
+            return self.explorer_layout(self.cached_obj, term_width=self.term.width)
 
     def get_overview_layout(self) -> Layout:
         if self.help_layout.visible:
@@ -255,8 +285,11 @@ class Explorer:
         rprint(object_explorer, end="")
 
     @property
-    def panel_height(self):
-        return self.term.height - 8
+    def panel_height(self) -> int:
+        if self.stack.visible:
+            return (self.term.height - 10) // 2
+        else:
+            return self.term.height - 6
 
 
 def explore(obj: Any) -> Any:
