@@ -59,6 +59,7 @@ class ExplorerLayout(Layout):
 
             title = "[i][cyan]dir[/cyan]()[/i] | [u]public[/u] [dim]private[/dim]"
             subtitle = (
+                "[dim][u][][/u]:switch pane [/dim]"
                 f"[white]([/white][magenta]{self.public_index + 1 if cached_obj.plain_public_attributes else 0}"
                 f"[/magenta][white]/[/white][magenta]{len(cached_obj.plain_public_attributes)}[/magenta][white])"
             )
@@ -79,6 +80,7 @@ class ExplorerLayout(Layout):
 
             title = "[i][cyan]dir[/cyan]()[/i] | [dim]public[/dim] [u]private[/u]"
             subtitle = (
+                "[dim][u][][/u]:switch pane [/dim]"
                 f"[white]([/white][magenta]{self.private_index + 1}"
                 f"[/magenta][white]/[/white][magenta]{len(cached_obj.plain_private_attributes)}[/magenta][white])"
             )
