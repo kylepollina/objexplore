@@ -1,7 +1,7 @@
 
 ![logo](images/logo.png)
 
-Objexplore is an interactive Python object explorer. Use it while debugging, or exploring a new library, or whatever!
+Objexplore is an interactive Python object explorer for the terminal. Use it while debugging, or exploring a new library, or whatever!
 
 ![cibuild](https://github.com/kylepollina/objexplore/actions/workflows/python-app.yml/badge.svg) ![pypi](https://img.shields.io/pypi/v/objexplore.svg)
 
