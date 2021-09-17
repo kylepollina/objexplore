@@ -8,7 +8,6 @@ from .cached_object import CachedObject
 class ExplorerState:
     public, private = 0, 1
 
-
 class ExplorerLayout(Layout):
     def __init__(self, cached_obj: CachedObject, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -25,6 +24,9 @@ class ExplorerLayout(Layout):
         else:  # ExplorerState.private
             attr = cached_obj.plain_private_attributes[self.private_index]
             return cached_obj[attr]
+
+    def dict_layout(self, cached_obj: CachedObject) -> Layout:
+        ...
 
     def update_selected_cached_object(self):
         if (
@@ -43,6 +45,9 @@ class ExplorerLayout(Layout):
             self.cached_obj.selected_cached_obj = self.cached_obj[attr]
 
     def __call__(self, cached_obj: CachedObject, term_width: int) -> Layout:
+        if type(cached_obj.obj) == dict:
+            return self.dict_layout(cached_obj)
+
         if self.state == ExplorerState.public:
             attribute_text = []
             for attr in cached_obj.plain_public_attributes[self.public_window :]:
