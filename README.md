@@ -28,10 +28,5 @@ import pandas
 explore(pandas)
 ```
 
-## Features
-- Dictionary explorer TODO
-- List/Set explorer TODO
-- DataFrame explorer TODO
-
 ## Contributing
 Contributions welcome!

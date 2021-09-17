@@ -20,7 +20,6 @@ version = "0.9.5"
 
 # TODO methods filter
 # or just a type filter?
-# TODO for list/set/dict/tuple do length in info panel
 # TODO empty overview layouts for when there are 0 public attributes
 
 
