@@ -28,4 +28,6 @@ from objexplore import explore
 import pandas
 explore(pandas)
 ```
-Contributions welcome!
+
+## Contributing
+Read [CONTRIBUTING.md](CONTRIBUTING.md)
