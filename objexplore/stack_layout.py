@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from rich.layout import Layout
 from rich.panel import Panel
+from rich.text import Text
 from rich.tree import Tree
 
 from .cached_object import CachedObject
@@ -33,6 +34,7 @@ class StackLayout(Layout):
     def pop(self) -> Optional[StackFrame]:
         if len(self.stack) > 1:
             return self.stack.pop()
+        return None
 
     def __getitem__(self, item):
         return self.stack[item]
@@ -41,8 +43,9 @@ class StackLayout(Layout):
         self.visible = True
         self.index = len(self.stack) - 1
 
-    def __call__(self) -> Layout:
-        stack_tree = None
+    def __call__(self, term_width: int) -> Layout:
+        panel_width = (term_width - 4) // 4 - 4
+        stack_tree: Tree
 
         for index, stack_frame in enumerate(self.stack):
             if index == self.index:
@@ -50,19 +53,27 @@ class StackLayout(Layout):
             else:
                 style = "none"
 
-            if not stack_tree:
+            if index == 0:
                 label = stack_frame.cached_obj.repr
                 label.style = style
-                stack_tree = Tree(label)
+                label.overflow = "ellipsis"
+                label.truncate(max_width=panel_width)
+                stack_tree = Tree(label, guide_style="white")
                 continue
 
+            label = (
+                Text(stack_frame.cached_obj.attr_name)
+                + Text(": ")
+                + stack_frame.cached_obj.typeof
+            )
+            label.overflow = "ellipsis"
+            label.truncate(max_width=panel_width - 4)
             stack_tree.add(
-                stack_frame.cached_obj.attr_name
-                + ": "
-                + str(stack_frame.cached_obj.typeof),
+                label,
                 style=style,
             )
 
+        self.size = len(self.stack) + 5
         self.update(
             Panel(
                 stack_tree,
@@ -87,7 +98,7 @@ class StackLayout(Layout):
             if self.index > self.window + panel_height:
                 self.window += 1
 
-    def select(self):
+    def select(self) -> CachedObject:
         self.stack = self.stack[: self.index + 1]
         stack_frame = self.stack.pop()
         return stack_frame.cached_obj

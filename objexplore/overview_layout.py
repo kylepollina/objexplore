@@ -38,7 +38,7 @@ class OverviewLayout(Layout):
             layout = Layout(ratio=3)
             layout.split_column(
                 Layout(self.get_value_panel(cached_obj, term_height), name="obj_value"),
-                Layout(self.get_type_panel(cached_obj), name="obj_type", size=3),
+                self.get_info_layout(cached_obj),
                 Layout(
                     self.get_docstring_panel(cached_obj, console),
                     name="obj_doc",
@@ -49,7 +49,7 @@ class OverviewLayout(Layout):
     def get_value_panel(self, cached_obj: CachedObject, term_height: int):
         if cached_obj.is_callable:
             if self.preview_state == PreviewState.repr:
-                title = "[i]preview[/i] | [u][cyan]repr[/cyan]()[/u] [dim]source"
+                title = "[i]preview[/i] | [i][cyan]repr[/cyan]()[/i] [dim]source"
                 renderable = cached_obj.obj
 
                 if self.state == OverviewState.all:
@@ -62,7 +62,7 @@ class OverviewLayout(Layout):
                     )
 
             elif self.preview_state == PreviewState.source:
-                title = "[i]preview[/i] | [dim][cyan]repr[/cyan]()[/dim] [u]source[/u]"
+                title = "[i]preview[/i] | [dim][i][cyan]repr[/cyan]()[/i][/dim] [u]source[/u]"
                 renderable = cached_obj.get_source(term_height)
             else:
                 pass
@@ -70,7 +70,7 @@ class OverviewLayout(Layout):
             subtitle = "[dim][u]p[/u]:toggle [u]f[/u]:fullscreen [u]{}[/u]:switch pane"
 
         else:
-            title = "[i]preview[/i] | [u][cyan]repr[/cyan]()[/u]"
+            title = "[i]preview[/i] | [i][cyan]repr[/cyan]()[/i]"
             subtitle = "[dim][u]p[/u]:toggle [u]f[/u]:fullscreen"
             renderable = cached_obj.obj
 
@@ -90,12 +90,34 @@ class OverviewLayout(Layout):
             style="white",
         )
 
+    def get_info_layout(self, cached_obj: CachedObject):
+        if cached_obj.length:
+            layout = Layout(size=3)
+            layout.split_row(
+                Layout(self.get_type_panel(cached_obj)),
+                Layout(
+                    Panel(
+                        cached_obj.length,
+                        title="[i][cyan]len[/cyan]()[/i]",
+                        title_align="left",
+                        style="white",
+                    )
+                ),
+            )
+            return layout
+
+        else:
+            return self.get_type_panel(cached_obj)
+
     def get_type_panel(self, cached_obj: CachedObject):
-        return Panel(
-            cached_obj.typeof,
-            title="[i]info[/i] | [u][cyan]type[/cyan]()[/u]",
-            title_align="left",
-            style="white",
+        return Layout(
+            Panel(
+                cached_obj.typeof,
+                title="[i][cyan]type[/cyan]()[/i]",
+                title_align="left",
+                style="white",
+            ),
+            size=3,
         )
 
     def get_docstring_panel(

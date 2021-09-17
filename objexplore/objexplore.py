@@ -1,6 +1,6 @@
 import pydoc
 import signal
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import blessed
 from blessed import Terminal
@@ -8,6 +8,7 @@ from rich import print as rprint
 from rich.console import Console
 from rich.layout import Layout
 from rich.panel import Panel
+from rich.syntax import Syntax
 
 from .cached_object import CachedObject
 from .explorer_layout import ExplorerLayout, ExplorerState
@@ -66,7 +67,7 @@ class Explorer:
                 key = self.term.inkey()
                 res = self.process_key_event(key)
 
-                # If the object is returned as a response the close the explorer and return the selected object
+                # If the object is returned as a response then close the explorer and return the selected object
                 if res:
                     break
         return res
@@ -74,11 +75,15 @@ class Explorer:
     def process_key_event(self, key: blessed.keyboard.Keystroke) -> Any:
         """ Process the incoming key """
 
+        if key == "b":
+            breakpoint()
+            pass
+
         # Help page ###########################################################
 
         if self.help_layout.visible:
             # Close help page
-            if key in ("?", "\x1b"):
+            if key == "?" or key.code == self.term.KEY_ESCAPE:
                 self.help_layout.visible = False
                 return
 
@@ -114,6 +119,7 @@ class Explorer:
 
         # Navigation ##########################################################
 
+        # if the stack view is open, only accept inputs to move around/close thes tack view
         if self.stack.visible and (
             key not in ("o", "j", "k", "\n")
             and key.code
@@ -121,14 +127,12 @@ class Explorer:
         ):
             return
 
-        # move selected attribute up
         elif key == "k" or key.code == self.term.KEY_UP:
             if self.stack.visible:
                 self.stack.move_up()
             else:
                 self.explorer_layout.move_up()
 
-        # move selected attribute down
         elif key == "j" or key.code == self.term.KEY_DOWN:
             if self.stack.visible:
                 self.stack.move_down(self.panel_height)
@@ -210,6 +214,8 @@ class Explorer:
 
         # Fullscreen
         elif key == "f":
+            printable: Union[str, Syntax]
+
             if self.overview_layout.state == OverviewState.docstring:
                 printable = self.cached_obj.selected_cached_obj.docstring
 
@@ -236,16 +242,12 @@ class Explorer:
         elif key == "r":
             return self.cached_obj.selected_cached_obj.obj
 
-        elif key == "b":
-            breakpoint()
-            pass
-
     def get_explorer_layout(self) -> Layout:
         if self.stack.visible:
             layout = Layout()
             layout.split_column(
                 self.explorer_layout(self.cached_obj, term_width=self.term.width),
-                self.stack(),
+                self.stack(term_width=self.term.width),
             )
             return layout
         else:

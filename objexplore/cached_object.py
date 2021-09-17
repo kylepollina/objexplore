@@ -1,11 +1,10 @@
 import inspect
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
 from rich.syntax import Syntax
 from rich.text import Text
-
 
 highlighter = ReprHighlighter()
 
@@ -47,6 +46,16 @@ class CachedObject:
         self.plain_private_attributes = sorted(
             attr for attr in self.plain_attrs if attr.startswith("_")
         )
+        self.public_attribute_width = (
+            max(map(len, self.plain_public_attributes))
+            if self.plain_public_attributes
+            else 0
+        )
+        self.private_attribute_width = (
+            max(map(len, self.plain_private_attributes))
+            if self.plain_private_attributes
+            else 0
+        )
         # Key:val pair of attribute name and the cached object associated with it
         self.cached_attributes: Dict[str, CachedObject] = {}
 
@@ -54,6 +63,13 @@ class CachedObject:
             self._source = inspect.getsource(self.obj)
         except Exception:
             self._source = ""
+
+        self.length: Optional[str]
+
+        try:
+            self.length = str(len(self.obj))
+        except TypeError:
+            self.length = None
 
     def cache_attributes(self):
         """ Create a CachedObject for each attribute of the self.obj """
@@ -99,7 +115,3 @@ class CachedObject:
                 line_range=(0, term_height),
                 background_color="default",
             )
-
-    @property
-    def display_name(self) -> str:
-        return f"{self.parent_name}.{self.name}" if self.name else repr(self.obj)

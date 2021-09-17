@@ -49,6 +49,7 @@ class HelpLayout(Layout):
                       { } - [cyan]switch pane[/cyan]
                         p - [cyan]toggle full preview[/cyan]
                         d - [cyan]toggle full docstring[/cyan]
+                        o - [cyan]toggle stack view[/cyan]
                         f - [cyan]open fullscreen view[/cyan]
                         H - [cyan]open help page on selected attribute[/cyan]
                         r - [cyan]return the selected object[/cyan]
