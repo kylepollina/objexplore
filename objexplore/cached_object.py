@@ -20,7 +20,7 @@ class CachedObject:
         self,
         obj: Any,
         dotpath: str = "",
-        attr_name=None,
+        attr_name: str = None,
     ):
         self.obj = obj
         self.dotpath = dotpath
@@ -35,6 +35,7 @@ class CachedObject:
 
         self.repr = highlighter(repr(self.obj))
         self.repr.overflow = "ellipsis"
+        self._repr_str = repr(self.obj)
 
         if "__weakref__" in self.plain_attrs:
             # Ignore weakrefs
@@ -68,12 +69,23 @@ class CachedObject:
 
         self.private_lines: List[Text] = []
         for plain_attr in self.plain_private_attributes:
-            attr = getattr(self.obj, plain_attr)
-            if callable(attr) or attr is None:
+            try:
+                attr = getattr(self.obj, plain_attr)
+            except AttributeError:
+                # There is a possibility that an attribute returned by dir() will not be accessable via getattr
+                # ex:
+                # >>> dir(type)[0]
+                # '__abstractmethods__'
+                # >>> getattr(type, dir(type)[0])
+                # Traceback (most recent call last):
+                #   File "<stdin>", line 1, in <module>
+                # AttributeError: __abstractmethods__
                 self.private_lines.append(Text(plain_attr, style="dim white italic"))
             else:
-                self.private_lines.append(Text(plain_attr, style="white"))
-            self.private_lines.append(Text(plain_attr, style="dim white italic"))
+                if callable(attr) or attr is None:
+                    self.private_lines.append(Text(plain_attr, style="dim white italic"))
+                else:
+                    self.private_lines.append(Text(plain_attr, style="white"))
 
         # Key:val pair of attribute name and the cached object associated with it
         self.cached_attributes: Dict[str, CachedObject] = {}
@@ -96,15 +108,26 @@ class CachedObject:
                 if type(key) is str:
                     repr_key = highlighter(f'"{key}"')
                 else:
-                    repr_key = highlighter(key)
+                    repr_key = highlighter(str(type(key)))
                 repr_val = highlighter(str(type(val)))
 
                 if callable(val):
-                    repr_val.style = "dim"
+                    repr_val.style = "dim italic"
 
                 line = Text('  ') + repr_key + Text(': ') + repr_val
                 line.overflow = "ellipsis"
                 self.repr_dict_lines.append(line)
+
+            self.num_keys = len(self.obj.keys())
+
+    @property
+    def title(self):
+        return "hello"
+        # for cases when the object is a huge dictionary we shouldnt try to render the whole dict
+        if len(self._repr_str) > console.width - 4:
+            return Text(self.attr_name + ' ') + self.typeof
+        else:
+            return self.repr
 
     def cache_attributes(self):
         """ Create a CachedObject for each attribute of the self.obj """

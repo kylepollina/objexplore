@@ -43,7 +43,7 @@ class Explorer:
         self.stack = StackLayout(head_obj=self.cached_obj, visible=False)
         self.help_layout = HelpLayout(version, visible=False, ratio=3)
         self.explorer_layout = ExplorerLayout(cached_obj=cached_obj)
-        self.overview_layout = OverviewLayout()
+        self.overview_layout = OverviewLayout(ratio=3)
 
         self.stack.append(
             StackFrame(
@@ -67,13 +67,22 @@ class Explorer:
 
         with self.term.cbreak(), self.term.hidden_cursor():
             while key not in ("q", "Q"):
-                self.draw()
-                key = self.term.inkey()
-                res = self.process_key_event(key)
+                try:
+                    self.draw()
+                    key = self.term.inkey()
+                    res = self.process_key_event(key)
 
-                # If the object is returned as a response then close the explorer and return the selected object
-                if res:
-                    break
+                    # If the object is returned as a response then close the explorer and return the selected object
+                    if res:
+                        break
+
+                except RuntimeError as err:
+                    # Some kind of error during resizing events. Ignore and continue
+                    if err.args[0] == "reentrant call inside <_io.BufferedWriter name='<stdout>'>":
+                        pass
+                    # Otherwise it is a new error. Raise
+                    else:
+                        raise err
         return res
 
     def process_key_event(self, key: blessed.keyboard.Keystroke) -> Any:
@@ -251,12 +260,12 @@ class Explorer:
         if self.stack.visible:
             layout = Layout()
             layout.split_column(
-                self.explorer_layout(self.cached_obj, term_width=self.term.width),
+                self.explorer_layout(term_width=self.term.width, term_height=self.term.height),
                 self.stack(term_width=self.term.width),
             )
             return layout
         else:
-            return self.explorer_layout(self.cached_obj, term_width=self.term.width)
+            return self.explorer_layout(term_width=self.term.width, term_height=self.term.height)
 
     def get_overview_layout(self) -> Layout:
         if self.help_layout.visible:
@@ -275,7 +284,7 @@ class Explorer:
 
         layout.split_row(self.get_explorer_layout(), self.get_overview_layout())
 
-        title = self.cached_obj.repr
+        title = self.cached_obj.title
 
         object_explorer = Panel(
             layout,
@@ -293,6 +302,7 @@ class Explorer:
 
     @property
     def panel_height(self) -> int:
+        # TODO this shouldn't be here
         if self.stack.visible:
             return (self.term.height - 10) // 2
         else:
@@ -303,12 +313,12 @@ def explore(obj: Any) -> Any:
     """ Run the explorer on the given object """
     try:
         e = Explorer(obj)
-        e.explore()
+        return e.explore()
     except Exception as e:
         console.print_exception(show_locals=True)
         print()
         rprint(f"[red]{random_error_quote()}")
         formatted_link = f"https://github.com/kylepollina/objexplore/issues/new?assignees=&labels=&template=bug_report.md&title={e}".replace(" ", "+")
-        print("Please report an issue here:")
+        print("Please report the issue here:")
         rprint(f"   [link={formatted_link}][u]{formatted_link}[/u][/link]")
         rprint("[yellow italic]Make sure to copy/paste the above traceback to the issue to make the issue quicker to solve!")

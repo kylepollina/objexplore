@@ -5,10 +5,14 @@ from collections import namedtuple
 
 from .cached_object import CachedObject
 from rich.highlighter import ReprHighlighter
+from rich.console import Console
+
+console = Console()
 
 ExplorerState = namedtuple('ExplorerState', ['public', 'private', 'dict'])
 
 highlighter = ReprHighlighter()
+
 
 class ExplorerLayout(Layout):
     def __init__(self, cached_obj: CachedObject, *args, **kwargs):
@@ -53,10 +57,31 @@ class ExplorerLayout(Layout):
             key = list(self.cached_obj.obj.keys())[self.dict_index]
             self.cached_obj.selected_cached_obj = CachedObject(self.cached_obj.obj[key], attr_name=key)
 
-    def dict_layout(self, cached_obj: CachedObject, term_width: int) -> Layout:
-        lines = [Text('{', style="none")]
-        panel_width = (term_width - 4) // 4 - 4
-        for index, line in enumerate(cached_obj.repr_dict_lines):
+    @staticmethod
+    def get_panel_width(term_width: int) -> int:
+        return (term_width - 4) // 4 - 4
+
+    def dict_layout(self, term_width: int, term_height: int) -> Layout:
+        """ Return the dictionary explorer layout """
+        panel_width = self.get_panel_width(term_width)
+        panel_height = term_height - 5
+        lines = []
+
+        if self.dict_window == 0:
+            lines.append(Text("{"))
+            start = 0
+            num_lines = panel_height - 1
+        elif self.dict_window == 1:
+            start = 0
+            num_lines = panel_height
+        else:
+            start = self.dict_window - 1
+            num_lines = panel_height
+
+        end = start + num_lines
+        index = start
+
+        for line in self.cached_obj.repr_dict_lines[start:end]:
             new_line = line.copy()
 
             if index == self.dict_index:
@@ -64,29 +89,36 @@ class ExplorerLayout(Layout):
 
             new_line.truncate(panel_width)
             lines.append(new_line)
+            index += 1
 
-        lines.append(Text('}'))
+        # Always add the } to the end, if it is out of view it won't be printed anyways
+        lines.append(Text("}"))
 
-        text = Text('\n').join(lines[self.dict_window:])
+        text = Text('\n').join(lines)
 
-        return Layout(
+        self.update(
             Panel(
                 text,
-                style="white"
+                title="dict()",
+                title_align="right",
+                subtitle=f"([magenta]{self.dict_index + 1}[/magenta]/[magenta]{self.cached_obj.num_keys}[/magenta])",
+                subtitle_align="right",
+                style="white",
             )
         )
+        return self
 
-    def __call__(self, cached_obj: CachedObject, term_width: int) -> Layout:
+    def __call__(self, term_width: int, term_height: int) -> Layout:
         """ Return the layout of the object explorer. This will be a list of lines representing the object attributes/keys/vals we are exploring """
         # TODO use [] to switch between public/private/dict layout?
 
         if self.state == ExplorerState.dict:
-            return self.dict_layout(cached_obj, term_width)
+            return self.dict_layout(term_width, term_height)
 
         lines = []
 
         if self.state == ExplorerState.public:
-            for index, line in enumerate(cached_obj.public_lines):
+            for index, line in enumerate(self.cached_obj.public_lines):
                 _line = line.copy()
                 if index == self.public_index:
                     _line.style += " reverse"
@@ -95,13 +127,12 @@ class ExplorerLayout(Layout):
             title = "[i][cyan]dir[/cyan]()[/i] | [u]public[/u] [dim]private[/dim]"
             subtitle = (
                 "[dim][u][][/u]:switch pane [/dim]"
-                f"[white]([/white][magenta]{self.public_index + 1 if cached_obj.plain_public_attributes else 0}"
-                f"[/magenta][white]/[/white][magenta]{len(cached_obj.plain_public_attributes)}[/magenta][white])"
+                f"[white]([/white][magenta]{self.public_index + 1 if self.cached_obj.plain_public_attributes else 0}"
+                f"[/magenta][white]/[/white][magenta]{len(self.cached_obj.plain_public_attributes)}[/magenta][white])"
             )
 
-
         elif self.state == ExplorerState.private:
-            for index, line in enumerate(cached_obj.private_lines):
+            for index, line in enumerate(self.cached_obj.private_lines):
                 _line = line.copy()
                 if index == self.private_index:
                     _line.style += " reverse"
@@ -111,7 +142,7 @@ class ExplorerLayout(Layout):
             subtitle = (
                 "[dim][u][][/u]:switch pane [/dim]"
                 f"[white]([/white][magenta]{self.private_index + 1}"
-                f"[/magenta][white]/[/white][magenta]{len(cached_obj.plain_private_attributes)}[/magenta][white])"
+                f"[/magenta][white]/[/white][magenta]{len(self.cached_obj.plain_private_attributes)}[/magenta][white])"
             )
 
         renderable = Text('\n').join(lines[self.public_window:])

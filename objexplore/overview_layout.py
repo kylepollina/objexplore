@@ -21,18 +21,19 @@ class OverviewLayout(Layout):
 
     def __call__(self, cached_obj: CachedObject, term_height: int, console) -> Layout:
         if self.state == OverviewState.docstring:
-            return Layout(
+            self.update(
                 self.get_docstring_panel(
                     cached_obj=cached_obj,
                     console=console,
                     term_height=term_height,
                     fullscreen=True,
-                ),
-                ratio=3,
+                )
             )
+            return self
 
         elif self.state == OverviewState.value:
-            return Layout(self.get_value_panel(cached_obj, term_height), ratio=3)
+            self.update(self.get_value_panel(cached_obj, term_height))
+            return self
 
         else:
             layout = Layout(ratio=3)
