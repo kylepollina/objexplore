@@ -18,9 +18,11 @@ from .stack_layout import StackFrame, StackLayout
 
 version = "1.0"
 
+# TODO fix explore(namedtuple)
 # TODO methods filter
 # or just a type filter?
 # TODO empty overview layouts for when there are 0 public attributes
+# TODO search filter
 
 
 class Explorer:

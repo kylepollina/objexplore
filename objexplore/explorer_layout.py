@@ -1,20 +1,24 @@
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.text import Text
+from collections import namedtuple
 
 from .cached_object import CachedObject
 
+ExplorerState = namedtuple('ExplorerState', ['public', 'private', 'dict'])
 
-class ExplorerState:
-    public, private = 0, 1
 
 class ExplorerLayout(Layout):
     def __init__(self, cached_obj: CachedObject, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cached_obj = cached_obj
-        self.state = ExplorerState.public
+        if type(cached_obj.obj) == dict:
+            self.state = ExplorerState.dict
+        else:
+            self.state = ExplorerState.public
         self.public_index = self.private_index = 0
         self.public_window = self.private_window = 0
+        self.dict_index = self.dict_window = 0
 
     def selected_cached_object(self, cached_obj) -> CachedObject:
         if self.state == ExplorerState.public:
@@ -24,9 +28,6 @@ class ExplorerLayout(Layout):
         else:  # ExplorerState.private
             attr = cached_obj.plain_private_attributes[self.private_index]
             return cached_obj[attr]
-
-    def dict_layout(self, cached_obj: CachedObject) -> Layout:
-        ...
 
     def update_selected_cached_object(self):
         if (
@@ -44,8 +45,29 @@ class ExplorerLayout(Layout):
             attr = self.cached_obj.plain_private_attributes[self.private_index]
             self.cached_obj.selected_cached_obj = self.cached_obj[attr]
 
+    def dict_layout(self, cached_obj: CachedObject) -> Layout:
+        lines = [Text('{')]
+        for index, key in enumerate(cached_obj.obj.keys()):
+            if index == self.dict_index:
+                style = "reverse"
+            else:
+                style = "none"
+
+            lines.append(Text(f'  {key}', style=style))
+
+        lines.append(Text('}'))
+
+        text = Text('\n').join(lines[self.dict_window:])
+
+        return Layout(
+            Panel(
+                text,
+                style="white"
+            )
+        )
+
     def __call__(self, cached_obj: CachedObject, term_width: int) -> Layout:
-        if type(cached_obj.obj) == dict:
+        if self.state == ExplorerState.dict:
             return self.dict_layout(cached_obj)
 
         if self.state == ExplorerState.public:
@@ -123,6 +145,15 @@ class ExplorerLayout(Layout):
                 self.private_index -= 1
                 if self.private_index < self.private_window:
                     self.private_window -= 1
+
+        elif self.state == ExplorerState.dict:
+            if self.dict_index > 0:
+                self.dict_index -= 1
+                if self.dict_index < self.dict_window - 1:
+                    self.dict_window -= 1
+            elif self.dict_window == 1:
+                self.dict_window -= 1
+
         self.update_selected_cached_object()
 
     def move_down(self, panel_height: int, cached_obj: CachedObject):
@@ -138,6 +169,15 @@ class ExplorerLayout(Layout):
                 self.private_index += 1
                 if self.private_index > self.private_window + panel_height:
                     self.private_window += 1
+
+        elif self.state == ExplorerState.dict:
+            if self.dict_index < len(cached_obj.obj.keys()) - 1:
+                self.dict_index += 1
+                if self.dict_index > self.dict_window + panel_height - 1:
+                    self.dict_window += 1
+            elif self.dict_window == len(cached_obj.obj.keys()) - panel_height:
+                self.dict_window += 1
+
         self.update_selected_cached_object()
 
     def move_top(self):
@@ -148,6 +188,10 @@ class ExplorerLayout(Layout):
         elif self.state == ExplorerState.private:
             self.private_index = 0
             self.private_window = 0
+
+        elif self.state == ExplorerState.dict:
+            self.dict_index = self.dict_window = 0
+
         self.update_selected_cached_object()
 
     def move_bottom(self, panel_height: int, cached_obj: CachedObject):
@@ -158,4 +202,9 @@ class ExplorerLayout(Layout):
         elif self.state == ExplorerState.private:
             self.private_index = len(cached_obj.plain_private_attributes) - 1
             self.private_window = max(0, self.private_index - panel_height)
+
+        elif self.state == ExplorerState.dict:
+            self.dict_index = len(cached_obj.obj.keys()) - 1
+            self.dict_window = max(0, self.dict_index - panel_height + 2)
+
         self.update_selected_cached_object()
