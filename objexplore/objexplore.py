@@ -164,7 +164,9 @@ class Explorer:
             else:
                 new_cached_obj = self.cached_obj.selected_cached_obj
 
-            if new_cached_obj.obj is not None and not callable(new_cached_obj.obj):
+            if new_cached_obj.obj not in (None, [], {}, (), set()) and not callable(
+                new_cached_obj.obj
+            ):
                 self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
                 self.cached_obj = new_cached_obj
                 self.cached_obj.cache_attributes()
