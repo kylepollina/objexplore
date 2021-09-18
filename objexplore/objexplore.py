@@ -4,7 +4,7 @@ from typing import Any, Optional, Union
 
 import blessed
 from blessed import Terminal
-from rich import print as rprint
+import rich
 from rich.console import Console
 from rich.layout import Layout
 from rich.panel import Panel
@@ -256,6 +256,18 @@ class Explorer:
         elif key == "H":
             help(self.cached_obj.selected_cached_obj.obj)
 
+        elif key == "i":
+            with console.capture() as capture:
+                rich.inspect(self.cached_obj.selected_cached_obj.obj, console=console, methods=True)
+            str_out = capture.get()
+            pydoc.pager(str_out)
+
+        elif key == "I":
+            with console.capture() as capture:
+                rich.inspect(self.cached_obj.selected_cached_obj.obj, console=console, all=True)
+            str_out = capture.get()
+            pydoc.pager(str_out)
+
         # Other ################################################################
 
         # Return selected object
@@ -308,7 +320,7 @@ class Explorer:
             height=self.term.height - 1,
             style="blue",
         )
-        rprint(object_explorer, end="")
+        rich.print(object_explorer, end="")
 
     @property
     def panel_height(self) -> int:
@@ -327,12 +339,12 @@ def explore(obj: Any) -> Any:
     except Exception as e:
         console.print_exception(show_locals=True)
         print()
-        rprint(f"[red]{random_error_quote()}")
+        rich.print(f"[red]{random_error_quote()}")
         formatted_link = f"https://github.com/kylepollina/objexplore/issues/new?assignees=&labels=&template=bug_report.md&title={e}".replace(
             " ", "+"
         )
         print("Please report the issue here:")
-        rprint(f"   [link={formatted_link}][u]{formatted_link}[/u][/link]")
-        rprint(
+        rich.print(f"   [link={formatted_link}][u]{formatted_link}[/u][/link]")
+        rich.print(
             "[yellow italic]Make sure to copy/paste the above traceback to the issue to make the issue quicker to solve!"
         )
