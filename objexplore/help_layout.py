@@ -52,6 +52,8 @@ class HelpLayout(Layout):
                         o - [cyan]toggle stack view[/cyan]
                         f - [cyan]open fullscreen view[/cyan]
                         H - [cyan]open help page on selected attribute[/cyan]
+                        i - [cyan]run [magenta]rich[/magenta][white].[/white][magenta]inspect[/magenta][white](<[/white][bright_magenta]OBJECT[/bright_magenta]>, [yellow]methods[/yellow]=[italic bright_green]True[/italic bright_green][white])[/white][/cyan]
+                        I - [cyan]run [magenta]rich[/magenta][white].[/white][magenta]inspect[/magenta][white](<[/white][bright_magenta]OBJECT[/bright_magenta]>, [yellow]all[/yellow]=[italic bright_green]True[/italic bright_green][white])[/white][/cyan]
                         r - [cyan]return the selected object[/cyan]
                         ? - [cyan]toggle help page[/cyan]
                       q Q - [cyan]quit[/cyan]
