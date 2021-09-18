@@ -1,8 +1,14 @@
+
 from typing import Optional
+
+from rich.layout import Layout
+from rich.style import Style
 from rich.panel import Panel
 from rich.pretty import Pretty
-from rich.layout import Layout
+from rich.text import Text
+
 from .cached_object import CachedObject
+from .utils import is_selectable
 
 
 class OverviewState:
@@ -20,11 +26,13 @@ class OverviewLayout(Layout):
         self.preview_state = PreviewState.repr
 
     def __call__(self, cached_obj: CachedObject, term_height: int, console) -> Layout:
+        """
+        :param cached_obj: The selected cached object given by the explorer layout
+        """
         if self.state == OverviewState.docstring:
             self.update(
                 self.get_docstring_panel(
                     cached_obj=cached_obj,
-                    console=console,
                     term_height=term_height,
                     fullscreen=True,
                 )
@@ -41,55 +49,58 @@ class OverviewLayout(Layout):
                 Layout(self.get_value_panel(cached_obj, term_height), name="obj_value"),
                 self.get_info_layout(cached_obj),
                 Layout(
-                    self.get_docstring_panel(cached_obj, console),
+                    self.get_docstring_panel(cached_obj=cached_obj),
                     name="obj_doc",
                 ),
             )
             return layout
 
     def get_value_panel(self, cached_obj: CachedObject, term_height: int):
-        if cached_obj.is_callable:
-            if self.preview_state == PreviewState.repr:
-                title = "[i]preview[/i] | [i][cyan]repr[/cyan]()[/i] [dim]source"
-                renderable = cached_obj.obj
-
-                if self.state == OverviewState.all:
-                    renderable = Pretty(
-                        renderable, max_length=(max((term_height - 6) // 2 - 7, 1))
-                    )
-                else:
-                    renderable = Pretty(
-                        renderable, max_length=(max(term_height - 9, 1))
-                    )
-
-            elif self.preview_state == PreviewState.source:
-                title = "[i]preview[/i] | [dim][i][cyan]repr[/cyan]()[/i][/dim] [u]source[/u]"
-                renderable = cached_obj.get_source(term_height)
-            else:
-                pass
-
-            subtitle = "[dim][u]p[/u]:toggle [u]f[/u]:fullscreen [u]{}[/u]:switch pane"
-
-        else:
+        if is_selectable(cached_obj):
             title = "[i]preview[/i] | [i][cyan]repr[/cyan]()[/i]"
-            subtitle = "[dim][u]p[/u]:toggle [u]f[/u]:fullscreen"
-            renderable = cached_obj.obj
+            subtitle = "[dim][u]p[/u]:toggle [u]f[/u]:fullscreen [u]{}[/u]:switch pane"
+            renderable = cached_obj.pretty
 
             if self.state == OverviewState.all:
-                renderable = Pretty(
-                    renderable, max_length=(max((term_height - 6) // 2 - 7, 1))
-                )
+                renderable.max_length = (max((term_height - 6) // 2 - 7, 1))
             else:
-                renderable = Pretty(renderable, max_length=(max(term_height - 9, 1)))
+                renderable.max_length = (max(term_height - 9, 1))
 
-        return Panel(
-            renderable,
-            title=title,
-            title_align="left",
-            subtitle=subtitle,
-            subtitle_align="left",
-            style="white",
-        )
+            return Panel(
+                renderable,
+                title=title,
+                title_align="left",
+                subtitle=subtitle,
+                subtitle_align="left",
+                style=Style(color="white")
+            )
+
+        else:
+            title = "[i]preview[/i] | [i][cyan]repr[/cyan]()[/i] [dim]source"
+            subtitle = "[dim][u]p[/u]:toggle [u]f[/u]:fullscreen [u]{}[/u]:switch pane"
+            renderable = cached_obj.pretty
+
+            if self.state == OverviewState.all:
+                renderable.max_length = (max((term_height - 6) // 2 - 7, 1))
+            else:
+                renderable.max_length = (max(term_height - 9, 1))
+
+
+        #     if self.state == OverviewState.all:
+        #         renderable = Pretty(
+        #             renderable, max_length=(max((term_height - 6) // 2 - 7, 1))
+        #         )
+        #     else:
+        #         renderable = Pretty(renderable, max_length=(max(term_height - 9, 1)))
+
+        # return Panel(
+        #     renderable,
+        #     title=title,
+        #     title_align="left",
+        #     subtitle=subtitle,
+        #     subtitle_align="left",
+        #     style="white",
+        # )
 
     def get_info_layout(self, cached_obj: CachedObject):
         if cached_obj.length:
@@ -124,16 +135,12 @@ class OverviewLayout(Layout):
     def get_docstring_panel(
         self,
         cached_obj: CachedObject,
-        console,
         term_height: Optional[int] = None,
         fullscreen: bool = False,
     ) -> Panel:
         """ Build the docstring panel """
-        # TODO improve docstring rendering speed, appears to be a bottleneck
         title = "[i]docstring"
-        docstring = console.render_str(
-            "\n".join(cached_obj.docstring.splitlines()[:term_height])
-        )
+        docstring = Text("\n").join(cached_obj.docstring.split("\n")[:term_height])
         if fullscreen:
             return Panel(
                 docstring,

@@ -1,6 +1,8 @@
 import pydoc
 import signal
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, List
+from rich.text import Text
+from rich.style import Style
 
 import blessed
 from blessed import Terminal
@@ -16,6 +18,7 @@ from .explorer_layout import ExplorerLayout, ExplorerState
 from .help_layout import HelpLayout, HelpState, random_error_quote
 from .overview_layout import OverviewLayout, OverviewState, PreviewState
 from .stack_layout import StackFrame, StackLayout
+from .filter_layout import FilterLayout
 
 version = "1.2.5"
 
@@ -28,9 +31,6 @@ version = "1.2.5"
 
 console = Console()
 
-class FilterLayout(Layout):
-    def __init__(self, *args, **kwargs):
-        ...
 
 class Explorer:
     """ Explorer class used to interactively explore Python Objects """
@@ -38,7 +38,7 @@ class Explorer:
     def __init__(self, obj: Any):
         cached_obj = CachedObject(obj, dotpath=repr(obj))
         # Figure out all the attributes of the current obj's attributes
-        cached_obj.cache_attributes()
+        cached_obj.cache()
 
         # self.head_obj = cached_obj
         self.cached_obj: CachedObject = cached_obj
@@ -47,7 +47,7 @@ class Explorer:
         self.help_layout = HelpLayout(version, visible=False, ratio=3)
         self.explorer_layout = ExplorerLayout(cached_obj=cached_obj)
         self.overview_layout = OverviewLayout(ratio=3)
-        self.filter_layout = FilterLayout()
+        self.filter_layout = FilterLayout(cached_obj=self.cached_obj, visible=False)
 
         self.stack.append(
             StackFrame(
@@ -97,7 +97,7 @@ class Explorer:
 
         if key == "b":
             breakpoint()
-            pass
+            return
 
         # Help page ###########################################################
 
@@ -139,9 +139,17 @@ class Explorer:
 
         # Navigation ##########################################################
 
-        # if the stack view is open, only accept inputs to move around/close thes tack view
+        # if the stack view is open, only accept inputs to move around/close the stack view
         if self.stack.visible and (
             key not in ("o", "j", "k", "\n")
+            and key.code
+            not in (self.term.KEY_UP, self.term.KEY_DOWN, self.term.KEY_RIGHT)
+        ):
+            return
+
+        # if the filter view is open, only accept inputs to move around/close the filter view
+        if self.filter_layout.visible and (
+            key not in ("n", "j", "k", "\n", " ")
             and key.code
             not in (self.term.KEY_UP, self.term.KEY_DOWN, self.term.KEY_RIGHT)
         ):
@@ -150,27 +158,33 @@ class Explorer:
         elif key == "k" or key.code == self.term.KEY_UP:
             if self.stack.visible:
                 self.stack.move_up()
+            elif self.filter_layout.visible:
+                self.filter_layout.move_up()
             else:
                 self.explorer_layout.move_up()
 
         elif key == "j" or key.code == self.term.KEY_DOWN:
             if self.stack.visible:
                 self.stack.move_down(self.panel_height)
+            elif self.filter_layout.visible:
+                self.filter_layout.move_down()
             else:
                 self.explorer_layout.move_down(self.panel_height, self.cached_obj)
 
-        # Enter
+        elif key in ("\n", " ") and self.filter_layout.visible:
+            self.filter_layout.toggle()
+
         elif key in ("\n", "l") or key.code == self.term.KEY_RIGHT:
 
             if self.stack.visible:
                 new_cached_obj = self.stack.select()
             else:
-                new_cached_obj = self.cached_obj.selected_cached_obj
+                new_cached_obj = self.explorer_layout.selected_object
 
             if is_selectable(new_cached_obj.obj):
                 self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
                 self.cached_obj = new_cached_obj
-                self.cached_obj.cache_attributes()
+                self.cached_obj.cache()
                 self.stack.append(
                     StackFrame(
                         cached_obj=self.cached_obj,
@@ -289,14 +303,23 @@ class Explorer:
             layout = Layout()
             layout.split_column(
                 self.explorer_layout(
-                    term_width=self.term.width, term_height=self.term.height
+                    term_width=self.term.width, term_height=self.term.height,
                 ),
                 self.stack(term_width=self.term.width),
             )
             return layout
+        elif self.filter_layout.visible:
+            layout = Layout()
+            layout.split_column(
+                self.explorer_layout(
+                    term_width=self.term.width, term_height=self.term.height,
+                ),
+                self.filter_layout()
+            )
+            return layout
         else:
             return self.explorer_layout(
-                term_width=self.term.width, term_height=self.term.height
+                term_width=self.term.width, term_height=self.term.height,
             )
 
     def get_overview_layout(self) -> Layout:
@@ -304,7 +327,7 @@ class Explorer:
             return self.help_layout()
         else:
             return self.overview_layout(
-                cached_obj=self.cached_obj.selected_cached_obj,
+                cached_obj=self.explorer_layout.selected_cached_object(),
                 term_height=self.term.height,
                 console=console,
             )
@@ -346,15 +369,16 @@ def explore(obj: Any) -> Any:
     try:
         e = Explorer(obj)
         return e.explore()
-    except Exception as e:
+    except Exception as err:
         console.print_exception(show_locals=True)
         print()
         rich.print(f"[red]{random_error_quote()}")
-        formatted_link = f"https://github.com/kylepollina/objexplore/issues/new?assignees=&labels=&template=bug_report.md&title={e}".replace(
+        formatted_link = f"https://github.com/kylepollina/objexplore/issues/new?assignees=&labels=&template=bug_report.md&title={err}".replace(
             " ", "+"
         )
         print("Please report the issue here:")
         rich.print(f"   [link={formatted_link}][u]{formatted_link}[/u][/link]")
+        print()
         rich.print(
-            "[yellow italic]Make sure to copy/paste the above traceback to the issue to make the issue quicker to solve!"
+            "[yellow italic]Make sure to copy/paste the above traceback to the issue page to make this quicker to fix :)"
         )

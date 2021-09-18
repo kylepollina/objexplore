@@ -1,0 +1,84 @@
+
+from typing import List, Dict
+
+import types
+
+from rich.layout import Layout
+from rich.panel import Panel
+from rich.style import Style
+from rich.text import Text
+
+from .cached_object import CachedObject
+
+
+# Filters
+
+def isbuiltin(cached_obj: CachedObject) -> bool:
+    return cached_obj.isbuiltin
+
+def isclass(cached_obj: CachedObject) -> bool:
+    return cached_obj.isclass
+
+def isfunction(cached_obj: CachedObject) -> bool:
+    return cached_obj.isfunction
+
+def ismethod(cached_obj: CachedObject) -> bool:
+    return cached_obj.ismethod
+
+def ismodule(cached_obj: CachedObject) -> bool:
+    return cached_obj.ismodule
+
+
+class FilterLayout(Layout):
+    def __init__(self, cached_obj: CachedObject, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cached_obj = cached_obj
+        self.filters: Dict[str, List[bool, types.FunctionType]] = {
+            'builtin': [False, isbuiltin],
+            'class': [False, isclass],
+            'function': [False, isfunction],
+            'method': [False, ismethod],
+            'module': [False, ismodule]
+        }
+        self.index = 0
+        self.cached_obj.set_filters(self.get_enabled_filters())
+
+    def move_down(self):
+        if self.index < len(self.filters) - 1:
+            self.index += 1
+
+    def move_up(self):
+        if self.index > 0:
+            self.index -= 1
+
+    def get_enabled_filters(self) -> List[types.FunctionType]:
+        return [method for name, (enabled, method) in self.filters.items() if enabled is True]
+
+    def toggle(self):
+        filter_name = list(self.filters.keys())[self.index]
+        self.filters[filter_name][0] = not self.filters[filter_name][0]
+        self.cached_obj.set_filters(self.get_enabled_filters())
+
+    def get_lines(self) -> List[Text]:
+        lines = []
+        for index, (name, (enabled, method)) in enumerate(self.filters.items()):
+            line = (
+                Text("[", style=Style(color="white"))
+                + Text("X" if enabled else " ", style=Style(color="blue"))
+                + Text("] ", style=Style(color="white"))
+                + Text(name, style=Style(color="white"))
+            )
+            if index == self.index:
+                line.style += Style(reverse=True)
+            lines.append(line)
+        return lines
+
+    def __call__(self):
+        lines = self.get_lines()
+        self.update(
+            Panel(
+                Text("\n").join(lines),
+                title="filter"
+            )
+        )
+        return self

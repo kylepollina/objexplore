@@ -116,6 +116,12 @@ def random_error_quote():
         "BONK!",
         "[blink]",
         "Oh no!",
+        "Whoopsies.",
+        "Dag nabit",
+        "👀",
+        "Computer over.",
+        "Virus = very yes.",
+        "Oh Child!",
     ]
     q1 = choice(quotes)
     quotes.remove(q1)

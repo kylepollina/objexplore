@@ -1,11 +1,14 @@
 import inspect
-from typing import Any, Dict, List, Optional, Union
+import types
+from typing import Any, Dict, List, Optional, Union, Tuple
 
+from rich.pretty import Pretty
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
 from rich.style import Style
 from rich.syntax import Syntax
 from rich.text import Text
+
 from .utils import is_selectable
 
 highlighter = ReprHighlighter()
@@ -29,15 +32,16 @@ class CachedObject:
         self.attr_name = attr_name if attr_name else repr(obj)
         self.is_callable = callable(obj)
         self.selected_cached_obj: CachedObject
-
-        self.typeof: Text = highlighter(str(type(self.obj)))
-        self.docstring: str = inspect.getdoc(self.obj) or "[magenta italic]None"
-
         self.plain_attrs = dir(self.obj)
 
+        # TODO this can be better
+        self.text = Text(self.attr_name, style=Style())
+
+        # Highlighted attributes
+        self.typeof: Text = highlighter(str(type(self.obj)))
+        self.docstring: Text = console.render_str(inspect.getdoc(self.obj) or "None")
         self.repr = highlighter(repr(self.obj))
         self.repr.overflow = "ellipsis"
-        self._repr_str = repr(self.obj)
 
         if "__weakref__" in self.plain_attrs:
             # Ignore weakrefs
@@ -49,65 +53,16 @@ class CachedObject:
         self.plain_private_attributes = sorted(
             attr for attr in self.plain_attrs if attr.startswith("_")
         )
-        self.public_attribute_width = (
-            max(map(len, self.plain_public_attributes))
-            if self.plain_public_attributes
-            else 0
-        )
-        self.private_attribute_width = (
-            max(map(len, self.plain_private_attributes))
-            if self.plain_private_attributes
-            else 0
-        )
 
-        # Pre-generated list of lines to render in the explorer layout when exploring public or private attributes of an object
-        self.public_lines: List[Text] = []
-        for plain_attr in self.plain_public_attributes:
-            try:
-                attr = getattr(self.obj, plain_attr)
-            except AttributeError:
-                # There is a possibility that an attribute returned by dir() will not be accessable via getattr
-                # ex:
-                # >>> dir(type)[0]
-                # '__abstractmethods__'
-                # >>> getattr(type, dir(type)[0])
-                # Traceback (most recent call last):
-                #   File "<stdin>", line 1, in <module>
-                # AttributeError: __abstractmethods__
-                self.public_lines.append(Text(plain_attr, style=Style()))
-            if callable(attr) or attr is None:
-                self.public_lines.append(
-                    Text(plain_attr, style=Style(dim=True, italic=True))
-                )
-            else:
-                self.public_lines.append(Text(plain_attr, style=Style()))
-
-        self.private_lines: List[Text] = []
-        for plain_attr in self.plain_private_attributes:
-            try:
-                attr = getattr(self.obj, plain_attr)
-            except AttributeError:
-                # There is a possibility that an attribute returned by dir() will not be accessable via getattr
-                # ex:
-                # >>> dir(type)[0]
-                # '__abstractmethods__'
-                # >>> getattr(type, dir(type)[0])
-                # Traceback (most recent call last):
-                #   File "<stdin>", line 1, in <module>
-                # AttributeError: __abstractmethods__
-                self.private_lines.append(
-                    Text(plain_attr, style=Style(dim=True, italic=True))
-                )
-            else:
-                if callable(attr) or attr is None:
-                    self.private_lines.append(
-                        Text(plain_attr, style=Style(dim=True, italic=True))
-                    )
-                else:
-                    self.private_lines.append(Text(plain_attr, style=Style()))
-
-        # Key:val pair of attribute name and the cached object associated with it
-        self.cached_attributes: Dict[str, CachedObject] = {}
+        self.public_attributes = {}
+        self.private_attributes = {}
+        self.filtered_public_attributes = {}
+        self.filtered_private_attributes = {}
+        self._hidden_public_attributes = {}
+        self._hidden_private_attributes = {}
+        # TODO hidden for below
+        self.cached_dict = {}
+        self.cached_list = []
 
         try:
             self._source = inspect.getsource(self.obj)
@@ -121,70 +76,110 @@ class CachedObject:
         except TypeError:
             self.length = None
 
-        if type(self.obj) == dict:
-            """ TODO """
-            self.dict_lines: List[Text] = []
-            for key, val in self.obj.items():
-                if type(key) is str:
-                    repr_key = console.render_str(f'"{key}"')
-                elif type(key) in (int, float, dict, list, set, tuple, bool, None):
-                    repr_key = console.render_str(str(key))
-                else:
-                    repr_key = highlighter(str(repr(key)))
-                repr_val = highlighter(str(type(val)))
+        self.isbuiltin = inspect.isbuiltin(self.obj)
+        self.isclass = inspect.isclass(self.obj)
+        self.isclass = inspect.isclass(self.obj)
+        self.isfunction = inspect.isfunction(self.obj)
+        self.ismethod = inspect.ismethod(self.obj)
+        self.ismodule = inspect.ismodule(self.obj)
+        self.filters: List[types.FunctionType] = []
 
-                if not is_selectable(val):
-                    repr_val.style = Style(dim=True, italic=True)
 
-                line = Text("  ") + repr_key + Text(": ") + repr_val
-                line.overflow = "ellipsis"
-                self.dict_lines.append(line)
-
-        if type(self.obj) in (list, tuple):
-            self.list_lines: List[Text] = []
-            for index, item in enumerate(self.obj):
-                item_type = highlighter(str(type(item)))
-                line = (
-                    Text(" [") + console.render_str(str(index)) + Text("] ") + item_type
-                )
-                if not is_selectable(item):
-                    line.style = Style(dim=True, italic=True)
-                self.list_lines.append(line)
+        self.pretty = Pretty(self.obj)
 
     @property
     def title(self):
         # for cases when the object is a huge dictionary we shouldnt try to render the whole dict
-        if len(self._repr_str) > console.width - 4:
-            return Text(self.attr_name + " ") + self.typeof
-        else:
-            return self.repr
+        title = self.repr.copy()
+        title.truncate(console.width - 4)
+        return title
 
-    def cache_attributes(self):
-        """ Create a CachedObject for each attribute of the self.obj """
-        if not self.cached_attributes:
-            for attr in self.plain_attrs:
-                self.cached_attributes[attr] = CachedObject(
+    def cache(self):
+        if not self.public_attributes:
+            for attr in self.plain_public_attributes:
+                self.public_attributes[attr] = CachedObject(
                     getattr(self.obj, attr),
                     dotpath=f"{self.dotpath}.{attr}",
-                    attr_name=attr,
+                    attr_name=attr
                 )
 
-        # Set the default selected cached attribute
-        if type(self.obj) == dict:
-            self.selected_cached_obj = CachedObject(self.obj[list(self.obj.keys())[0]])
-        elif type(self.obj) in (list, tuple):
-            self.selected_cached_obj = CachedObject(self.obj[0])
-        elif self.plain_public_attributes:
-            self.selected_cached_obj = self.cached_attributes[
-                self.plain_public_attributes[0]
-            ]
-        else:
-            self.selected_cached_obj = self.cached_attributes[
-                self.plain_private_attributes[0]
-            ]
+        if not self.private_attributes:
+            for attr in self.plain_private_attributes:
+                self.private_attributes[attr] = CachedObject(
+                    getattr(self.obj, attr),
+                    dotpath=f"{self.dotpath}.{attr}",
+                    attr_name=attr
+                )
 
-    def __getitem__(self, key) -> "CachedObject":
-        return self.cached_attributes[key]
+        # TODO filter
+        if not self.cached_dict:
+            if type(self.obj) == dict:
+                for key, val in self.obj.items():
+                    self.cached_dict[key] = CachedObject(
+                        val,
+                        dotpath=f"{self.dotpath}[{key}]",
+                        attr_name=key
+                    )
+        if not self.cached_list:
+            if type(self.obj) == list:
+                for index, item in enumerate(self.obj):
+                    self.cached_dict[index] = CachedObject(
+                        item,
+                        dotpath=f"{self.dotpath}[{index}]",
+                        attr_name=key
+                    )
+
+        self.filter()
+
+    def set_filters(self, filters: List[types.FunctionType]):
+        self.filters = filters
+        self.filter()
+
+    def filter(self):
+        self.filtered_public_attributes = {}
+        if not self.filters:
+            self.filtered_public_attributes = self.public_attributes
+        else:
+            for attr, cached_obj in self.public_attributes.items():
+                # Only keep objects that match the filter
+                for _filter in self.filters:
+                    if _filter(cached_obj):
+                        self.filtered_public_attributes[attr] = cached_obj
+
+        self.filtered_private_attributes = {}
+        # If no filters, show all
+        if not self.filters:
+            self.filtered_private_attributes = self.private_attributes
+        # If there are filters, only show the ones sthat satisfy
+        else:
+            for attr, cached_obj in self.private_attributes.items():
+                # Only keep objects that match the filter
+                for _filter in self.filters:
+                    if _filter(cached_obj):
+                        break
+                else:
+                    self.filtered_private_attributes[attr] = cached_obj
+
+        self.filtered_dict_lines: List[Text] = []
+        if type(self.obj) == dict:
+            for key, val in self.obj.items():
+                repr_key: Text
+                repr_val: Text
+
+                if type(key) == str:
+                    key_text = console.render_str(f'"{key}"')
+                elif type(key) in (int, float, dict, list, set, tuple, bool, None):
+                    key_text = console.render_str(str(key))
+                else:
+                    key_text = highlighter(str(key))
+
+                repr_val = highlighter(str(type(val)))
+
+                if not is_selectable(val):
+                    repr_val.style += Style(dim=True, italic=True)
+
+                line = Text(" ") + repr_key + Text(": ") + repr_val
+                line.overflow = "ellipsis"
 
     def get_source(
         self, term_height: int = 0, fullscreen: bool = False
@@ -207,3 +202,54 @@ class CachedObject:
                 line_range=(0, term_height),
                 background_color="default",
             )
+
+
+        # # Pre-generated list of lines to render in the explorer layout when exploring public or private attributes of an object
+        # self.public_lines: List[Text] = []
+        # for plain_attr in self.plain_public_attributes:
+        #     try:
+        #         attr = getattr(self.obj, plain_attr)
+        #     except AttributeError:
+        #         # There is a possibility that an attribute returned by dir() will not be accessable via getattr
+        #         # ex:
+        #         # >>> dir(type)[0]
+        #         # '__abstractmethods__'
+        #         # >>> getattr(type, dir(type)[0])
+        #         # Traceback (most recent call last):
+        #         #   File "<stdin>", line 1, in <module>
+        #         # AttributeError: __abstractmethods__
+        #         self.public_lines.append(Text(plain_attr, style=Style()))
+        #     if callable(attr) or attr is None:
+        #         self.public_lines.append(
+        #             Text(plain_attr, style=Style(dim=True, italic=True))
+        #         )
+        #     else:
+        #         self.public_lines.append(Text(plain_attr, style=Style()))
+
+        # self.private_lines: List[Text] = []
+        # for plain_attr in self.plain_private_attributes:
+        #     try:
+        #         attr = getattr(self.obj, plain_attr)
+        #     except AttributeError:
+        #         # There is a possibility that an attribute returned by dir() will not be accessable via getattr
+        #         # ex:
+        #         # >>> dir(type)[0]
+        #         # '__abstractmethods__'
+        #         # >>> getattr(type, dir(type)[0])
+        #         # Traceback (most recent call last):
+        #         #   File "<stdin>", line 1, in <module>
+        #         # AttributeError: __abstractmethods__
+        #         self.private_lines.append(
+        #             Text(plain_attr, style=Style(dim=True, italic=True))
+        #         )
+        #     else:
+        #         if callable(attr) or attr is None:
+        #             self.private_lines.append(
+        #                 Text(plain_attr, style=Style(dim=True, italic=True))
+        #             )
+        #         else:
+        #             self.private_lines.append(Text(plain_attr, style=Style()))
+
+        # # Key:val pair of attribute name and the cached object associated with it
+        # self.cached_attributes: Dict[str, CachedObject] = {}
+
