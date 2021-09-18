@@ -40,6 +40,10 @@ https://user-images.githubusercontent.com/13981456/133886899-ae91cc77-7b63-4e39-
 https://user-images.githubusercontent.com/13981456/133889219-0b80d1f4-697a-4532-aa4a-00898267eef5.mov
 
 
+-----
+
+Built with the amazing [rich](https://github.com/willmcgugan/rich) and [blessed](https://github.com/jquast/blessed) packages. Check them out!
+
 
 ## Contributing
 Read [CONTRIBUTING.md](CONTRIBUTING.md)
