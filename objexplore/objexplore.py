@@ -16,7 +16,7 @@ from .help_layout import HelpLayout, HelpState, random_error_quote
 from .overview_layout import OverviewLayout, OverviewState, PreviewState
 from .stack_layout import StackFrame, StackLayout
 
-version = "1.0"
+version = "1.1"
 
 # TODO fix explore(namedtuple)
 # TODO methods filter
