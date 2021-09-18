@@ -11,34 +11,16 @@ from rich.text import Text
 from .cached_object import CachedObject
 
 
-# Filters
-
-def isbuiltin(cached_obj: CachedObject) -> bool:
-    return cached_obj.isbuiltin
-
-def isclass(cached_obj: CachedObject) -> bool:
-    return cached_obj.isclass
-
-def isfunction(cached_obj: CachedObject) -> bool:
-    return cached_obj.isfunction
-
-def ismethod(cached_obj: CachedObject) -> bool:
-    return cached_obj.ismethod
-
-def ismodule(cached_obj: CachedObject) -> bool:
-    return cached_obj.ismodule
-
-
 class FilterLayout(Layout):
     def __init__(self, cached_obj: CachedObject, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cached_obj = cached_obj
         self.filters: Dict[str, List[bool, types.FunctionType]] = {
-            'builtin': [False, isbuiltin],
-            'class': [False, isclass],
-            'function': [False, isfunction],
-            'method': [False, ismethod],
-            'module': [False, ismodule]
+            'builtin': [False, lambda cached_obj: cached_obj.isbuiltin],
+            'class': [False, lambda cached_obj: cached_obj.isclass],
+            'function': [False, lambda cached_obj: cached_obj.isfunction],
+            'method': [False, lambda cached_obj: cached_obj.ismethod],
+            'module': [False, lambda cached_obj: cached_obj.ismodule]
         }
         self.index = 0
         self.cached_obj.set_filters(self.get_enabled_filters())

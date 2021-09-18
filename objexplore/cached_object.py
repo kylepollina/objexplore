@@ -147,18 +147,14 @@ class CachedObject:
                         self.filtered_public_attributes[attr] = cached_obj
 
         self.filtered_private_attributes = {}
-        # If no filters, show all
         if not self.filters:
             self.filtered_private_attributes = self.private_attributes
-        # If there are filters, only show the ones sthat satisfy
         else:
             for attr, cached_obj in self.private_attributes.items():
                 # Only keep objects that match the filter
                 for _filter in self.filters:
                     if _filter(cached_obj):
-                        break
-                else:
-                    self.filtered_private_attributes[attr] = cached_obj
+                        self.filtered_private_attributes[attr] = cached_obj
 
         self.filtered_dict_lines: List[Text] = []
         if type(self.obj) == dict:
