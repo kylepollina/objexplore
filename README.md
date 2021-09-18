@@ -29,5 +29,13 @@ import pandas
 explore(pandas)
 ```
 
+## Features
+
+### Dictionary explorer
+
+https://user-images.githubusercontent.com/13981456/133886899-ae91cc77-7b63-4e39-9cbc-197805c72f24.mov
+
+
 ## Contributing
 Read [CONTRIBUTING.md](CONTRIBUTING.md)
+
