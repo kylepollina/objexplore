@@ -28,6 +28,9 @@ version = "1.2.5"
 
 console = Console()
 
+class FilterLayout(Layout):
+    def __init__(self, *args, **kwargs):
+        ...
 
 class Explorer:
     """ Explorer class used to interactively explore Python Objects """
@@ -44,6 +47,7 @@ class Explorer:
         self.help_layout = HelpLayout(version, visible=False, ratio=3)
         self.explorer_layout = ExplorerLayout(cached_obj=cached_obj)
         self.overview_layout = OverviewLayout(ratio=3)
+        self.filter_layout = FilterLayout()
 
         self.stack.append(
             StackFrame(
@@ -195,6 +199,9 @@ class Explorer:
 
         elif key == "o" and not self.stack.visible:
             self.stack.set_visible()
+
+        elif key == "n":
+            self.filter_layout.visible = not self.filter_layout.visible
 
         # Switch between public and private attributes
         elif key in ("[", "]"):
