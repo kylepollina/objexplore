@@ -44,6 +44,6 @@ https://user-images.githubusercontent.com/13981456/133889219-0b80d1f4-697a-4532-
 ## Contributing
 Read [CONTRIBUTING.md](CONTRIBUTING.md)
 
+------
 
-
-
+[LICENSE](LICENSE)
