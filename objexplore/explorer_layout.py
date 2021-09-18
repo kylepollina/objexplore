@@ -81,7 +81,7 @@ class ExplorerLayout(Layout):
         end = start + num_lines
         index = start
 
-        for line in self.cached_obj.repr_dict_lines[start:end]:
+        for line in self.cached_obj.dict_lines[start:end]:
             new_line = line.copy()
 
             if index == self.dict_index:
@@ -99,7 +99,7 @@ class ExplorerLayout(Layout):
         self.update(
             Panel(
                 text,
-                title="dict()",
+                title="[i][cyan]dict[/cyan]()",
                 title_align="right",
                 subtitle=f"([magenta]{self.dict_index + 1}[/magenta]/[magenta]{self.cached_obj.num_keys}[/magenta])",
                 subtitle_align="right",

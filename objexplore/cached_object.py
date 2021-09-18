@@ -61,7 +61,18 @@ class CachedObject:
         # Pre-generated list of lines to render in the explorer layout when exploring public or private attributes of an object
         self.public_lines: List[Text] = []
         for plain_attr in self.plain_public_attributes:
-            attr = getattr(self.obj, plain_attr)
+            try:
+                attr = getattr(self.obj, plain_attr)
+            except AttributeError:
+                # There is a possibility that an attribute returned by dir() will not be accessable via getattr
+                # ex:
+                # >>> dir(type)[0]
+                # '__abstractmethods__'
+                # >>> getattr(type, dir(type)[0])
+                # Traceback (most recent call last):
+                #   File "<stdin>", line 1, in <module>
+                # AttributeError: __abstractmethods__
+                self.public_lines.append(Text(plain_attr, style="white"))
             if callable(attr) or attr is None:
                 self.public_lines.append(Text(plain_attr, style="dim white italic"))
             else:
@@ -103,12 +114,15 @@ class CachedObject:
             self.length = None
 
         if type(self.obj) == dict:
-            self.repr_dict_lines: List[Text] = []
+            """ TODO """
+            self.dict_lines: List[Text] = []
             for key, val in self.obj.items():
                 if type(key) is str:
-                    repr_key = highlighter(f'"{key}"')
+                    repr_key = console.render_str(f'"{key}"')
+                elif type(key) in (int, float, dict, list, set, tuple, bool, None):
+                    repr_key = console.render_str(str(key))
                 else:
-                    repr_key = highlighter(str(type(key)))
+                    repr_key = highlighter(str(repr(key)))
                 repr_val = highlighter(str(type(val)))
 
                 if callable(val):
@@ -116,13 +130,12 @@ class CachedObject:
 
                 line = Text('  ') + repr_key + Text(': ') + repr_val
                 line.overflow = "ellipsis"
-                self.repr_dict_lines.append(line)
+                self.dict_lines.append(line)
 
             self.num_keys = len(self.obj.keys())
 
     @property
     def title(self):
-        return "hello"
         # for cases when the object is a huge dictionary we shouldnt try to render the whole dict
         if len(self._repr_str) > console.width - 4:
             return Text(self.attr_name + ' ') + self.typeof
@@ -140,7 +153,9 @@ class CachedObject:
                 )
 
         # Set the default selected cached attribute
-        if self.plain_public_attributes:
+        if type(self.obj) == dict:
+            self.selected_cached_obj = CachedObject(self.obj[list(self.obj.keys())[0]])
+        elif self.plain_public_attributes:
             self.selected_cached_obj = self.cached_attributes[
                 self.plain_public_attributes[0]
             ]
