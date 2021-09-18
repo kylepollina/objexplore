@@ -56,27 +56,25 @@ class CachedObject:
             if self.plain_private_attributes
             else 0
         )
-        # TODO rename?
-        self.repr_public_lines = [
-            Text(
-                attr,
-                style=(
-                    "white" if not callable(getattr(self.obj, attr))
-                    else "dim white italic"
-                )
-            )
-            for attr in self.plain_public_attributes
-        ]
-        self.repr_private_lines = [
-            Text(
-                attr,
-                style=(
-                    "white" if not callable(getattr(self.obj, attr))
-                    else "dim white italic"
-                )
-            )
-            for attr in self.plain_private_attributes
-        ]
+
+        # Pre-generated list of lines to render in the explorer layout when exploring public or private attributes of an object
+        self.public_lines: List[Text] = []
+        for plain_attr in self.plain_public_attributes:
+            attr = getattr(self.obj, plain_attr)
+            if callable(attr) or attr is None:
+                self.public_lines.append(Text(plain_attr, style="dim white italic"))
+            else:
+                self.public_lines.append(Text(plain_attr, style="white"))
+
+        self.private_lines: List[Text] = []
+        for plain_attr in self.plain_private_attributes:
+            attr = getattr(self.obj, plain_attr)
+            if callable(attr) or attr is None:
+                self.private_lines.append(Text(plain_attr, style="dim white italic"))
+            else:
+                self.private_lines.append(Text(plain_attr, style="white"))
+            self.private_lines.append(Text(plain_attr, style="dim white italic"))
+
         # Key:val pair of attribute name and the cached object associated with it
         self.cached_attributes: Dict[str, CachedObject] = {}
 

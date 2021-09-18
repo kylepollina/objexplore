@@ -3,6 +3,7 @@ import signal
 from typing import Any, Optional, Union
 
 import blessed
+import rich
 from blessed import Terminal
 from rich import print as rprint
 from rich.console import Console
@@ -12,7 +13,7 @@ from rich.syntax import Syntax
 
 from .cached_object import CachedObject
 from .explorer_layout import ExplorerLayout, ExplorerState
-from .help_layout import HelpLayout, HelpState
+from .help_layout import HelpLayout, HelpState, random_error_quote
 from .overview_layout import OverviewLayout, OverviewState, PreviewState
 from .stack_layout import StackFrame, StackLayout
 
@@ -26,6 +27,7 @@ version = "1.0"
 # TODO generate the explorer lines on cachedobject instatiation to speed up processing
 #    - Auto generate ALL renderables on init. docstring, repr (i think already done) type, len, source, etc
 
+console = Console()
 
 class Explorer:
     """ Explorer class used to interactively explore Python Objects """
@@ -38,7 +40,6 @@ class Explorer:
         # self.head_obj = cached_obj
         self.cached_obj: CachedObject = cached_obj
         self.term = Terminal()
-        self.console = Console()
         self.stack = StackLayout(head_obj=self.cached_obj, visible=False)
         self.help_layout = HelpLayout(version, visible=False, ratio=3)
         self.explorer_layout = ExplorerLayout(cached_obj=cached_obj)
@@ -92,8 +93,8 @@ class Explorer:
 
             # Fullscreen
             elif key == "f":
-                with self.console.capture() as capture:
-                    self.console.print(self.help_layout.text)
+                with console.capture() as capture:
+                    console.print(self.help_layout.text)
                 str_out = capture.get()
                 pydoc.pager(str_out)
                 return
@@ -231,8 +232,8 @@ class Explorer:
                     fullscreen=True
                 )
 
-            with self.console.capture() as capture:
-                self.console.print(printable)
+            with console.capture() as capture:
+                console.print(printable)
 
             str_out = capture.get()
             pydoc.pager(str_out)
@@ -264,7 +265,7 @@ class Explorer:
             return self.overview_layout(
                 cached_obj=self.cached_obj.selected_cached_obj,
                 term_height=self.term.height,
-                console=self.console,
+                console=console,
             )
 
     def draw(self, *args):
@@ -300,4 +301,14 @@ class Explorer:
 
 def explore(obj: Any) -> Any:
     """ Run the explorer on the given object """
-    return Explorer(obj).explore()
+    try:
+        e = Explorer(obj)
+        e.explore()
+    except Exception as e:
+        console.print_exception(show_locals=True)
+        print()
+        rprint(f"[red]{random_error_quote()}")
+        formatted_link = f"https://github.com/kylepollina/objexplore/issues/new?assignees=&labels=&template=bug_report.md&title={e}".replace(" ", "+")
+        print("Please report an issue here:")
+        rprint(f"   [link={formatted_link}][u]{formatted_link}[/u][/link]")
+        rprint("[yellow italic]Make sure to copy/paste the above traceback to the issue to make the issue quicker to solve!")

@@ -77,17 +77,20 @@ class ExplorerLayout(Layout):
         )
 
     def __call__(self, cached_obj: CachedObject, term_width: int) -> Layout:
+        """ Return the layout of the object explorer. This will be a list of lines representing the object attributes/keys/vals we are exploring """
+        # TODO use [] to switch between public/private/dict layout?
+
         if self.state == ExplorerState.dict:
             return self.dict_layout(cached_obj, term_width)
 
         lines = []
 
         if self.state == ExplorerState.public:
-            for index, line in enumerate(cached_obj.repr_public_lines):
-                new_line = line.copy()
+            for index, line in enumerate(cached_obj.public_lines):
+                _line = line.copy()
                 if index == self.public_index:
-                    new_line.style += " reverse"
-                lines.append(new_line)
+                    _line.style += " reverse"
+                lines.append(_line)
 
             title = "[i][cyan]dir[/cyan]()[/i] | [u]public[/u] [dim]private[/dim]"
             subtitle = (
@@ -98,11 +101,11 @@ class ExplorerLayout(Layout):
 
 
         elif self.state == ExplorerState.private:
-            for index, line in enumerate(cached_obj.repr_private_lines):
-                new_line = line.copy()
+            for index, line in enumerate(cached_obj.private_lines):
+                _line = line.copy()
                 if index == self.private_index:
-                    new_line.style += " reverse"
-                lines.append(new_line)
+                    _line.style += " reverse"
+                lines.append(_line)
 
             title = "[i][cyan]dir[/cyan]()[/i] | [dim]public[/dim] [u]private[/u]"
             subtitle = (
@@ -110,7 +113,6 @@ class ExplorerLayout(Layout):
                 f"[white]([/white][magenta]{self.private_index + 1}"
                 f"[/magenta][white]/[/white][magenta]{len(cached_obj.plain_private_attributes)}[/magenta][white])"
             )
-
 
         renderable = Text('\n').join(lines[self.public_window:])
 

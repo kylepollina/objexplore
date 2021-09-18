@@ -74,16 +74,49 @@ Version:         [cyan]{self.version}[/cyan]
 PyPI:            [cyan]https://pypi.org/project/objexplore[/cyan]
 Source:          [cyan]https://github.com/kylepollina/objexplore[/cyan][yellow italic]
 Report an issue[/yellow italic]: [cyan]https://github.com/kylepollina/objexplore/issues[/cyan]\n\n"""
-                + self.random_quote()
+                + "[i]" + self.random_quote()
             )
 
     def random_quote(self):
         return choice(
             [
-                "[i]Have a nice day!![/i]",
-                "[i]You look rather dashing today![/i]",
-                "[i]:)[/i]",
-                "[i]:earth_africa:[/i]",
-                "[i]<3[/i]",
+                "Have a nice day!!",
+                "You look rather dashing today!",
+                ":)",
+                ":earth_africa:",
+                "<3",
+                "Thanks for checking this out ;)",
+                "Why, hello there!",
+                "Oh well look who it is!",
+
+                "Oh if a man tried\n"
+                "To take his time on Earth\n"
+                "And prove before he died\n"
+                "What one man's life could be worth\n"
+                "I wonder what would happen to this world\n"
+                " - Harry Chapin",
+
+                "In this world, people [u i]can[/u i] change it for the better,\n"
+                "and that those people who are crazy enough to think that\n"
+                "they can change the world are the ones that actually do.\n"
+                " - Steve Jobs"
             ]
         )
+
+
+def random_error_quote():
+    quotes = [
+        "Aw nuts!",
+        "Uh oh...",
+        "Foiled again!",
+        "We've been bamboozled!",
+        "Something ain't right here...",
+        "$#%@!!",
+        "BONK!",
+        "[blink]",
+        "Oh no!",
+    ]
+    q1 = choice(quotes)
+    quotes.remove(q1)
+    q2 = choice(quotes)
+    return q1 + " " + q2
