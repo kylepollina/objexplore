@@ -140,7 +140,7 @@ class CachedObject:
                 line.overflow = "ellipsis"
                 self.dict_lines.append(line)
 
-        if type(self.obj) == list:
+        if type(self.obj) in (list, tuple):
             self.list_lines: List[Text] = []
             for index, item in enumerate(self.obj):
                 item_type = highlighter(str(type(item)))
@@ -172,7 +172,7 @@ class CachedObject:
         # Set the default selected cached attribute
         if type(self.obj) == dict:
             self.selected_cached_obj = CachedObject(self.obj[list(self.obj.keys())[0]])
-        elif type(self.obj) == list:
+        elif type(self.obj) in (list, tuple):
             self.selected_cached_obj = CachedObject(self.obj[0])
         elif self.plain_public_attributes:
             self.selected_cached_obj = self.cached_attributes[

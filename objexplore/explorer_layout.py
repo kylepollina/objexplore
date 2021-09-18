@@ -11,7 +11,7 @@ from .cached_object import CachedObject
 
 console = Console()
 
-ExplorerState = namedtuple("ExplorerState", ["public", "private", "dict", "list"])
+ExplorerState = namedtuple("ExplorerState", ["public", "private", "dict", "list", "tuple"])
 
 highlighter = ReprHighlighter()
 
@@ -20,10 +20,13 @@ class ExplorerLayout(Layout):
     def __init__(self, cached_obj: CachedObject, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cached_obj = cached_obj
+        _type = type(cached_obj.obj)
         if type(cached_obj.obj) == dict:
             self.state = ExplorerState.dict
         elif type(cached_obj.obj) == list:
             self.state = ExplorerState.list
+        elif type(cached_obj.obj) == tuple:
+            self.state = ExplorerState.tuple
         else:
             self.state = ExplorerState.public
         self.public_index = self.private_index = 0
@@ -64,7 +67,7 @@ class ExplorerLayout(Layout):
                 self.cached_obj.obj[key], attr_name=key
             )
 
-        elif self.state == ExplorerState.list:
+        elif self.state in (ExplorerState.list, ExplorerState.tuple):
             item = self.cached_obj.obj[self.list_index]
             self.cached_obj.selected_cached_obj = CachedObject(item)
 
@@ -129,7 +132,7 @@ class ExplorerLayout(Layout):
         lines = []
 
         if self.list_window == 0:
-            lines.append(Text("["))
+            lines.append(Text("[" if self.state == ExplorerState.list else "("))
             start = 0
             num_lines = panel_height - 1
         elif self.list_window == 1:
@@ -152,14 +155,14 @@ class ExplorerLayout(Layout):
             lines.append(new_line)
             index += 1
 
-        lines.append(Text("]"))
+        lines.append(Text("]" if self.state == ExplorerState.list else ")"))
 
         text = Text("\n").join(lines)
 
         self.update(
             Panel(
                 text,
-                title="[i][cyan]list[/cyan]()",
+                title=f"[i][cyan]{'list' if self.state == ExplorerState.list else 'tuple'}[/cyan]()",
                 title_align="right",
                 subtitle=f"([magenta]{self.list_index + 1}[/magenta]/[magenta]{self.cached_obj.length}[/magenta])",
                 subtitle_align="right",
@@ -176,7 +179,7 @@ class ExplorerLayout(Layout):
         if self.state == ExplorerState.dict:
             return self.dict_layout(term_width, term_height)
 
-        elif self.state == ExplorerState.list:
+        elif self.state in (ExplorerState.list, ExplorerState.tuple):
             return self.list_layout(term_width, term_height)
 
         else:
@@ -253,7 +256,7 @@ class ExplorerLayout(Layout):
             elif self.dict_window == 1:
                 self.dict_window -= 1
 
-        elif self.state == ExplorerState.list:
+        elif self.state in (ExplorerState.list, ExplorerState.tuple):
             if self.list_index > 0:
                 self.list_index -= 1
                 if self.list_index < self.list_window - 1:
@@ -285,7 +288,7 @@ class ExplorerLayout(Layout):
             elif self.dict_window == len(cached_obj.obj.keys()) - panel_height:
                 self.dict_window += 1
 
-        elif self.state == ExplorerState.list:
+        elif self.state in (ExplorerState.list, ExplorerState.tuple):
             if self.list_index < len(cached_obj.obj) - 1:
                 self.list_index += 1
                 if self.list_index > self.list_window + panel_height - 1:
@@ -307,7 +310,7 @@ class ExplorerLayout(Layout):
         elif self.state == ExplorerState.dict:
             self.dict_index = self.dict_window = 0
 
-        elif self.state == ExplorerState.list:
+        elif self.state in (ExplorerState.list, ExplorerState.tuple):
             self.list_index = self.list_window = 0
 
         self.update_selected_cached_object()
@@ -325,7 +328,7 @@ class ExplorerLayout(Layout):
             self.dict_index = len(cached_obj.obj.keys()) - 1
             self.dict_window = max(0, self.dict_index - panel_height + 2)
 
-        elif self.state == ExplorerState.list:
+        elif self.state in (ExplorerState.list, ExplorerState.tuple):
             self.list_index = len(cached_obj.obj) - 1
             self.list_window = max(0, self.list_index - panel_height + 2)
 
