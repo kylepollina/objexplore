@@ -255,13 +255,19 @@ class Explorer:
 
         elif key == "i":
             with console.capture() as capture:
-                rich.inspect(self.cached_obj.selected_cached_obj.obj, console=console, methods=True)
+                rich.inspect(
+                    self.cached_obj.selected_cached_obj.obj,
+                    console=console,
+                    methods=True,
+                )
             str_out = capture.get()
             pydoc.pager(str_out)
 
         elif key == "I":
             with console.capture() as capture:
-                rich.inspect(self.cached_obj.selected_cached_obj.obj, console=console, all=True)
+                rich.inspect(
+                    self.cached_obj.selected_cached_obj.obj, console=console, all=True
+                )
             str_out = capture.get()
             pydoc.pager(str_out)
 
