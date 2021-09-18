@@ -47,18 +47,23 @@ class ExplorerLayout(Layout):
             attr = self.cached_obj.plain_private_attributes[self.private_index]
             self.cached_obj.selected_cached_obj = self.cached_obj[attr]
 
+        elif self.state == ExplorerState.dict:
+            # have to create a cached object every time to not infinitely recurse
+            # TODO add more details
+            key = list(self.cached_obj.obj.keys())[self.dict_index]
+            self.cached_obj.selected_cached_obj = CachedObject(self.cached_obj.obj[key], attr_name=key)
+
     def dict_layout(self, cached_obj: CachedObject, term_width: int) -> Layout:
-        lines = [Text('{')]
+        lines = [Text('{', style="none")]
         panel_width = (term_width - 4) // 4 - 4
         for index, line in enumerate(cached_obj.repr_dict_lines):
-            if index == self.dict_index:
-                style = "reverse"
-            else:
-                style = "none"
+            new_line = line.copy()
 
-            line.style = style
-            line.truncate(panel_width)
-            lines.append(line)
+            if index == self.dict_index:
+                new_line.style = "reverse"
+
+            new_line.truncate(panel_width)
+            lines.append(new_line)
 
         lines.append(Text('}'))
 

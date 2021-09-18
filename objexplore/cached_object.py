@@ -79,6 +79,10 @@ class CachedObject:
                 else:
                     repr_key = highlighter(key)
                 repr_val = highlighter(str(type(val)))
+
+                if callable(val):
+                    repr_val.style = "dim"
+
                 line = Text('  ') + repr_key + Text(': ') + repr_val
                 line.overflow = "ellipsis"
                 self.repr_dict_lines.append(line)

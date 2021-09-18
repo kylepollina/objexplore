@@ -23,6 +23,8 @@ version = "1.0"
 # or just a type filter?
 # TODO empty overview layouts for when there are 0 public attributes
 # TODO search filter
+# TODO generate the explorer lines on cachedobject instatiation to speed up processing
+#    - Auto generate ALL renderables on init. docstring, repr (i think already done) type, len, source, etc
 
 
 class Explorer:
@@ -142,6 +144,7 @@ class Explorer:
 
         # Enter
         elif key in ("\n", "l") or key.code == self.term.KEY_RIGHT:
+
             if self.stack.visible:
                 new_cached_obj = self.stack.select()
             else:
