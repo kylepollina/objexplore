@@ -80,19 +80,14 @@ class ExplorerLayout(Layout):
         if self.state == ExplorerState.dict:
             return self.dict_layout(cached_obj, term_width)
 
+        lines = []
+
         if self.state == ExplorerState.public:
-            attribute_text = []
-            for attr in cached_obj.plain_public_attributes[self.public_window :]:
-                obj = getattr(cached_obj.obj, attr)
-                if callable(obj) or obj is None:
-                    style = "dim italic"
-                else:
-                    style = ""
-
-                if attr == cached_obj.plain_public_attributes[self.public_index]:
-                    style += " reverse"
-
-                attribute_text.append(Text(attr, overflow="ellipsis", style=style))
+            for index, line in enumerate(cached_obj.repr_public_lines):
+                new_line = line.copy()
+                if index == self.public_index:
+                    new_line.style += " reverse"
+                lines.append(new_line)
 
             title = "[i][cyan]dir[/cyan]()[/i] | [u]public[/u] [dim]private[/dim]"
             subtitle = (
@@ -101,19 +96,13 @@ class ExplorerLayout(Layout):
                 f"[/magenta][white]/[/white][magenta]{len(cached_obj.plain_public_attributes)}[/magenta][white])"
             )
 
+
         elif self.state == ExplorerState.private:
-            attribute_text = []
-            for attr in cached_obj.plain_private_attributes[self.private_window :]:
-                obj = getattr(cached_obj.obj, attr)
-                if callable(obj) or obj is None:
-                    style = "dim italic"
-                else:
-                    style = ""
-
-                if attr == cached_obj.plain_private_attributes[self.private_index]:
-                    style += " reverse"
-
-                attribute_text.append(Text(attr, overflow="ellipsis", style=style))
+            for index, line in enumerate(cached_obj.repr_private_lines):
+                new_line = line.copy()
+                if index == self.private_index:
+                    new_line.style += " reverse"
+                lines.append(new_line)
 
             title = "[i][cyan]dir[/cyan]()[/i] | [dim]public[/dim] [u]private[/u]"
             subtitle = (
@@ -122,24 +111,23 @@ class ExplorerLayout(Layout):
                 f"[/magenta][white]/[/white][magenta]{len(cached_obj.plain_private_attributes)}[/magenta][white])"
             )
 
+
+        renderable = Text('\n').join(lines[self.public_window:])
+
         # If terminal is too small don't show the 'dir()' part of the title
         if term_width / 4 < 28:
             title = title.split("|")[-1].strip()
 
-        # Start with an empty text object, all following Text objects will steal the styles from this one
-        renderable_text = Text("", overflow="ellipsis")
-        for t in attribute_text:
-            renderable_text += t + "\n"
-
-        panel = Panel(
-            renderable_text,
-            title=title,
-            title_align="right",
-            subtitle=subtitle,
-            subtitle_align="right",
-            style="white",
+        self.update(
+            Panel(
+                renderable,
+                title=title,
+                title_align="right",
+                subtitle=subtitle,
+                subtitle_align="right",
+                style="white",
+            )
         )
-        self.update(panel)
         return self
 
     def move_up(self):

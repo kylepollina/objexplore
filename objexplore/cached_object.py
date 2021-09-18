@@ -56,6 +56,27 @@ class CachedObject:
             if self.plain_private_attributes
             else 0
         )
+        # TODO rename?
+        self.repr_public_lines = [
+            Text(
+                attr,
+                style=(
+                    "white" if not callable(getattr(self.obj, attr))
+                    else "dim white italic"
+                )
+            )
+            for attr in self.plain_public_attributes
+        ]
+        self.repr_private_lines = [
+            Text(
+                attr,
+                style=(
+                    "white" if not callable(getattr(self.obj, attr))
+                    else "dim white italic"
+                )
+            )
+            for attr in self.plain_private_attributes
+        ]
         # Key:val pair of attribute name and the cached object associated with it
         self.cached_attributes: Dict[str, CachedObject] = {}
 
