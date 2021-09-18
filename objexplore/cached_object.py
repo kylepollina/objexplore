@@ -34,10 +34,13 @@ class CachedObject:
         self.selected_cached_obj: CachedObject
         self.plain_attrs = dir(self.obj)
 
-        # TODO this can be better
-        self.text = Text(self.attr_name, style=Style())
-
         # Highlighted attributes
+        if not is_selectable(self.obj):
+            style = Style(dim=True, italic=True)
+        else:
+            style = Style()
+        self.text = Text(self.attr_name, style)
+
         self.typeof: Text = highlighter(str(type(self.obj)))
         self.docstring: Text = console.render_str(inspect.getdoc(self.obj) or "None")
         self.repr = highlighter(repr(self.obj))

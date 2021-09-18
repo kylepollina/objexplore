@@ -221,11 +221,6 @@ class ExplorerLayout(Layout):
                 lines.append(line)
 
             title = "[i][cyan]dir[/cyan]()[/i] | [dim]public[/dim] [u]private[/u]"
-            # subtitle = (
-                # "[dim][u][][/u]:switch pane [/dim]"
-                # f"[white]([/white][magenta]{self.private_index + 1}"
-                # f"[/magenta][white]/[/white][magenta]{len(self.cached_obj.filtered_private_attributes)}[/magenta][white])"
-            # )
             subtitle = (
                 "[dim][u][][/u]:switch pane [/dim]"
                 f"[white]([/white][magenta]{self.private_index + 1 if self.cached_obj.filtered_private_attributes else 0}"
