@@ -11,7 +11,9 @@ from .cached_object import CachedObject
 
 console = Console()
 
-ExplorerState = namedtuple("ExplorerState", ["public", "private", "dict", "list", "tuple"])
+ExplorerState = namedtuple(
+    "ExplorerState", ["public", "private", "dict", "list", "tuple"]
+)
 
 highlighter = ReprHighlighter()
 
@@ -21,11 +23,11 @@ class ExplorerLayout(Layout):
         super().__init__(*args, **kwargs)
         self.cached_obj = cached_obj
         _type = type(cached_obj.obj)
-        if type(cached_obj.obj) == dict:
+        if _type == dict:
             self.state = ExplorerState.dict
-        elif type(cached_obj.obj) == list:
+        elif _type == list:
             self.state = ExplorerState.list
-        elif type(cached_obj.obj) == tuple:
+        elif _type == tuple:
             self.state = ExplorerState.tuple
         else:
             self.state = ExplorerState.public
