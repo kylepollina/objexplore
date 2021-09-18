@@ -17,17 +17,14 @@ from .help_layout import HelpLayout, HelpState, random_error_quote
 from .overview_layout import OverviewLayout, OverviewState, PreviewState
 from .stack_layout import StackFrame, StackLayout
 
-version = "1.2.4"
+version = "1.2.5"
 
 # TODO fix explore(namedtuple)
 # TODO methods filter
 # or just a type filter?
 # TODO empty overview layouts for when there are 0 public attributes
 # TODO search filter
-# TODO generate the explorer lines on cachedobject instatiation to speed up processing
-#    - Auto generate ALL renderables on init. docstring, repr (i think already done) type, len, source, etc
 # TODO use inspect.ismethod inspect.ismodule, inspect.isfunction isclass
-# TODO 'i' to fullscreen print rich.inspect
 
 console = Console()
 
