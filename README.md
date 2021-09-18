@@ -35,14 +35,15 @@ explore(pandas)
 
 https://user-images.githubusercontent.com/13981456/133886899-ae91cc77-7b63-4e39-9cbc-197805c72f24.mov
 
-### List explorer
+### List/tuple explorer
 
-
-https://user-images.githubusercontent.com/13981456/133888385-08568bd4-30e3-407b-a404-5f7db346fb99.mov
-
+https://user-images.githubusercontent.com/13981456/133889219-0b80d1f4-697a-4532-aa4a-00898267eef5.mov
 
 
 
 ## Contributing
 Read [CONTRIBUTING.md](CONTRIBUTING.md)
+
+
+
 
