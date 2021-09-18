@@ -10,6 +10,7 @@ from rich.layout import Layout
 from rich.panel import Panel
 from rich.syntax import Syntax
 
+from .utils import is_selectable
 from .cached_object import CachedObject
 from .explorer_layout import ExplorerLayout, ExplorerState
 from .help_layout import HelpLayout, HelpState, random_error_quote
@@ -26,6 +27,7 @@ version = "1.1"
 # TODO generate the explorer lines on cachedobject instatiation to speed up processing
 #    - Auto generate ALL renderables on init. docstring, repr (i think already done) type, len, source, etc
 # TODO use inspect.ismethod inspect.ismodule, inspect.isfunction isclass
+# TODO 'i' to fullscreen print rich.inspect
 
 console = Console()
 
@@ -164,9 +166,10 @@ class Explorer:
             else:
                 new_cached_obj = self.cached_obj.selected_cached_obj
 
-            if new_cached_obj.obj not in (None, [], {}, (), set()) and not callable(
-                new_cached_obj.obj
-            ):
+            # if new_cached_obj.obj not in (None, [], {}, (), set()) and not callable(
+            #     new_cached_obj.obj
+            # ):
+            if is_selectable(new_cached_obj):
                 self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
                 self.cached_obj = new_cached_obj
                 self.cached_obj.cache_attributes()

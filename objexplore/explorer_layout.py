@@ -11,7 +11,7 @@ from .cached_object import CachedObject
 
 console = Console()
 
-ExplorerState = namedtuple("ExplorerState", ["public", "private", "dict"])
+ExplorerState = namedtuple("ExplorerState", ["public", "private", "dict", "list"])
 
 highlighter = ReprHighlighter()
 
@@ -22,11 +22,14 @@ class ExplorerLayout(Layout):
         self.cached_obj = cached_obj
         if type(cached_obj.obj) == dict:
             self.state = ExplorerState.dict
+        elif type(cached_obj.obj) == list:
+            self.state = ExplorerState.list
         else:
             self.state = ExplorerState.public
         self.public_index = self.private_index = 0
         self.public_window = self.private_window = 0
         self.dict_index = self.dict_window = 0
+        self.list_index = self.list_window = 0
 
     def selected_cached_object(self, cached_obj) -> CachedObject:
         if self.state == ExplorerState.public:
@@ -61,14 +64,22 @@ class ExplorerLayout(Layout):
                 self.cached_obj.obj[key], attr_name=key
             )
 
+        elif self.state == ExplorerState.list:
+            item = self.cached_obj.obj[self.list_index]
+            self.cached_obj.selected_cached_obj = CachedObject(item)
+
     @staticmethod
     def get_panel_width(term_width: int) -> int:
         return (term_width - 4) // 4 - 4
 
+    @staticmethod
+    def get_panel_height(term_height: int) -> int:
+        return term_height - 5
+
     def dict_layout(self, term_width: int, term_height: int) -> Layout:
         """ Return the dictionary explorer layout """
         panel_width = self.get_panel_width(term_width)
-        panel_height = term_height - 5
+        panel_height = self.get_panel_height(term_height)
         lines = []
 
         if self.dict_window == 0:
@@ -105,7 +116,52 @@ class ExplorerLayout(Layout):
                 text,
                 title="[i][cyan]dict[/cyan]()",
                 title_align="right",
-                subtitle=f"([magenta]{self.dict_index + 1}[/magenta]/[magenta]{self.cached_obj.num_keys}[/magenta])",
+                subtitle=f"([magenta]{self.dict_index + 1}[/magenta]/[magenta]{self.cached_obj.length}[/magenta])",
+                subtitle_align="right",
+                style="white",
+            )
+        )
+        return self
+
+    def list_layout(self, term_width: int, term_height: int) -> Layout:
+        panel_width = self.get_panel_width(term_width)
+        panel_height = self.get_panel_height(term_height)
+        lines = []
+
+        if self.list_window == 0:
+            lines.append(Text("["))
+            start = 0
+            num_lines = panel_height - 1
+        elif self.list_window == 1:
+            start = 0
+            num_lines = panel_height
+        else:
+            start = self.list_window - 1
+            num_lines = panel_height
+
+        end = start + num_lines
+        index = start
+
+        for line in self.cached_obj.list_lines[start:end]:
+            new_line = line.copy()
+
+            if index == self.list_index:
+                new_line.style = "reverse"
+
+            new_line.truncate(panel_width)
+            lines.append(new_line)
+            index += 1
+
+        lines.append(Text("]"))
+
+        text = Text("\n").join(lines)
+
+        self.update(
+            Panel(
+                text,
+                title="[i][cyan]list[/cyan]()",
+                title_align="right",
+                subtitle=f"([magenta]{self.list_index + 1}[/magenta]/[magenta]{self.cached_obj.length}[/magenta])",
                 subtitle_align="right",
                 style="white",
             )
@@ -113,12 +169,20 @@ class ExplorerLayout(Layout):
         return self
 
     def __call__(self, term_width: int, term_height: int) -> Layout:
+        # TODO change to just accept term object
         """ Return the layout of the object explorer. This will be a list of lines representing the object attributes/keys/vals we are exploring """
         # TODO use [] to switch between public/private/dict layout?
 
         if self.state == ExplorerState.dict:
             return self.dict_layout(term_width, term_height)
 
+        elif self.state == ExplorerState.list:
+            return self.list_layout(term_width, term_height)
+
+        else:
+            return self.dir_layout(term_width)
+
+    def dir_layout(self, term_width: int) -> Layout:
         lines = []
 
         if self.state == ExplorerState.public:
@@ -189,6 +253,14 @@ class ExplorerLayout(Layout):
             elif self.dict_window == 1:
                 self.dict_window -= 1
 
+        elif self.state == ExplorerState.list:
+            if self.list_index > 0:
+                self.list_index -= 1
+                if self.list_index < self.list_window - 1:
+                    self.list_window -= 1
+            elif self.list_window == 1:
+                self.list_window -= 1
+
         self.update_selected_cached_object()
 
     def move_down(self, panel_height: int, cached_obj: CachedObject):
@@ -213,6 +285,14 @@ class ExplorerLayout(Layout):
             elif self.dict_window == len(cached_obj.obj.keys()) - panel_height:
                 self.dict_window += 1
 
+        elif self.state == ExplorerState.list:
+            if self.list_index < len(cached_obj.obj) - 1:
+                self.list_index += 1
+                if self.list_index > self.list_window + panel_height - 1:
+                    self.list_window += 1
+            elif self.list_window == len(cached_obj.obj) - panel_height:
+                self.list_window += 1
+
         self.update_selected_cached_object()
 
     def move_top(self):
@@ -226,6 +306,9 @@ class ExplorerLayout(Layout):
 
         elif self.state == ExplorerState.dict:
             self.dict_index = self.dict_window = 0
+
+        elif self.state == ExplorerState.list:
+            self.list_index = self.list_window = 0
 
         self.update_selected_cached_object()
 
@@ -241,5 +324,9 @@ class ExplorerLayout(Layout):
         elif self.state == ExplorerState.dict:
             self.dict_index = len(cached_obj.obj.keys()) - 1
             self.dict_window = max(0, self.dict_index - panel_height + 2)
+
+        elif self.state == ExplorerState.list:
+            self.list_index = len(cached_obj.obj) - 1
+            self.list_window = max(0, self.list_index - panel_height + 2)
 
         self.update_selected_cached_object()
