@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, List
 
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
@@ -70,6 +70,18 @@ class CachedObject:
             self.length = str(len(self.obj))
         except TypeError:
             self.length = None
+
+        if type(self.obj) == dict:
+            self.repr_dict_lines: List[Text] = []
+            for key, val in self.obj.items():
+                if type(key) is str:
+                    repr_key = highlighter(f'"{key}"')
+                else:
+                    repr_key = highlighter(key)
+                repr_val = highlighter(str(type(val)))
+                line = Text('  ') + repr_key + Text(': ') + repr_val
+                line.overflow = "ellipsis"
+                self.repr_dict_lines.append(line)
 
     def cache_attributes(self):
         """ Create a CachedObject for each attribute of the self.obj """

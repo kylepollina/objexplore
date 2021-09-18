@@ -4,9 +4,11 @@ from rich.text import Text
 from collections import namedtuple
 
 from .cached_object import CachedObject
+from rich.highlighter import ReprHighlighter
 
 ExplorerState = namedtuple('ExplorerState', ['public', 'private', 'dict'])
 
+highlighter = ReprHighlighter()
 
 class ExplorerLayout(Layout):
     def __init__(self, cached_obj: CachedObject, *args, **kwargs):
@@ -45,15 +47,18 @@ class ExplorerLayout(Layout):
             attr = self.cached_obj.plain_private_attributes[self.private_index]
             self.cached_obj.selected_cached_obj = self.cached_obj[attr]
 
-    def dict_layout(self, cached_obj: CachedObject) -> Layout:
+    def dict_layout(self, cached_obj: CachedObject, term_width: int) -> Layout:
         lines = [Text('{')]
-        for index, key in enumerate(cached_obj.obj.keys()):
+        panel_width = (term_width - 4) // 4 - 4
+        for index, line in enumerate(cached_obj.repr_dict_lines):
             if index == self.dict_index:
                 style = "reverse"
             else:
                 style = "none"
 
-            lines.append(Text(f'  {key}', style=style))
+            line.style = style
+            line.truncate(panel_width)
+            lines.append(line)
 
         lines.append(Text('}'))
 
@@ -68,7 +73,7 @@ class ExplorerLayout(Layout):
 
     def __call__(self, cached_obj: CachedObject, term_width: int) -> Layout:
         if self.state == ExplorerState.dict:
-            return self.dict_layout(cached_obj)
+            return self.dict_layout(cached_obj, term_width)
 
         if self.state == ExplorerState.public:
             attribute_text = []
