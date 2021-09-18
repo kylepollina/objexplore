@@ -33,7 +33,8 @@ explore(pandas)
 
 ### Dictionary explorer
 
-https://user-images.githubusercontent.com/13981456/133886899-ae91cc77-7b63-4e39-9cbc-197805c72f24.mov
+https://user-images.githubusercontent.com/13981456/133894806-c4dd6101-1e03-4b33-8c65-b6cca0a2c03f.mov
+
 
 ### List/tuple explorer
 
