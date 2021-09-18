@@ -74,7 +74,8 @@ Version:         [cyan]{self.version}[/cyan]
 PyPI:            [cyan]https://pypi.org/project/objexplore[/cyan]
 Source:          [cyan]https://github.com/kylepollina/objexplore[/cyan][yellow italic]
 Report an issue[/yellow italic]: [cyan]https://github.com/kylepollina/objexplore/issues[/cyan]\n\n"""
-                + "[i]" + self.random_quote()
+                + "[i]"
+                + self.random_quote()
             )
 
     def random_quote(self):
@@ -88,18 +89,16 @@ Report an issue[/yellow italic]: [cyan]https://github.com/kylepollina/objexplore
                 "Thanks for checking this out ;)",
                 "Why, hello there!",
                 "Oh well look who it is!",
-
                 "Oh if a man tried\n"
                 "To take his time on Earth\n"
                 "And prove before he died\n"
                 "What one man's life could be worth\n"
                 "I wonder what would happen to this world\n"
                 " - Harry Chapin",
-
                 "In this world, people [u i]can[/u i] change it for the better,\n"
                 "and that those people who are crazy enough to think that\n"
                 "they can change the world are the ones that actually do.\n"
-                " - Steve Jobs"
+                " - Steve Jobs",
             ]
         )
 

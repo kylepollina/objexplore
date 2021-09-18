@@ -1,8 +1,9 @@
 import inspect
-from typing import Any, Dict, Optional, Union, List
+from typing import Any, Dict, List, Optional, Union
 
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
+from rich.style import Style
 from rich.syntax import Syntax
 from rich.text import Text
 
@@ -19,12 +20,12 @@ class CachedObject:
     def __init__(
         self,
         obj: Any,
-        dotpath: str = "",
         attr_name: str = None,
+        dotpath: str = "",
     ):
         self.obj = obj
         self.dotpath = dotpath
-        self.attr_name = attr_name
+        self.attr_name = attr_name if attr_name else repr(obj)
         self.is_callable = callable(obj)
         self.selected_cached_obj: CachedObject
 
@@ -72,11 +73,13 @@ class CachedObject:
                 # Traceback (most recent call last):
                 #   File "<stdin>", line 1, in <module>
                 # AttributeError: __abstractmethods__
-                self.public_lines.append(Text(plain_attr, style="white"))
+                self.public_lines.append(Text(plain_attr, style=Style()))
             if callable(attr) or attr is None:
-                self.public_lines.append(Text(plain_attr, style="dim white italic"))
+                self.public_lines.append(
+                    Text(plain_attr, style=Style(dim=True, italic=True))
+                )
             else:
-                self.public_lines.append(Text(plain_attr, style="white"))
+                self.public_lines.append(Text(plain_attr, style=Style()))
 
         self.private_lines: List[Text] = []
         for plain_attr in self.plain_private_attributes:
@@ -91,12 +94,16 @@ class CachedObject:
                 # Traceback (most recent call last):
                 #   File "<stdin>", line 1, in <module>
                 # AttributeError: __abstractmethods__
-                self.private_lines.append(Text(plain_attr, style="dim white italic"))
+                self.private_lines.append(
+                    Text(plain_attr, style=Style(dim=True, italic=True))
+                )
             else:
                 if callable(attr) or attr is None:
-                    self.private_lines.append(Text(plain_attr, style="dim white italic"))
+                    self.private_lines.append(
+                        Text(plain_attr, style=Style(dim=True, italic=True))
+                    )
                 else:
-                    self.private_lines.append(Text(plain_attr, style="white"))
+                    self.private_lines.append(Text(plain_attr, style=Style()))
 
         # Key:val pair of attribute name and the cached object associated with it
         self.cached_attributes: Dict[str, CachedObject] = {}
@@ -126,9 +133,9 @@ class CachedObject:
                 repr_val = highlighter(str(type(val)))
 
                 if callable(val):
-                    repr_val.style = "dim italic"
+                    repr_val.style = Style(dim=True, italic=True)
 
-                line = Text('  ') + repr_key + Text(': ') + repr_val
+                line = Text("  ") + repr_key + Text(": ") + repr_val
                 line.overflow = "ellipsis"
                 self.dict_lines.append(line)
 
@@ -138,7 +145,7 @@ class CachedObject:
     def title(self):
         # for cases when the object is a huge dictionary we shouldnt try to render the whole dict
         if len(self._repr_str) > console.width - 4:
-            return Text(self.attr_name + ' ') + self.typeof
+            return Text(self.attr_name + " ") + self.typeof
         else:
             return self.repr
 

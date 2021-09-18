@@ -1,15 +1,17 @@
-from rich.layout import Layout
-from rich.panel import Panel
-from rich.text import Text
 from collections import namedtuple
 
-from .cached_object import CachedObject
-from rich.highlighter import ReprHighlighter
 from rich.console import Console
+from rich.highlighter import ReprHighlighter
+from rich.layout import Layout
+from rich.panel import Panel
+from rich.style import Style
+from rich.text import Text
+
+from .cached_object import CachedObject
 
 console = Console()
 
-ExplorerState = namedtuple('ExplorerState', ['public', 'private', 'dict'])
+ExplorerState = namedtuple("ExplorerState", ["public", "private", "dict"])
 
 highlighter = ReprHighlighter()
 
@@ -55,7 +57,9 @@ class ExplorerLayout(Layout):
             # have to create a cached object every time to not infinitely recurse
             # TODO add more details
             key = list(self.cached_obj.obj.keys())[self.dict_index]
-            self.cached_obj.selected_cached_obj = CachedObject(self.cached_obj.obj[key], attr_name=key)
+            self.cached_obj.selected_cached_obj = CachedObject(
+                self.cached_obj.obj[key], attr_name=key
+            )
 
     @staticmethod
     def get_panel_width(term_width: int) -> int:
@@ -94,7 +98,7 @@ class ExplorerLayout(Layout):
         # Always add the } to the end, if it is out of view it won't be printed anyways
         lines.append(Text("}"))
 
-        text = Text('\n').join(lines)
+        text = Text("\n").join(lines)
 
         self.update(
             Panel(
@@ -121,7 +125,7 @@ class ExplorerLayout(Layout):
             for index, line in enumerate(self.cached_obj.public_lines):
                 _line = line.copy()
                 if index == self.public_index:
-                    _line.style += " reverse"
+                    _line.style += Style(reverse=True)  # type: ignore
                 lines.append(_line)
 
             title = "[i][cyan]dir[/cyan]()[/i] | [u]public[/u] [dim]private[/dim]"
@@ -135,7 +139,7 @@ class ExplorerLayout(Layout):
             for index, line in enumerate(self.cached_obj.private_lines):
                 _line = line.copy()
                 if index == self.private_index:
-                    _line.style += " reverse"
+                    _line.style += Style(reverse=True)  # type: ignore
                 lines.append(_line)
 
             title = "[i][cyan]dir[/cyan]()[/i] | [dim]public[/dim] [u]private[/u]"
@@ -145,7 +149,7 @@ class ExplorerLayout(Layout):
                 f"[/magenta][white]/[/white][magenta]{len(self.cached_obj.plain_private_attributes)}[/magenta][white])"
             )
 
-        renderable = Text('\n').join(lines[self.public_window:])
+        renderable = Text("\n").join(lines[self.public_window :])
 
         # If terminal is too small don't show the 'dir()' part of the title
         if term_width / 4 < 28:

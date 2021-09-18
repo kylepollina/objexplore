@@ -3,7 +3,6 @@ import signal
 from typing import Any, Optional, Union
 
 import blessed
-import rich
 from blessed import Terminal
 from rich import print as rprint
 from rich.console import Console
@@ -26,8 +25,10 @@ version = "1.0"
 # TODO search filter
 # TODO generate the explorer lines on cachedobject instatiation to speed up processing
 #    - Auto generate ALL renderables on init. docstring, repr (i think already done) type, len, source, etc
+# TODO use inspect.ismethod inspect.ismodule, inspect.isfunction isclass
 
 console = Console()
+
 
 class Explorer:
     """ Explorer class used to interactively explore Python Objects """
@@ -78,7 +79,10 @@ class Explorer:
 
                 except RuntimeError as err:
                     # Some kind of error during resizing events. Ignore and continue
-                    if err.args[0] == "reentrant call inside <_io.BufferedWriter name='<stdout>'>":
+                    if (
+                        err.args[0]
+                        == "reentrant call inside <_io.BufferedWriter name='<stdout>'>"
+                    ):
                         pass
                     # Otherwise it is a new error. Raise
                     else:
@@ -260,12 +264,16 @@ class Explorer:
         if self.stack.visible:
             layout = Layout()
             layout.split_column(
-                self.explorer_layout(term_width=self.term.width, term_height=self.term.height),
+                self.explorer_layout(
+                    term_width=self.term.width, term_height=self.term.height
+                ),
                 self.stack(term_width=self.term.width),
             )
             return layout
         else:
-            return self.explorer_layout(term_width=self.term.width, term_height=self.term.height)
+            return self.explorer_layout(
+                term_width=self.term.width, term_height=self.term.height
+            )
 
     def get_overview_layout(self) -> Layout:
         if self.help_layout.visible:
@@ -318,7 +326,11 @@ def explore(obj: Any) -> Any:
         console.print_exception(show_locals=True)
         print()
         rprint(f"[red]{random_error_quote()}")
-        formatted_link = f"https://github.com/kylepollina/objexplore/issues/new?assignees=&labels=&template=bug_report.md&title={e}".replace(" ", "+")
+        formatted_link = f"https://github.com/kylepollina/objexplore/issues/new?assignees=&labels=&template=bug_report.md&title={e}".replace(
+            " ", "+"
+        )
         print("Please report the issue here:")
         rprint(f"   [link={formatted_link}][u]{formatted_link}[/u][/link]")
-        rprint("[yellow italic]Make sure to copy/paste the above traceback to the issue to make the issue quicker to solve!")
+        rprint(
+            "[yellow italic]Make sure to copy/paste the above traceback to the issue to make the issue quicker to solve!"
+        )

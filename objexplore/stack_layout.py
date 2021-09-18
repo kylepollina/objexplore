@@ -99,7 +99,7 @@ class StackLayout(Layout):
                 self.window += 1
 
     def select(self) -> CachedObject:
-        """ The stack always contains every stack frame including the current frame
+        """The stack always contains every stack frame including the current frame
         so selecting based on the index, we want to rebuild the stack to be everything
         up to the selected index and then pop the very top off and return
 
