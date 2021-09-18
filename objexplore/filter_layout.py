@@ -16,11 +16,18 @@ class FilterLayout(Layout):
         super().__init__(*args, **kwargs)
         self.cached_obj = cached_obj
         self.filters: Dict[str, List[bool, types.FunctionType]] = {
-            'builtin': [False, lambda cached_obj: cached_obj.isbuiltin],
             'class': [False, lambda cached_obj: cached_obj.isclass],
             'function': [False, lambda cached_obj: cached_obj.isfunction],
             'method': [False, lambda cached_obj: cached_obj.ismethod],
-            'module': [False, lambda cached_obj: cached_obj.ismodule]
+            'module': [False, lambda cached_obj: cached_obj.ismodule],
+            'int': [False, lambda cached_obj: type(cached_obj.obj) == int],
+            'float': [False, lambda cached_obj: type(cached_obj.obj) == float],
+            'bool': [False, lambda cached_obj: type(cached_obj.obj) == bool],
+            'dict': [False, lambda cached_obj: type(cached_obj.obj) == dict],
+            'list': [False, lambda cached_obj: type(cached_obj.obj) == list],
+            'tuple': [False, lambda cached_obj: type(cached_obj.obj) == tuple],
+            'set': [False, lambda cached_obj: type(cached_obj.obj) == set],
+            'builtin': [False, lambda cached_obj: cached_obj.isbuiltin],
         }
         self.index = 0
         self.cached_obj.set_filters(self.get_enabled_filters())

@@ -4,7 +4,6 @@ from typing import Optional
 from rich.layout import Layout
 from rich.style import Style
 from rich.panel import Panel
-from rich.pretty import Pretty
 from rich.text import Text
 
 from .cached_object import CachedObject
@@ -56,7 +55,7 @@ class OverviewLayout(Layout):
             return layout
 
     def get_value_panel(self, cached_obj: CachedObject, term_height: int):
-        if is_selectable(cached_obj):
+        if is_selectable(cached_obj.obj):
             title = "[i]preview[/i] | [i][cyan]repr[/cyan]()[/i]"
             subtitle = "[dim][u]p[/u]:toggle [u]f[/u]:fullscreen [u]{}[/u]:switch pane"
             renderable = cached_obj.pretty
@@ -66,41 +65,30 @@ class OverviewLayout(Layout):
             else:
                 renderable.max_length = (max(term_height - 9, 1))
 
-            return Panel(
-                renderable,
-                title=title,
-                title_align="left",
-                subtitle=subtitle,
-                subtitle_align="left",
-                style=Style(color="white")
-            )
-
         else:
-            title = "[i]preview[/i] | [i][cyan]repr[/cyan]()[/i] [dim]source"
+            if self.preview_state == PreviewState.repr:
+                renderable = cached_obj.pretty
+                title = "[i]preview[/i] | [i][cyan]repr[/cyan]()[/i] [dim]source"
+
+                if self.state == OverviewState.all:
+                    num_lines = (max((term_height - 6) // 2 - 7, 1))
+                else:
+                    num_lines = (max(term_height - 9, 1))
+
+            if self.preview_state == PreviewState.source:
+                renderable = cached_obj.get_source(term_height)
+                title = "[i]preview[/i] | [dim][cyan]repr[/cyan]()[/dim] [underline]source"
+
             subtitle = "[dim][u]p[/u]:toggle [u]f[/u]:fullscreen [u]{}[/u]:switch pane"
-            renderable = cached_obj.pretty
 
-            if self.state == OverviewState.all:
-                renderable.max_length = (max((term_height - 6) // 2 - 7, 1))
-            else:
-                renderable.max_length = (max(term_height - 9, 1))
-
-
-        #     if self.state == OverviewState.all:
-        #         renderable = Pretty(
-        #             renderable, max_length=(max((term_height - 6) // 2 - 7, 1))
-        #         )
-        #     else:
-        #         renderable = Pretty(renderable, max_length=(max(term_height - 9, 1)))
-
-        # return Panel(
-        #     renderable,
-        #     title=title,
-        #     title_align="left",
-        #     subtitle=subtitle,
-        #     subtitle_align="left",
-        #     style="white",
-        # )
+        return Panel(
+            renderable,
+            title=title,
+            title_align="left",
+            subtitle=subtitle,
+            subtitle_align="left",
+            style=Style(color="white")
+        )
 
     def get_info_layout(self, cached_obj: CachedObject):
         if cached_obj.length:

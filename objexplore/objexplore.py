@@ -149,13 +149,13 @@ class Explorer:
 
         # if the filter view is open, only accept inputs to move around/close the filter view
         if self.filter_layout.visible and (
-            key not in ("n", "j", "k", "\n", " ")
+            key not in ("n", "j", "k", "\n", " ", "[", "]")
             and key.code
             not in (self.term.KEY_UP, self.term.KEY_DOWN, self.term.KEY_RIGHT)
         ):
             return
 
-        elif key == "k" or key.code == self.term.KEY_UP:
+        if key == "k" or key.code == self.term.KEY_UP:
             if self.stack.visible:
                 self.stack.move_up()
             elif self.filter_layout.visible:
@@ -226,7 +226,7 @@ class Explorer:
                 self.explorer_layout.state = ExplorerState.public
 
         elif key in ("{", "}"):
-            if not callable(self.cached_obj.selected_cached_obj.obj):
+            if not is_selectable(self.explorer_layout.selected_cached_object()):
                 return
 
             if self.overview_layout.preview_state == PreviewState.repr:
@@ -255,13 +255,13 @@ class Explorer:
             printable: Union[str, Syntax]
 
             if self.overview_layout.state == OverviewState.docstring:
-                printable = self.cached_obj.selected_cached_obj.docstring
+                printable = self.explorer_layout.selected_cached_object().docstring
 
             elif self.overview_layout.preview_state == PreviewState.repr:
-                printable = self.cached_obj.selected_cached_obj.obj
+                printable = self.explorer_layout.selected_cached_object().obj
 
             elif self.overview_layout.preview_state == PreviewState.source:
-                printable = self.cached_obj.selected_cached_obj.get_source(
+                printable = self.explorer_layout.selected_cached_object().get_source(
                     fullscreen=True
                 )
 
