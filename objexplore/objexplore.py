@@ -17,7 +17,7 @@ from .help_layout import HelpLayout, HelpState, random_error_quote
 from .overview_layout import OverviewLayout, OverviewState, PreviewState
 from .stack_layout import StackFrame, StackLayout
 
-version = "1.2.2"
+version = "1.2.3"
 
 # TODO fix explore(namedtuple)
 # TODO methods filter
@@ -166,10 +166,7 @@ class Explorer:
             else:
                 new_cached_obj = self.cached_obj.selected_cached_obj
 
-            # if new_cached_obj.obj not in (None, [], {}, (), set()) and not callable(
-            #     new_cached_obj.obj
-            # ):
-            if is_selectable(new_cached_obj):
+            if is_selectable(new_cached_obj.obj):
                 self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
                 self.cached_obj = new_cached_obj
                 self.cached_obj.cache_attributes()
