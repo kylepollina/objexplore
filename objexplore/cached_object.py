@@ -19,6 +19,12 @@ PRIVATE = "PRIVATE"
 
 console = Console()
 
+def safegetattr(obj, attr):
+    try:
+        return getattr(obj, attr)
+    except Exception:
+        return None
+
 
 class CachedObject:
     def __init__(
@@ -56,17 +62,6 @@ class CachedObject:
 
         self.attr_name = attr_name if attr_name else repr(self.obj)
 
-        # Highlighted attributes
-        if not is_selectable(self.obj):
-            style = Style(dim=True, italic=True)
-        else:
-            style = Style()
-        self.text = Text(self.attr_name, style)
-
-        self.typeof: Text = highlighter(str(type(self.obj)))
-        self.docstring: Text = console.render_str(inspect.getdoc(self.obj) or "None")
-        self.repr = highlighter(repr(self.obj))
-        self.repr.overflow = "ellipsis"
 
         if "__weakref__" in self.plain_attrs:
             # Ignore weakrefs
@@ -109,8 +104,36 @@ class CachedObject:
         self.ismodule = inspect.ismodule(self.obj)
         self.filters: List[types.FunctionType] = []
 
-
+        # Highlighted attributes
+        self.typeof: Text = highlighter(str(type(self.obj)))
+        self.docstring: Text = console.render_str(inspect.getdoc(self.obj) or "None")
+        self.docstring_lines = self.docstring.split()
+        self.repr = highlighter(repr(self.obj))
+        self.repr.overflow = "ellipsis"
         self.pretty = Pretty(self.obj)
+
+        self.text = Text(self.attr_name, style=Style(), overflow="ellipsis")
+        if self.ismodule:
+            self.text.style = Style(color="blue")
+        elif self.isclass:
+            self.text.style = Style(color="magenta")
+        if self.isfunction:
+            self.text += Text("()", style=Style(color="white"))
+        # elif callable(self.obj):
+        #     pass
+        #     # self.text.style = Style(color="yellow", dim=True)
+        elif type(self.obj) in (dict, set):
+            self.text += Text("{}", style=Style(color="white"))
+        elif type(self.obj) == list:
+            self.text += Text("[]", style=Style(color="white"))
+        elif type(self.obj) == tuple:
+            self.text += Text("()", style=Style(color="white"))
+        elif self.obj is None:
+            self.text.style = Style(dim=True, italic=True)
+        # else:
+        #     self.text.style = Style()
+
+
 
     @property
     def title(self):
@@ -125,7 +148,7 @@ class CachedObject:
         if not self.public_attributes:
             for attr in self.plain_public_attributes:
                 self.public_attributes[attr] = CachedObject(
-                    getattr(self.obj, attr),
+                    safegetattr(self.obj, attr),
                     parent_path=self.dotpath,
                     attr_name=attr
                 )
@@ -133,7 +156,7 @@ class CachedObject:
         if not self.private_attributes:
             for attr in self.plain_private_attributes:
                 self.private_attributes[attr] = CachedObject(
-                    getattr(self.obj, attr),
+                    safegetattr(self.obj, attr),
                     parent_path=self.dotpath,
                     attr_name=attr
                 )
@@ -246,54 +269,3 @@ class CachedObject:
                 line_range=(0, term_height),
                 background_color="default",
             )
-
-
-        # # Pre-generated list of lines to render in the explorer layout when exploring public or private attributes of an object
-        # self.public_lines: List[Text] = []
-        # for plain_attr in self.plain_public_attributes:
-        #     try:
-        #         attr = getattr(self.obj, plain_attr)
-        #     except AttributeError:
-        #         # There is a possibility that an attribute returned by dir() will not be accessable via getattr
-        #         # ex:
-        #         # >>> dir(type)[0]
-        #         # '__abstractmethods__'
-        #         # >>> getattr(type, dir(type)[0])
-        #         # Traceback (most recent call last):
-        #         #   File "<stdin>", line 1, in <module>
-        #         # AttributeError: __abstractmethods__
-        #         self.public_lines.append(Text(plain_attr, style=Style()))
-        #     if callable(attr) or attr is None:
-        #         self.public_lines.append(
-        #             Text(plain_attr, style=Style(dim=True, italic=True))
-        #         )
-        #     else:
-        #         self.public_lines.append(Text(plain_attr, style=Style()))
-
-        # self.private_lines: List[Text] = []
-        # for plain_attr in self.plain_private_attributes:
-        #     try:
-        #         attr = getattr(self.obj, plain_attr)
-        #     except AttributeError:
-        #         # There is a possibility that an attribute returned by dir() will not be accessable via getattr
-        #         # ex:
-        #         # >>> dir(type)[0]
-        #         # '__abstractmethods__'
-        #         # >>> getattr(type, dir(type)[0])
-        #         # Traceback (most recent call last):
-        #         #   File "<stdin>", line 1, in <module>
-        #         # AttributeError: __abstractmethods__
-        #         self.private_lines.append(
-        #             Text(plain_attr, style=Style(dim=True, italic=True))
-        #         )
-        #     else:
-        #         if callable(attr) or attr is None:
-        #             self.private_lines.append(
-        #                 Text(plain_attr, style=Style(dim=True, italic=True))
-        #             )
-        #         else:
-        #             self.private_lines.append(Text(plain_attr, style=Style()))
-
-        # # Key:val pair of attribute name and the cached object associated with it
-        # self.cached_attributes: Dict[str, CachedObject] = {}
-

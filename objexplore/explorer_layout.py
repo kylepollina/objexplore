@@ -191,6 +191,7 @@ class ExplorerLayout(Layout):
 
     def dir_layout(self, term_width: int, term_height: int) -> Layout:
         lines = []
+        panel_width = self.get_panel_width(term_width)
 
         if self.state == ExplorerState.public:
             # Reset the public index / window in case applying a filter has now moved the index
@@ -203,6 +204,16 @@ class ExplorerLayout(Layout):
                 line = cached_obj.text.copy()
                 if index == self.public_index:
                     line.style += Style(reverse=True)
+
+                # dim_typeof = cached_obj.typeof.copy()
+                # dim_typeof.style = Style(dim=True)
+                # line = (
+                #     line
+                #     + Text(" " * max(2, panel_width - (len(line) + len(cached_obj.typeof))))
+                #     + dim_typeof
+                # )
+
+                line.truncate(panel_width)
                 lines.append(line)
 
             title = "[i][cyan]dir[/cyan]()[/i] | [u]public[/u] [dim]private[/dim]"
@@ -227,6 +238,17 @@ class ExplorerLayout(Layout):
                 line = cached_obj.text.copy()
                 if index == self.private_index:
                     line.style += Style(reverse=True)
+
+                # TODO add a toggle able feature for this
+                # dim_typeof = cached_obj.typeof.copy()
+                # dim_typeof.style = Style(dim=True)
+                # line = (
+                #     line
+                #     + Text(" " * max(2, panel_width - (len(line) + len(cached_obj.typeof))))
+                #     + dim_typeof
+                # )
+
+                line.truncate(panel_width)
                 lines.append(line)
 
             title = "[i][cyan]dir[/cyan]()[/i] | [dim]public[/dim] [u]private[/u]"

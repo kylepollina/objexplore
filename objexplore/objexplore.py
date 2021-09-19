@@ -226,7 +226,7 @@ class Explorer:
                 self.explorer_layout.state = ExplorerState.public
 
         elif key in ("{", "}"):
-            if not is_selectable(self.explorer_layout.selected_object):
+            if not callable(self.explorer_layout.selected_object.obj):
                 return
 
             if self.overview_layout.preview_state == PreviewState.repr:

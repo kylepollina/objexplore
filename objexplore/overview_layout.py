@@ -33,7 +33,6 @@ class OverviewLayout(Layout):
                 self.get_docstring_panel(
                     cached_obj=cached_obj,
                     term_height=term_height,
-                    fullscreen=True,
                 )
             )
             return self
@@ -48,7 +47,7 @@ class OverviewLayout(Layout):
                 Layout(self.get_value_panel(cached_obj, term_height), name="obj_value"),
                 self.get_info_layout(cached_obj),
                 Layout(
-                    self.get_docstring_panel(cached_obj=cached_obj),
+                    self.get_docstring_panel(cached_obj=cached_obj, term_height=term_height),
                     name="obj_doc",
                 ),
             )
@@ -123,29 +122,20 @@ class OverviewLayout(Layout):
     def get_docstring_panel(
         self,
         cached_obj: CachedObject,
-        term_height: Optional[int] = None,
-        fullscreen: bool = False,
+        term_height: int,
     ) -> Panel:
         """ Build the docstring panel """
         title = "[i]docstring"
-        docstring = Text("\n").join(cached_obj.docstring.split("\n")[:term_height])
-        if fullscreen:
-            return Panel(
-                docstring,
-                title=title,
-                title_align="left",
-                subtitle="[dim][u]d[/u]:toggle [u]f[/u]:fullscreen",
-                subtitle_align="left",
-                style="white",
-            )
+        if self.state == OverviewState.docstring:
+            subtitle = "[dim][u]d[/u]:toggle [u]f[/u]:fullscreen",
         else:
-            # Only need to show the lines of the docstring that would be visible by
-            # the terminal
-            return Panel(
-                docstring,
-                title=title,
-                title_align="left",
-                subtitle="[dim][u]d[/u]:toggle",
-                subtitle_align="left",
-                style="white",
-            )
+            subtitle = "[dim][u]d[/u]:toggle"
+        docstring = Text("\n").join(cached_obj.docstring_lines[:term_height])
+        return Panel(
+            docstring,
+            title=title,
+            title_align="left",
+            subtitle=subtitle,
+            subtitle_align="left",
+            style="white",
+        )
