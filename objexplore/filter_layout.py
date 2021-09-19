@@ -4,11 +4,14 @@ from typing import List, Dict
 import types
 
 from rich.layout import Layout
+from rich.highlighter import ReprHighlighter
 from rich.panel import Panel
 from rich.style import Style
 from rich.text import Text
 
 from .cached_object import CachedObject
+
+highlighter = ReprHighlighter()
 
 
 class FilterLayout(Layout):
@@ -48,6 +51,11 @@ class FilterLayout(Layout):
         self.filters[filter_name][0] = not self.filters[filter_name][0]
         cached_obj.set_filters(self.get_enabled_filters())
 
+    def clear_filters(self, cached_obj: CachedObject):
+        for name, filter_data in self.filters.copy().items():
+            self.filters[name][0] = False
+        cached_obj.set_filters([])
+
     def get_lines(self) -> List[Text]:
         lines = []
         for index, (name, (enabled, method)) in enumerate(self.filters.items()):
@@ -55,7 +63,7 @@ class FilterLayout(Layout):
                 Text("[", style=Style(color="white"))
                 + Text("X" if enabled else " ", style=Style(color="blue"))
                 + Text("] ", style=Style(color="white"))
-                + Text(name, style=Style(color="white"))
+                + Text(name, style=Style(color="magenta"))
             )
             if index == self.index:
                 line.style += Style(reverse=True)
@@ -67,7 +75,11 @@ class FilterLayout(Layout):
         self.update(
             Panel(
                 Text("\n").join(lines),
-                title="filter"
+                title="\[filter]",
+                title_align="right",
+                subtitle="[white][dim][u]c[/u]:clear [u]space[/u]:select",
+                subtitle_align="right",
+                style="bright_magenta",
             )
         )
         self.size = len(self.filters) + 2

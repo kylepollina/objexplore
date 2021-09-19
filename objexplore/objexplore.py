@@ -137,11 +137,11 @@ class Explorer:
             self.help_layout.visible = True
             return
 
-        # Navigation ##########################################################
+        # Pop-ups #############################################################
 
         # if the stack view is open, only accept inputs to move around/close the stack view
         if self.stack.visible and (
-            key not in ("o", "j", "k", "\n")
+            key not in ("o", "j", "k", "\n", "n")
             and key.code
             not in (self.term.KEY_UP, self.term.KEY_DOWN, self.term.KEY_RIGHT)
         ):
@@ -149,11 +149,13 @@ class Explorer:
 
         # if the filter view is open, only accept inputs to move around/close the filter view
         if self.filter_layout.visible and (
-            key not in ("n", "j", "k", "\n", " ", "[", "]")
+            key not in ("n", "j", "k", "\n", " ", "[", "]", "c", "o")
             and key.code
             not in (self.term.KEY_UP, self.term.KEY_DOWN, self.term.KEY_RIGHT)
         ):
             return
+
+        # Navigation ##########################################################
 
         if key == "k" or key.code == self.term.KEY_UP:
             if self.stack.visible:
@@ -209,14 +211,26 @@ class Explorer:
 
         # View ################################################################
 
-        if key == "o" and self.stack.visible:
-            self.stack.visible = False
-
-        elif key == "o" and not self.stack.visible:
-            self.stack.set_visible()
+        if key == "o":
+            if self.stack.visible:
+                self.stack.visible = False
+            elif self.filter_layout.visible:
+                self.filter_layout.visible = False
+                self.stack.set_visible()
+            else:
+                self.stack.set_visible()
 
         elif key == "n":
-            self.filter_layout.visible = not self.filter_layout.visible
+            if self.filter_layout.visible:
+                self.filter_layout.visible = False
+            elif self.stack.visible:
+                self.stack.visible = False
+                self.filter_layout.visible = True
+            else:
+                self.filter_layout.visible = True
+
+        elif key == "c" and self.filter_layout.visible:
+            self.filter_layout.clear_filters(self.cached_obj)
 
         # Switch between public and private attributes
         elif key in ("[", "]"):
@@ -348,7 +362,7 @@ class Explorer:
             subtitle=(
                 "[red][u]q[/u]:quit[/red] "
                 f"[cyan][u]?[/u]:{'exit ' if self.help_layout.visible else ''}help[/] "
-                "[white][dim][u]o[/u]:toggle stack view[/dim]"
+                "[white][dim][u]o[/u]:stack [u]n[/u]:filter [u]r[/u]:return[/dim]"
             ),
             subtitle_align="left",
             height=self.term.height - 1,

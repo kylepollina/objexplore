@@ -79,7 +79,7 @@ class StackLayout(Layout):
                 stack_tree,
                 title="\[stack]",
                 title_align="right",
-                subtitle="[dim][u]j[/u]:down [u]k[/u]:up [u]enter[/u]:select",
+                subtitle="[dim][u]space[/u]:select",
                 subtitle_align="right",
                 style="bright_blue",
             )
