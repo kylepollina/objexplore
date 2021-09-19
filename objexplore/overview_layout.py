@@ -1,13 +1,14 @@
 
-from typing import Optional
+from typing import Union
 
 from rich.layout import Layout
 from rich.style import Style
 from rich.panel import Panel
 from rich.text import Text
+from rich.pretty import Pretty
+from rich.syntax import Syntax
 
 from .cached_object import CachedObject
-from .utils import is_selectable
 
 
 class OverviewState:
@@ -47,36 +48,36 @@ class OverviewLayout(Layout):
                 Layout(self.get_value_panel(cached_obj, term_height), name="obj_value"),
                 self.get_info_layout(cached_obj),
                 Layout(
-                    self.get_docstring_panel(cached_obj=cached_obj, term_height=term_height),
+                    self.get_docstring_panel(
+                        cached_obj=cached_obj, term_height=term_height
+                    ),
                     name="obj_doc",
                 ),
             )
             return layout
 
     def get_value_panel(self, cached_obj: CachedObject, term_height: int):
+        renderable: Union[str, Pretty, Syntax]
         if not callable(cached_obj.obj):
             title = "[i]preview[/i] | [i][cyan]repr[/cyan]()[/i]"
             subtitle = "[dim][u]p[/u]:toggle [u]f[/u]:fullscreen [u]{}[/u]:switch pane"
             renderable = cached_obj.pretty
 
             if self.state == OverviewState.all:
-                renderable.max_length = (max((term_height - 6) // 2 - 7, 1))
+                renderable.max_length = max((term_height - 6) // 2 - 7, 1)
             else:
-                renderable.max_length = (max(term_height - 9, 1))
+                renderable.max_length = max(term_height - 9, 1)
 
         else:
             if self.preview_state == PreviewState.repr:
                 renderable = cached_obj.pretty
                 title = "[i]preview[/i] | [i][cyan]repr[/cyan]()[/i] [dim]source"
 
-                if self.state == OverviewState.all:
-                    num_lines = (max((term_height - 6) // 2 - 7, 1))
-                else:
-                    num_lines = (max(term_height - 9, 1))
-
             if self.preview_state == PreviewState.source:
                 renderable = cached_obj.get_source(term_height)
-                title = "[i]preview[/i] | [dim][cyan]repr[/cyan]()[/dim] [underline]source"
+                title = (
+                    "[i]preview[/i] | [dim][cyan]repr[/cyan]()[/dim] [underline]source"
+                )
 
             subtitle = "[dim][u]p[/u]:toggle [u]f[/u]:fullscreen [u]{}[/u]:switch pane"
 
@@ -86,7 +87,7 @@ class OverviewLayout(Layout):
             title_align="left",
             subtitle=subtitle,
             subtitle_align="left",
-            style=Style(color="white")
+            style=Style(color="white"),
         )
 
     def get_info_layout(self, cached_obj: CachedObject):
@@ -127,7 +128,7 @@ class OverviewLayout(Layout):
         """ Build the docstring panel """
         title = "[i]docstring"
         if self.state == OverviewState.docstring:
-            subtitle = "[dim][u]d[/u]:toggle [u]f[/u]:fullscreen",
+            subtitle = "[dim][u]d[/u]:toggle [u]f[/u]:fullscreen"
         else:
             subtitle = "[dim][u]d[/u]:toggle"
         docstring = Text("\n").join(cached_obj.docstring_lines[:term_height])

@@ -252,7 +252,7 @@ class Explorer:
 
         # Fullscreen
         elif key == "f":
-            printable: Union[str, Syntax]
+            printable: Union[str, Syntax, Text]
 
             if self.overview_layout.state == OverviewState.docstring:
                 printable = self.explorer_layout.selected_object.docstring
@@ -272,7 +272,7 @@ class Explorer:
             pydoc.pager(str_out)
 
         elif key == "H":
-            help(self.explorer_layout.selected_object())
+            help(self.explorer_layout.selected_object)
 
         elif key == "i":
             with console.capture() as capture:
@@ -303,7 +303,8 @@ class Explorer:
             layout = Layout()
             layout.split_column(
                 self.explorer_layout(
-                    term_width=self.term.width, term_height=self.term.height,
+                    term_width=self.term.width,
+                    term_height=self.term.height,
                 ),
                 self.stack(term_width=self.term.width),
             )
@@ -312,14 +313,16 @@ class Explorer:
             layout = Layout()
             layout.split_column(
                 self.explorer_layout(
-                    term_width=self.term.width, term_height=self.term.height,
+                    term_width=self.term.width,
+                    term_height=self.term.height,
                 ),
-                self.filter_layout()
+                self.filter_layout(),
             )
             return layout
         else:
             return self.explorer_layout(
-                term_width=self.term.width, term_height=self.term.height,
+                term_width=self.term.width,
+                term_height=self.term.height,
             )
 
     def get_overview_layout(self) -> Layout:
@@ -339,7 +342,11 @@ class Explorer:
 
         layout.split_row(self.get_explorer_layout(), self.get_overview_layout())
 
-        title = self.cached_obj.dotpath + Text(" | ", style="white") + self.cached_obj.typeof
+        title = (
+            self.cached_obj.dotpath
+            + Text(" | ", style="white")
+            + self.cached_obj.typeof
+        )
 
         object_explorer = Panel(
             layout,
@@ -357,7 +364,8 @@ class Explorer:
 
     @property
     def panel_height(self) -> int:
-        # TODO this shouldn't be here
+        # TODO think about putting this somewhere else?
+        # TODO maybe a custom terminal object
         if self.stack.visible:
             return (self.term.height - 10) // 2
         else:
@@ -368,7 +376,7 @@ def explore(obj: Any) -> Any:
     """ Run the explorer on the given object """
     try:
         frame = inspect.currentframe()
-        name = frame.f_back.f_code.co_names[1]
+        name = frame.f_back.f_code.co_names[1]  # type: ignore
         e = Explorer(obj, name_of_obj=name)
         return e.explore()
     except Exception as err:

@@ -1,10 +1,11 @@
+
 import inspect
 import types
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from rich.pretty import Pretty
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
+from rich.pretty import Pretty
 from rich.style import Style
 from rich.syntax import Syntax
 from rich.text import Text
@@ -19,6 +20,7 @@ PRIVATE = "PRIVATE"
 
 console = Console()
 
+
 def safegetattr(obj, attr):
     try:
         return getattr(obj, attr)
@@ -32,7 +34,7 @@ class CachedObject:
         obj: Any,
         parent_path: Text = None,
         attr_name: str = None,
-        index: Any = None
+        index: Any = None,
     ):
         self.obj = obj
         self.is_callable = callable(obj)
@@ -40,13 +42,17 @@ class CachedObject:
         self.plain_attrs = dir(self.obj)
 
         if self.obj is None:
-            self.dotpath = highlighter('None')
+            self.dotpath = highlighter("None")
 
         elif attr_name is not None:
             if not parent_path:
                 self.dotpath = Text(attr_name, style=Style(color="cyan"))
             else:
-                self.dotpath = parent_path + Text(".", style=Style(color="white")) + Text(attr_name, style=Style(color="cyan"))
+                self.dotpath = (
+                    parent_path
+                    + Text(".", style=Style(color="white"))
+                    + Text(attr_name, style=Style(color="cyan"))
+                )
 
         elif index is not None:
             if type(index) == str:
@@ -54,14 +60,22 @@ class CachedObject:
             else:
                 repr_index = console.render_str(str(index))
             if not parent_path:
-                self.dotpath = Text("[", style=Style(color="white")) + repr_index + Text("]", style=Style(color="white"))
+                self.dotpath = (
+                    Text("[", style=Style(color="white"))
+                    + repr_index
+                    + Text("]", style=Style(color="white"))
+                )
             else:
-                self.dotpath = parent_path + Text("[", style=Style(color="white")) + repr_index + Text("]", style=Style(color="white"))
+                self.dotpath = (
+                    parent_path
+                    + Text("[", style=Style(color="white"))
+                    + repr_index
+                    + Text("]", style=Style(color="white"))
+                )
         else:
             raise ValueError("Need to specify an attribute name or an index")
 
         self.attr_name = attr_name if attr_name else repr(self.obj)
-
 
         if "__weakref__" in self.plain_attrs:
             # Ignore weakrefs
@@ -74,25 +88,23 @@ class CachedObject:
             attr for attr in self.plain_attrs if attr.startswith("_")
         )
 
-        self.public_attributes = {}
-        self.private_attributes = {}
-        self.filtered_public_attributes = {}
-        self.filtered_private_attributes = {}
-        self._hidden_public_attributes = {}
-        self._hidden_private_attributes = {}
-        # TODO hidden for below
-        self.cached_dict = {}
-        self.cached_list = []
+        self.public_attributes: Dict[str, CachedObject] = {}
+        self.private_attributes: Dict[str, CachedObject] = {}
+        self.filtered_public_attributes: Dict[str, CachedObject] = {}
+        self.filtered_private_attributes: Dict[str, CachedObject] = {}
+        # TODO display # of hidden items?
+        # self._hidden_public_attributes = {}
+        # self._hidden_private_attributes = {}
 
         try:
-            self._source = inspect.getsource(self.obj)
+            self._source = inspect.getsource(self.obj)  # type: ignore
         except Exception:
             self._source = ""
 
         self.length: Optional[str]
 
         try:
-            self.length = str(len(self.obj))
+            self.length = str(len(self.obj))  # type: ignore
         except TypeError:
             self.length = None
 
@@ -128,18 +140,16 @@ class CachedObject:
             self.text += Text("[]", style=Style(color="white"))
         elif type(self.obj) == tuple:
             self.text += Text("()", style=Style(color="white"))
-        elif self.obj is None:
+        elif self.obj in (None, (), {}, [], set()):
             self.text.style = Style(dim=True, italic=True)
         # else:
         #     self.text.style = Style()
-
-
 
     @property
     def title(self):
         # for cases when the object is a huge dictionary we shouldnt try to render the whole dict
         if len(self.repr.plain) > console.width - 4:
-            return Text(self.attr_name) + Text(' ') + self.typeof
+            return Text(self.attr_name) + Text(" ") + self.typeof
         title = self.repr.copy()
         title.truncate(console.width - 4)
         return title
@@ -150,7 +160,7 @@ class CachedObject:
                 self.public_attributes[attr] = CachedObject(
                     safegetattr(self.obj, attr),
                     parent_path=self.dotpath,
-                    attr_name=attr
+                    attr_name=attr,
                 )
 
         if not self.private_attributes:
@@ -158,7 +168,7 @@ class CachedObject:
                 self.private_attributes[attr] = CachedObject(
                     safegetattr(self.obj, attr),
                     parent_path=self.dotpath,
-                    attr_name=attr
+                    attr_name=attr,
                 )
 
         self.filter()
@@ -212,7 +222,8 @@ class CachedObject:
                 line = Text(" ") + repr_key + Text(": ") + repr_val
                 line.overflow = "ellipsis"
                 self.filtered_dict[key] = (
-                    line, CachedObject(val, parent_path=self.dotpath, index=key)
+                    line,
+                    CachedObject(val, parent_path=self.dotpath, index=key),
                 )
             if self.filters:
                 for attr, (line, cached_obj) in self.filtered_dict.copy().items():

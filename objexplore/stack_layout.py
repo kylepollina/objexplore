@@ -9,12 +9,12 @@ from rich.tree import Tree
 from .cached_object import CachedObject
 from .explorer_layout import ExplorerLayout
 from .overview_layout import OverviewLayout
-from .filter_layout import FilterLayout
 
 
 @dataclass
 class StackFrame:
     """ Datastructure to store a frame in the object stack """
+
     cached_obj: CachedObject
     explorer_layout: ExplorerLayout
     overview_layout: OverviewLayout

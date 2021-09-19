@@ -1,10 +1,8 @@
-
-from typing import List, Dict
-
 import types
+from typing import Dict, List
 
-from rich.layout import Layout
 from rich.highlighter import ReprHighlighter
+from rich.layout import Layout
 from rich.panel import Panel
 from rich.style import Style
 from rich.text import Text
@@ -18,19 +16,19 @@ class FilterLayout(Layout):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.filters: Dict[str, List[bool, types.FunctionType]] = {
-            'class': [False, lambda cached_obj: cached_obj.isclass],
-            'function': [False, lambda cached_obj: cached_obj.isfunction],
-            'method': [False, lambda cached_obj: cached_obj.ismethod],
-            'module': [False, lambda cached_obj: cached_obj.ismodule],
-            'int': [False, lambda cached_obj: type(cached_obj.obj) == int],
-            'str': [False, lambda cached_obj: type(cached_obj.obj) == str],
-            'float': [False, lambda cached_obj: type(cached_obj.obj) == float],
-            'bool': [False, lambda cached_obj: type(cached_obj.obj) == bool],
-            'dict': [False, lambda cached_obj: type(cached_obj.obj) == dict],
-            'list': [False, lambda cached_obj: type(cached_obj.obj) == list],
-            'tuple': [False, lambda cached_obj: type(cached_obj.obj) == tuple],
-            'set': [False, lambda cached_obj: type(cached_obj.obj) == set],
-            'builtin': [False, lambda cached_obj: cached_obj.isbuiltin],
+            "class": [False, lambda cached_obj: cached_obj.isclass],
+            "function": [False, lambda cached_obj: cached_obj.isfunction],
+            "method": [False, lambda cached_obj: cached_obj.ismethod],
+            "module": [False, lambda cached_obj: cached_obj.ismodule],
+            "int": [False, lambda cached_obj: type(cached_obj.obj) == int],
+            "str": [False, lambda cached_obj: type(cached_obj.obj) == str],
+            "float": [False, lambda cached_obj: type(cached_obj.obj) == float],
+            "bool": [False, lambda cached_obj: type(cached_obj.obj) == bool],
+            "dict": [False, lambda cached_obj: type(cached_obj.obj) == dict],
+            "list": [False, lambda cached_obj: type(cached_obj.obj) == list],
+            "tuple": [False, lambda cached_obj: type(cached_obj.obj) == tuple],
+            "set": [False, lambda cached_obj: type(cached_obj.obj) == set],
+            "builtin": [False, lambda cached_obj: cached_obj.isbuiltin],
         }
         self.index = 0
 
@@ -43,7 +41,11 @@ class FilterLayout(Layout):
             self.index -= 1
 
     def get_enabled_filters(self) -> List[types.FunctionType]:
-        return [method for name, (enabled, method) in self.filters.items() if enabled is True]
+        return [
+            method
+            for name, (enabled, method) in self.filters.items()
+            if enabled is True
+        ]
 
     def toggle(self, cached_obj: CachedObject):
         """ Toggle the selected filter on or off and update the cached_obj filters with the new filters """
@@ -66,7 +68,7 @@ class FilterLayout(Layout):
                 + Text(name, style=Style(color="magenta"))
             )
             if index == self.index:
-                line.style += Style(reverse=True)
+                line.style += Style(reverse=True)  # type: ignore
             lines.append(line)
         return lines
 
