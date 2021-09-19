@@ -18,7 +18,7 @@ from .overview_layout import OverviewLayout, OverviewState, PreviewState
 from .stack_layout import StackFrame, StackLayout
 from .filter_layout import FilterLayout
 
-version = "1.2.5"
+version = "1.2.6"
 
 # TODO fix explore(namedtuple)
 # TODO empty overview layouts for when there are 0 public attributes
@@ -54,7 +54,11 @@ class Explorer:
         )
 
         # Run self.draw() whenever the win change signal is caught
-        signal.signal(signal.SIGWINCH, self.draw)
+        try:
+            signal.signal(signal.SIGWINCH, self.draw)
+        except AttributeError:
+            # OS does not have SIGWINCH signal
+            pass
 
     def explore(self) -> Optional[Any]:
         """ Open the interactive explorer """

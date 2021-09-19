@@ -1,5 +1,7 @@
 # Contributing
 
+> Beware: This codebase is still very raw and ugly. Each new version it will be cleaned a little bit. _I Promise!_
+
 ## Running the [makefile](https://github.com/kylepollina/objexplore/blob/main/Makefile)
 
 ### `make check`
