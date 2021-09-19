@@ -17,7 +17,7 @@ from .help_layout import HelpLayout, HelpState, random_error_quote
 from .overview_layout import OverviewLayout, OverviewState, PreviewState
 from .stack_layout import StackFrame, StackLayout
 
-version = "1.2.6"
+version = "1.2.7"
 
 # TODO fix explore(namedtuple)
 # TODO methods filter
@@ -166,18 +166,19 @@ class Explorer:
                 new_cached_obj = self.stack.select()
             else:
                 new_cached_obj = self.cached_obj.selected_cached_obj
+                if not is_selectable(new_cached_obj.obj):
+                    return
 
-            if is_selectable(new_cached_obj.obj):
-                self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
-                self.cached_obj = new_cached_obj
-                self.cached_obj.cache_attributes()
-                self.stack.append(
-                    StackFrame(
-                        cached_obj=self.cached_obj,
-                        explorer_layout=self.explorer_layout,
-                        overview_layout=self.overview_layout,
-                    )
+            self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
+            self.cached_obj = new_cached_obj
+            self.cached_obj.cache_attributes()
+            self.stack.append(
+                StackFrame(
+                    cached_obj=self.cached_obj,
+                    explorer_layout=self.explorer_layout,
+                    overview_layout=self.overview_layout,
                 )
+            )
 
         # Escape
         elif (key in ("\x1b", "h") or key.code == self.term.KEY_LEFT) and self.stack:
