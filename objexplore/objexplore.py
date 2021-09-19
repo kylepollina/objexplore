@@ -20,8 +20,9 @@ from .filter_layout import FilterLayout
 
 version = "1.2.7"
 
-# TODO fix explore(namedtuple)
+# TODO re-explore the is_selectable method
 # TODO search filter
+
 
 console = Console()
 
@@ -121,7 +122,7 @@ class Explorer:
                     self.help_layout.state = HelpState.keybindings
                 return
 
-            elif key in ("j", "k") or key.code in (
+            elif key in ("j", "k", "o", "n") or key.code in (
                 self.term.KEY_UP,
                 self.term.KEY_DOWN,
             ):
@@ -133,24 +134,6 @@ class Explorer:
 
         if self.help_layout.visible is False and key == "?":
             self.help_layout.visible = True
-            return
-
-        # Pop-ups #############################################################
-
-        # if the stack view is open, only accept inputs to move around/close the stack view
-        if self.stack.visible and (
-            key not in ("o", "j", "k", "\n", "n")
-            and key.code
-            not in (self.term.KEY_UP, self.term.KEY_DOWN, self.term.KEY_RIGHT)
-        ):
-            return
-
-        # if the filter view is open, only accept inputs to move around/close the filter view
-        if self.filter_layout.visible and (
-            key not in ("n", "j", "k", "\n", " ", "[", "]", "c", "o")
-            and key.code
-            not in (self.term.KEY_UP, self.term.KEY_DOWN, self.term.KEY_RIGHT)
-        ):
             return
 
         # Navigation ##########################################################
@@ -174,18 +157,21 @@ class Explorer:
         elif key in ("\n", " ") and self.filter_layout.visible:
             self.filter_layout.toggle(cached_obj=self.cached_obj)
 
-        elif key in ("\n", "l") or key.code == self.term.KEY_RIGHT:
+        elif key in ("\n", "l", " ") or key.code == self.term.KEY_RIGHT:
 
             if self.stack.visible:
+                # If you are choosing the same frame as the current obj, then don't do anything
+                if self.stack[self.stack.index].cached_obj == self.cached_obj:
+                    return
                 new_cached_obj = self.stack.select()
             else:
-                new_cached_obj = self.cached_obj.selected_cached_obj
+                new_cached_obj = self.explorer_layout.selected_object
                 if not is_selectable(new_cached_obj.obj):
                     return
 
             self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
             self.cached_obj = new_cached_obj
-            self.cached_obj.cache_attributes()
+            self.cached_obj.cache()
             self.stack.append(
                 StackFrame(
                     cached_obj=self.cached_obj,
@@ -285,12 +271,12 @@ class Explorer:
             pydoc.pager(str_out)
 
         elif key == "H":
-            help(self.cached_obj.selected_cached_obj.obj)
+            help(self.explorer_layout.selected_object())
 
         elif key == "i":
             with console.capture() as capture:
                 rich.inspect(
-                    self.cached_obj.selected_cached_obj.obj,
+                    self.explorer_layout.selected_object.obj,
                     console=console,
                     methods=True,
                 )
@@ -300,7 +286,7 @@ class Explorer:
         elif key == "I":
             with console.capture() as capture:
                 rich.inspect(
-                    self.cached_obj.selected_cached_obj.obj, console=console, all=True
+                    self.explorer_layout.selected_object.obj, console=console, all=True
                 )
             str_out = capture.get()
             pydoc.pager(str_out)
@@ -309,7 +295,7 @@ class Explorer:
 
         # Return selected object
         elif key == "r":
-            return self.cached_obj.selected_cached_obj.obj
+            return self.explorer_layout.selected_object.obj
 
     def get_explorer_layout(self) -> Layout:
         if self.stack.visible:
