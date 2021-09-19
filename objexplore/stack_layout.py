@@ -9,6 +9,7 @@ from rich.tree import Tree
 from .cached_object import CachedObject
 from .explorer_layout import ExplorerLayout
 from .overview_layout import OverviewLayout
+from .filter_layout import FilterLayout
 
 
 @dataclass
@@ -18,6 +19,7 @@ class StackFrame:
     cached_obj: CachedObject
     explorer_layout: ExplorerLayout
     overview_layout: OverviewLayout
+    filter_layout: FilterLayout
 
 
 class StackLayout(Layout):
