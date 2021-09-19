@@ -54,7 +54,11 @@ class Explorer:
         )
 
         # Run self.draw() whenever the win change signal is caught
-        signal.signal(signal.SIGWINCH, self.draw)
+        try:
+            signal.signal(signal.SIGWINCH, self.draw)
+        except AttributeError:
+            # OS does not have SIGWINCH signal
+            pass
 
     def explore(self) -> Optional[Any]:
         """ Open the interactive explorer """
