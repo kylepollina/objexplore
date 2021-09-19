@@ -206,7 +206,7 @@ class ExplorerLayout(Layout):
                 f"[white]([/white][magenta]{self.public_index + 1 if self.cached_obj.filtered_public_attributes else 0}"
                 f"[/magenta][white]/[/white][magenta]{len(self.cached_obj.filtered_public_attributes)}[/magenta][white])"
             )
-            renderable = Text("\n").join(lines[self.public_window :])
+            renderable = Text("\n").join(lines[self.public_window:self.public_window + term_height])
 
         elif self.state == ExplorerState.private:
             # Reset the private index / window in case applying a filter has now moved the index
@@ -228,7 +228,7 @@ class ExplorerLayout(Layout):
                 f"[/magenta][white]/[/white][magenta]{len(self.cached_obj.filtered_private_attributes)}[/magenta][white])"
             )
 
-            renderable = Text("\n").join(lines[self.private_window :])
+            renderable = Text("\n").join(lines[self.private_window:self.private_window + term_height])
 
         # If terminal is too small don't show the 'dir()' part of the title
         if term_width / 4 < 28:
