@@ -21,9 +21,7 @@ from .filter_layout import FilterLayout
 version = "1.2.6"
 
 # TODO fix explore(namedtuple)
-# TODO empty overview layouts for when there are 0 public attributes
 # TODO search filter
-# TODO use inspect.ismethod inspect.ismodule, inspect.isfunction isclass
 
 console = Console()
 
