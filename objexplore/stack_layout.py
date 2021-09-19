@@ -15,7 +15,6 @@ from .filter_layout import FilterLayout
 @dataclass
 class StackFrame:
     """ Datastructure to store a frame in the object stack """
-
     cached_obj: CachedObject
     explorer_layout: ExplorerLayout
     overview_layout: OverviewLayout

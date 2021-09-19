@@ -148,6 +148,7 @@ class CachedObject:
                 for _filter in self.filters:
                     if _filter(cached_obj):
                         self.filtered_public_attributes[attr] = cached_obj
+                        break
 
         self.filtered_private_attributes = {}
         if not self.filters:
@@ -158,27 +159,40 @@ class CachedObject:
                 for _filter in self.filters:
                     if _filter(cached_obj):
                         self.filtered_private_attributes[attr] = cached_obj
+                        break
 
-        self.filtered_dict_lines: List[Text] = []
+        self.filtered_dict: Dict[str, Tuple[Text, CachedObject]] = {}
         if type(self.obj) == dict:
             for key, val in self.obj.items():
                 repr_key: Text
                 repr_val: Text
 
                 if type(key) == str:
-                    key_text = console.render_str(f'"{key}"')
+                    repr_key = console.render_str(f'"{key}"')
                 elif type(key) in (int, float, dict, list, set, tuple, bool, None):
-                    key_text = console.render_str(str(key))
+                    repr_key = console.render_str(str(key))
                 else:
-                    key_text = highlighter(str(key))
+                    repr_key = highlighter(str(key))
 
                 repr_val = highlighter(str(type(val)))
 
                 if not is_selectable(val):
-                    repr_val.style += Style(dim=True, italic=True)
+                    repr_val.style += " dim italic"
+                    repr_val.style = repr_val.style.strip()
 
                 line = Text(" ") + repr_key + Text(": ") + repr_val
                 line.overflow = "ellipsis"
+                self.filtered_dict[key] = (
+                    line, CachedObject(val, dotpath=f"{self.dotpath}[{key}]", attr_name=key)
+                )
+            if self.filters:
+                for attr, (line, cached_obj) in self.filtered_dict.copy().items():
+                    for _filter in self.filters:
+                        if _filter(cached_obj):
+                            self.filtered_dict[attr] = (line, cached_obj)
+                            break
+                    else:
+                        del self.filtered_dict[attr]
 
     def get_source(
         self, term_height: int = 0, fullscreen: bool = False

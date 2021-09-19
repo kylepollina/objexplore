@@ -47,7 +47,7 @@ class Explorer:
         self.help_layout = HelpLayout(version, visible=False, ratio=3)
         self.explorer_layout = ExplorerLayout(cached_obj=cached_obj)
         self.overview_layout = OverviewLayout(ratio=3)
-        self.filter_layout = FilterLayout(cached_obj=self.cached_obj, visible=False)
+        self.filter_layout = FilterLayout(visible=False)
 
         self.stack.append(
             StackFrame(
@@ -172,7 +172,7 @@ class Explorer:
                 self.explorer_layout.move_down(self.panel_height, self.cached_obj)
 
         elif key in ("\n", " ") and self.filter_layout.visible:
-            self.filter_layout.toggle()
+            self.filter_layout.toggle(cached_obj=self.cached_obj)
 
         elif key in ("\n", "l") or key.code == self.term.KEY_RIGHT:
 
@@ -226,7 +226,7 @@ class Explorer:
                 self.explorer_layout.state = ExplorerState.public
 
         elif key in ("{", "}"):
-            if not is_selectable(self.explorer_layout.selected_cached_object()):
+            if not is_selectable(self.explorer_layout.selected_object):
                 return
 
             if self.overview_layout.preview_state == PreviewState.repr:
@@ -255,13 +255,13 @@ class Explorer:
             printable: Union[str, Syntax]
 
             if self.overview_layout.state == OverviewState.docstring:
-                printable = self.explorer_layout.selected_cached_object().docstring
+                printable = self.explorer_layout.selected_object.docstring
 
             elif self.overview_layout.preview_state == PreviewState.repr:
-                printable = self.explorer_layout.selected_cached_object().obj
+                printable = self.explorer_layout.selected_object.obj
 
             elif self.overview_layout.preview_state == PreviewState.source:
-                printable = self.explorer_layout.selected_cached_object().get_source(
+                printable = self.explorer_layout.selected_object.get_source(
                     fullscreen=True
                 )
 
@@ -327,7 +327,7 @@ class Explorer:
             return self.help_layout()
         else:
             return self.overview_layout(
-                cached_obj=self.explorer_layout.selected_cached_object(),
+                cached_obj=self.explorer_layout.selected_object,
                 term_height=self.term.height,
                 console=console,
             )

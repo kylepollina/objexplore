@@ -38,19 +38,6 @@ class ExplorerLayout(Layout):
         self.dict_index = self.dict_window = 0
         self.list_index = self.list_window = 0
 
-    def selected_cached_object(self) -> CachedObject:
-        try:
-            if self.state == ExplorerState.public:
-                attr = list(self.cached_obj.filtered_public_attributes.keys())[self.public_index]
-                return self.cached_obj.filtered_public_attributes[attr]
-
-            elif self.state == ExplorerState.private:
-                attr = list(self.cached_obj.filtered_private_attributes.keys())[self.private_index]
-                return self.cached_obj.filtered_private_attributes[attr]
-
-        except IndexError:
-            return CachedObject(None)
-
     @staticmethod
     def get_panel_width(term_width: int) -> int:
         return (term_width - 4) // 4 - 4
@@ -62,7 +49,6 @@ class ExplorerLayout(Layout):
     def __call__(self, term_width: int, term_height: int) -> Layout:
         """ Return the layout of the object explorer. This will be a list of lines representing the object attributes/keys/vals we are exploring """
         # TODO change to just accept term object
-        # TODO use [] to switch between public/private/dict layout?
 
         if self.state == ExplorerState.dict:
             return self.dict_layout(term_width, term_height)
@@ -76,24 +62,28 @@ class ExplorerLayout(Layout):
     @property
     def selected_object(self) -> CachedObject:
         """ Return the currently selected cached object """
-        if self.state == ExplorerState.public:
-            attr = list(self.cached_obj.filtered_public_attributes.keys())[self.public_index]
-            return self.cached_obj.filtered_public_attributes[attr]
+        try:
+            if self.state == ExplorerState.public:
+                attr = list(self.cached_obj.filtered_public_attributes.keys())[self.public_index]
+                return self.cached_obj.filtered_public_attributes[attr]
 
-        elif self.state == ExplorerState.private:
-            attr = list(self.cached_obj.filtered_private_attributes.keys())[self.private_index]
-            return self.cached_obj.filtered_private_attributes[attr]
+            elif self.state == ExplorerState.private:
+                attr = list(self.cached_obj.filtered_private_attributes.keys())[self.private_index]
+                return self.cached_obj.filtered_private_attributes[attr]
 
-        elif self.state == ExplorerState.dict:
-            attr = list(self.cached_obj.filtered_dict)[self.dict_index]
-            return self.cached_obj.filterd_dict[attr]
+            elif self.state == ExplorerState.dict:
+                attr = list(self.cached_obj.filtered_dict)[self.dict_index]
+                return self.cached_obj.filtered_dict[attr][1]
 
-        elif self.state in (ExplorerState.list, ExplorerState.tuple):
-            return self.cached_obj.filtered_list[self.list_index]
+            elif self.state in (ExplorerState.list, ExplorerState.tuple):
+                return self.cached_obj.filtered_list[self.list_index]
+
+        except (KeyError, IndexError):
+            return CachedObject(None)
 
     def dict_layout(self, term_width: int, term_height: int) -> Layout:
         """ Return the dictionary explorer layout """
-        # TODO support filters
+
         panel_width = self.get_panel_width(term_width)
         panel_height = self.get_panel_height(term_height)
         lines = []
@@ -112,17 +102,15 @@ class ExplorerLayout(Layout):
         end = start + num_lines
         index = start
 
-        for line in self.cached_obj.dict_lines[start:end]:
+        for attr, (line, cached_obj) in list(self.cached_obj.filtered_dict.items())[start:end]:
             new_line = line.copy()
-
             if index == self.dict_index:
-                new_line.style = "reverse"
+                new_line.style = Style(reverse=True)
 
             new_line.truncate(panel_width)
             lines.append(new_line)
             index += 1
 
-        # Always add the } to the end, if it is out of view it won't be printed anyways
         lines.append(Text("}"))
 
         text = Text("\n").join(lines)
@@ -132,12 +120,40 @@ class ExplorerLayout(Layout):
                 text,
                 title="[i][cyan]dict[/cyan]()",
                 title_align="right",
-                subtitle=f"([magenta]{self.dict_index + 1}[/magenta]/[magenta]{self.cached_obj.length}[/magenta])",
+                subtitle=f"([magenta]{self.dict_index + 1}[/magenta]/[magenta]{len(self.cached_obj.filtered_dict)}[/magenta])",
                 subtitle_align="right",
                 style="white",
             )
         )
         return self
+
+
+        # for line in self.cached_obj.dict_lines[start:end]:
+        #     new_line = line.copy()
+
+        #     if index == self.dict_index:
+        #         new_line.style = "reverse"
+
+        #     new_line.truncate(panel_width)
+        #     lines.append(new_line)
+        #     index += 1
+
+        # # Always add the } to the end, if it is out of view it won't be printed anyways
+        # lines.append(Text("}"))
+
+        # text = Text("\n").join(lines)
+
+        # self.update(
+        #     Panel(
+        #         text,
+        #         title="[i][cyan]dict[/cyan]()",
+        #         title_align="right",
+        #         subtitle=f"([magenta]{self.dict_index + 1}[/magenta]/[magenta]{self.cached_obj.length}[/magenta])",
+        #         subtitle_align="right",
+        #         style="white",
+        #     )
+        # )
+        # return self
 
     def list_layout(self, term_width: int, term_height: int) -> Layout:
         panel_width = self.get_panel_width(term_width)
@@ -291,11 +307,11 @@ class ExplorerLayout(Layout):
                     self.private_window += 1
 
         elif self.state == ExplorerState.dict:
-            if self.dict_index < len(cached_obj.obj.keys()) - 1:
+            if self.dict_index < len(cached_obj.filtered_dict.keys()) - 1:
                 self.dict_index += 1
                 if self.dict_index > self.dict_window + panel_height - 1:
                     self.dict_window += 1
-            elif self.dict_window == len(cached_obj.obj.keys()) - panel_height:
+            elif self.dict_window == len(cached_obj.filtered_dict.keys()) - panel_height:
                 self.dict_window += 1
 
         elif self.state in (ExplorerState.list, ExplorerState.tuple):

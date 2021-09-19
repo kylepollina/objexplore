@@ -12,15 +12,15 @@ from .cached_object import CachedObject
 
 
 class FilterLayout(Layout):
-    def __init__(self, cached_obj: CachedObject, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.cached_obj = cached_obj
         self.filters: Dict[str, List[bool, types.FunctionType]] = {
             'class': [False, lambda cached_obj: cached_obj.isclass],
             'function': [False, lambda cached_obj: cached_obj.isfunction],
             'method': [False, lambda cached_obj: cached_obj.ismethod],
             'module': [False, lambda cached_obj: cached_obj.ismodule],
             'int': [False, lambda cached_obj: type(cached_obj.obj) == int],
+            'str': [False, lambda cached_obj: type(cached_obj.obj) == str],
             'float': [False, lambda cached_obj: type(cached_obj.obj) == float],
             'bool': [False, lambda cached_obj: type(cached_obj.obj) == bool],
             'dict': [False, lambda cached_obj: type(cached_obj.obj) == dict],
@@ -30,7 +30,6 @@ class FilterLayout(Layout):
             'builtin': [False, lambda cached_obj: cached_obj.isbuiltin],
         }
         self.index = 0
-        self.cached_obj.set_filters(self.get_enabled_filters())
 
     def move_down(self):
         if self.index < len(self.filters) - 1:
@@ -43,10 +42,11 @@ class FilterLayout(Layout):
     def get_enabled_filters(self) -> List[types.FunctionType]:
         return [method for name, (enabled, method) in self.filters.items() if enabled is True]
 
-    def toggle(self):
+    def toggle(self, cached_obj: CachedObject):
+        """ Toggle the selected filter on or off and update the cached_obj filters with the new filters """
         filter_name = list(self.filters.keys())[self.index]
         self.filters[filter_name][0] = not self.filters[filter_name][0]
-        self.cached_obj.set_filters(self.get_enabled_filters())
+        cached_obj.set_filters(self.get_enabled_filters())
 
     def get_lines(self) -> List[Text]:
         lines = []
