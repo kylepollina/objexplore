@@ -93,6 +93,8 @@ class CachedObject:
     @property
     def title(self):
         # for cases when the object is a huge dictionary we shouldnt try to render the whole dict
+        if len(self.repr.plain) > console.width - 4:
+            return Text(self.attr_name) + Text(' ') + self.typeof
         title = self.repr.copy()
         title.truncate(console.width - 4)
         return title
@@ -113,24 +115,6 @@ class CachedObject:
                     dotpath=f"{self.dotpath}.{attr}",
                     attr_name=attr
                 )
-
-        # TODO filter
-        if not self.cached_dict:
-            if type(self.obj) == dict:
-                for key, val in self.obj.items():
-                    self.cached_dict[key] = CachedObject(
-                        val,
-                        dotpath=f"{self.dotpath}[{key}]",
-                        attr_name=key
-                    )
-        if not self.cached_list:
-            if type(self.obj) == list:
-                for index, item in enumerate(self.obj):
-                    self.cached_dict[index] = CachedObject(
-                        item,
-                        dotpath=f"{self.dotpath}[{index}]",
-                        attr_name=key
-                    )
 
         self.filter()
 
@@ -193,6 +177,31 @@ class CachedObject:
                             break
                     else:
                         del self.filtered_dict[attr]
+
+        self.filtered_list: List[Tuple[Text, CachedObject]] = []
+        if type(self.obj) in (list, tuple, set):
+
+            for index, item in enumerate(self.obj):
+                line = (
+                    Text(" [", style=Style(color="white"))
+                    + Text(str(index), style=Style(color="blue"))
+                    + Text("] ", style=Style(color="white"))
+                    + highlighter(str(type(item)))
+                )
+                if not is_selectable(item):
+                    line.style += Style(dim=True, italic=True)
+
+                self.filtered_list.append(
+                    (line, CachedObject(item, dotpath=f"{self.dotpath}[{index}]", attr_name=str(item)))
+                )
+            if self.filters:
+                new_filtered_list: List[Tuple[Text, CachedObject]] = []
+                for line, cached_obj in self.filtered_list:
+                    for _filter in self.filters:
+                        if _filter(cached_obj):
+                            new_filtered_list.append((line, cached_obj))
+                            break
+                self.filtered_list = new_filtered_list
 
     def get_source(
         self, term_height: int = 0, fullscreen: bool = False

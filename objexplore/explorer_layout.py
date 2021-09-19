@@ -14,7 +14,7 @@ from .cached_object import CachedObject
 console = Console()
 
 ExplorerState = namedtuple(
-    "ExplorerState", ["public", "private", "dict", "list", "tuple"]
+    "ExplorerState", ["public", "private", "dict", "list", "tuple", "set"]
 )
 
 highlighter = ReprHighlighter()
@@ -75,8 +75,8 @@ class ExplorerLayout(Layout):
                 attr = list(self.cached_obj.filtered_dict)[self.dict_index]
                 return self.cached_obj.filtered_dict[attr][1]
 
-            elif self.state in (ExplorerState.list, ExplorerState.tuple):
-                return self.cached_obj.filtered_list[self.list_index]
+            elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
+                return self.cached_obj.filtered_list[self.list_index][1]
 
         except (KeyError, IndexError):
             return CachedObject(None)
@@ -127,41 +127,19 @@ class ExplorerLayout(Layout):
         )
         return self
 
-
-        # for line in self.cached_obj.dict_lines[start:end]:
-        #     new_line = line.copy()
-
-        #     if index == self.dict_index:
-        #         new_line.style = "reverse"
-
-        #     new_line.truncate(panel_width)
-        #     lines.append(new_line)
-        #     index += 1
-
-        # # Always add the } to the end, if it is out of view it won't be printed anyways
-        # lines.append(Text("}"))
-
-        # text = Text("\n").join(lines)
-
-        # self.update(
-        #     Panel(
-        #         text,
-        #         title="[i][cyan]dict[/cyan]()",
-        #         title_align="right",
-        #         subtitle=f"([magenta]{self.dict_index + 1}[/magenta]/[magenta]{self.cached_obj.length}[/magenta])",
-        #         subtitle_align="right",
-        #         style="white",
-        #     )
-        # )
-        # return self
-
     def list_layout(self, term_width: int, term_height: int) -> Layout:
         panel_width = self.get_panel_width(term_width)
         panel_height = self.get_panel_height(term_height)
         lines = []
 
+        type_map = {
+            ExplorerState.list: ["[", "]", "list"],
+            ExplorerState.tuple: ["(", ")", "tuple"],
+            ExplorerState.set: ["{", "}", "set"]
+        }
+
         if self.list_window == 0:
-            lines.append(Text("[" if self.state == ExplorerState.list else "("))
+            lines.append(Text(type_map.get(self.state)[0]))
             start = 0
             num_lines = panel_height - 1
         elif self.list_window == 1:
@@ -174,26 +152,26 @@ class ExplorerLayout(Layout):
         end = start + num_lines
         index = start
 
-        for line in self.cached_obj.list_lines[start:end]:
+        for line, cached_obj in self.cached_obj.filtered_list[start:end]:
             new_line = line.copy()
 
             if index == self.list_index:
-                new_line.style = "reverse"
+                new_line.style = Style(reverse=True)
 
             new_line.truncate(panel_width)
             lines.append(new_line)
             index += 1
 
-        lines.append(Text("]" if self.state == ExplorerState.list else ")"))
+        lines.append(Text(type_map.get(self.state)[1]))
 
         text = Text("\n").join(lines)
 
         self.update(
             Panel(
                 text,
-                title=f"[i][cyan]{'list' if self.state == ExplorerState.list else 'tuple'}[/cyan]()",
+                title=f"[i][cyan]{type_map.get(self.state)[2]}[/cyan]()",
                 title_align="right",
-                subtitle=f"([magenta]{self.list_index + 1}[/magenta]/[magenta]{self.cached_obj.length}[/magenta])",
+                subtitle=f"([magenta]{self.list_index + 1}[/magenta]/[magenta]{len(self.cached_obj.filtered_list)}[/magenta])",
                 subtitle_align="right",
                 style="white",
             )

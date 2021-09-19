@@ -185,6 +185,7 @@ class Explorer:
                 self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
                 self.cached_obj = new_cached_obj
                 self.cached_obj.cache()
+                self.cached_obj.set_filters(self.filter_layout.get_enabled_filters())
                 self.stack.append(
                     StackFrame(
                         cached_obj=self.cached_obj,
