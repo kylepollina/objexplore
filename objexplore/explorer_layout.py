@@ -200,6 +200,9 @@ class ExplorerLayout(Layout):
                 f"[white]([/white][magenta]{self.public_index + 1 if self.cached_obj.filtered_public_attributes else 0}"
                 f"[/magenta][white]/[/white][magenta]{len(self.cached_obj.filtered_public_attributes)}[/magenta][white])"
             )
+            if lines == []:
+                lines.append(Text("No public attributes", style=Style(color="red", italic=True)))
+
             renderable = Text("\n").join(lines[self.public_window:self.public_window + term_height])
 
         elif self.state == ExplorerState.private:
@@ -221,6 +224,8 @@ class ExplorerLayout(Layout):
                 f"[white]([/white][magenta]{self.private_index + 1 if self.cached_obj.filtered_private_attributes else 0}"
                 f"[/magenta][white]/[/white][magenta]{len(self.cached_obj.filtered_private_attributes)}[/magenta][white])"
             )
+            if lines == []:
+                lines.append(Text("No private attributes"), style=Style(color="red", italic=True))
 
             renderable = Text("\n").join(lines[self.private_window:self.private_window + term_height])
 
