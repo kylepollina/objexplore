@@ -1,8 +1,6 @@
 import pydoc
 import signal
-from typing import Any, Optional, Union, List
-from rich.text import Text
-from rich.style import Style
+from typing import Any, Optional, Union
 
 import blessed
 from blessed import Terminal
@@ -23,8 +21,6 @@ from .filter_layout import FilterLayout
 version = "1.2.5"
 
 # TODO fix explore(namedtuple)
-# TODO methods filter
-# or just a type filter?
 # TODO empty overview layouts for when there are 0 public attributes
 # TODO search filter
 # TODO use inspect.ismethod inspect.ismodule, inspect.isfunction isclass
