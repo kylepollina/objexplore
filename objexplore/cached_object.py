@@ -24,15 +24,37 @@ class CachedObject:
     def __init__(
         self,
         obj: Any,
+        parent_path: Text = None,
         attr_name: str = None,
-        dotpath: str = "",
+        index: Any = None
     ):
         self.obj = obj
-        self.dotpath = dotpath
-        self.attr_name = attr_name if attr_name else repr(obj)
         self.is_callable = callable(obj)
         self.selected_cached_obj: CachedObject
         self.plain_attrs = dir(self.obj)
+
+        if self.obj is None:
+            self.dotpath = highlighter('None')
+
+        elif attr_name is not None:
+            if not parent_path:
+                self.dotpath = Text(attr_name, style=Style(color="cyan"))
+            else:
+                self.dotpath = parent_path + Text(".", style=Style(color="white")) + Text(attr_name, style=Style(color="cyan"))
+
+        elif index is not None:
+            if type(index) == str:
+                repr_index = console.render_str(f'"{index}"')
+            else:
+                repr_index = console.render_str(str(index))
+            if not parent_path:
+                self.dotpath = Text("[", style=Style(color="white")) + repr_index + Text("]", style=Style(color="white"))
+            else:
+                self.dotpath = parent_path + Text("[", style=Style(color="white")) + repr_index + Text("]", style=Style(color="white"))
+        else:
+            raise ValueError("Need to specify an attribute name or an index")
+
+        self.attr_name = attr_name if attr_name else repr(self.obj)
 
         # Highlighted attributes
         if not is_selectable(self.obj):
@@ -104,7 +126,7 @@ class CachedObject:
             for attr in self.plain_public_attributes:
                 self.public_attributes[attr] = CachedObject(
                     getattr(self.obj, attr),
-                    dotpath=f"{self.dotpath}.{attr}",
+                    parent_path=self.dotpath,
                     attr_name=attr
                 )
 
@@ -112,7 +134,7 @@ class CachedObject:
             for attr in self.plain_private_attributes:
                 self.private_attributes[attr] = CachedObject(
                     getattr(self.obj, attr),
-                    dotpath=f"{self.dotpath}.{attr}",
+                    parent_path=self.dotpath,
                     attr_name=attr
                 )
 
@@ -167,7 +189,7 @@ class CachedObject:
                 line = Text(" ") + repr_key + Text(": ") + repr_val
                 line.overflow = "ellipsis"
                 self.filtered_dict[key] = (
-                    line, CachedObject(val, dotpath=f"{self.dotpath}[{key}]", attr_name=key)
+                    line, CachedObject(val, parent_path=self.dotpath, index=key)
                 )
             if self.filters:
                 for attr, (line, cached_obj) in self.filtered_dict.copy().items():
@@ -192,7 +214,7 @@ class CachedObject:
                     line.style += Style(dim=True, italic=True)
 
                 self.filtered_list.append(
-                    (line, CachedObject(item, dotpath=f"{self.dotpath}[{index}]", attr_name=str(item)))
+                    (line, CachedObject(item, parent_path=self.dotpath, index=index))
                 )
             if self.filters:
                 new_filtered_list: List[Tuple[Text, CachedObject]] = []

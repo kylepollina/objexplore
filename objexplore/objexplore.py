@@ -1,26 +1,27 @@
+import inspect
 import pydoc
 import signal
 from typing import Any, Optional, Union
 
 import blessed
-from blessed import Terminal
 import rich
+from blessed import Terminal
 from rich.console import Console
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.syntax import Syntax
+from rich.text import Text
 
-from .utils import is_selectable
 from .cached_object import CachedObject
 from .explorer_layout import ExplorerLayout, ExplorerState
+from .filter_layout import FilterLayout
 from .help_layout import HelpLayout, HelpState, random_error_quote
 from .overview_layout import OverviewLayout, OverviewState, PreviewState
 from .stack_layout import StackFrame, StackLayout
-from .filter_layout import FilterLayout
+from .utils import is_selectable
 
-version = "1.2.7"
+version = "1.3.0"
 
-# TODO re-explore the is_selectable method
 # TODO search filter
 
 
@@ -30,8 +31,8 @@ console = Console()
 class Explorer:
     """ Explorer class used to interactively explore Python Objects """
 
-    def __init__(self, obj: Any):
-        cached_obj = CachedObject(obj, dotpath=repr(obj))
+    def __init__(self, obj: Any, name_of_obj: str):
+        cached_obj = CachedObject(obj, attr_name=name_of_obj)
         # Figure out all the attributes of the current obj's attributes
         cached_obj.cache()
 
@@ -338,7 +339,7 @@ class Explorer:
 
         layout.split_row(self.get_explorer_layout(), self.get_overview_layout())
 
-        title = self.cached_obj.title
+        title = self.cached_obj.dotpath + Text(" | ", style="white") + self.cached_obj.typeof
 
         object_explorer = Panel(
             layout,
@@ -366,7 +367,9 @@ class Explorer:
 def explore(obj: Any) -> Any:
     """ Run the explorer on the given object """
     try:
-        e = Explorer(obj)
+        frame = inspect.currentframe()
+        name = frame.f_back.f_code.co_names[1]
+        e = Explorer(obj, name_of_obj=name)
         return e.explore()
     except Exception as err:
         console.print_exception(show_locals=True)

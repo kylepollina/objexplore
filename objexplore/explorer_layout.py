@@ -13,9 +13,13 @@ from .cached_object import CachedObject
 
 console = Console()
 
-ExplorerState = namedtuple(
-    "ExplorerState", ["public", "private", "dict", "list", "tuple", "set"]
-)
+class ExplorerState:
+    public = 'ExplorerState.public'
+    private = 'ExplorerState.private'
+    dict = 'ExplorerState.dict'
+    list = 'ExplorerState.list'
+    tuple = 'ExplorerState.tuple'
+    set = 'ExplorerState.set'
 
 highlighter = ReprHighlighter()
 
@@ -128,6 +132,13 @@ class ExplorerLayout(Layout):
         return self
 
     def list_layout(self, term_width: int, term_height: int) -> Layout:
+
+        # Reset the list index / window in case applying a filter has now moved the index
+        # farther down than it can access on the filtered attributes
+        if self.list_index >= len(self.cached_obj.filtered_list):
+            self.list_index = max(0, len(self.cached_obj.filtered_list) - 1)
+            self.list_window = max(0, self.list_index - self.get_panel_height(term_height))
+
         panel_width = self.get_panel_width(term_width)
         panel_height = self.get_panel_height(term_height)
         lines = []

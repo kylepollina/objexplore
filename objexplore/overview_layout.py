@@ -55,7 +55,7 @@ class OverviewLayout(Layout):
             return layout
 
     def get_value_panel(self, cached_obj: CachedObject, term_height: int):
-        if is_selectable(cached_obj.obj):
+        if not callable(cached_obj.obj):
             title = "[i]preview[/i] | [i][cyan]repr[/cyan]()[/i]"
             subtitle = "[dim][u]p[/u]:toggle [u]f[/u]:fullscreen [u]{}[/u]:switch pane"
             renderable = cached_obj.pretty
