@@ -1,4 +1,3 @@
-
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
 from rich.layout import Layout
