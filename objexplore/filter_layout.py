@@ -70,4 +70,5 @@ class FilterLayout(Layout):
                 title="filter"
             )
         )
+        self.size = len(self.filters) + 2
         return self

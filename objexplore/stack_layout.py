@@ -19,7 +19,6 @@ class StackFrame:
     cached_obj: CachedObject
     explorer_layout: ExplorerLayout
     overview_layout: OverviewLayout
-    filter_layout: FilterLayout
 
 
 class StackLayout(Layout):

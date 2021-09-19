@@ -54,7 +54,6 @@ class Explorer:
                 cached_obj=self.cached_obj,
                 explorer_layout=self.explorer_layout,
                 overview_layout=self.overview_layout,
-                filter_layout=self.filter_layout,
             )
         )
 
@@ -184,7 +183,6 @@ class Explorer:
 
             if is_selectable(new_cached_obj.obj):
                 self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
-                self.filter_layout = FilterLayout(new_cached_obj, visible=False)
                 self.cached_obj = new_cached_obj
                 self.cached_obj.cache()
                 self.stack.append(
@@ -192,7 +190,6 @@ class Explorer:
                         cached_obj=self.cached_obj,
                         explorer_layout=self.explorer_layout,
                         overview_layout=self.overview_layout,
-                        filter_layout=self.filter_layout,
                     )
                 )
 
