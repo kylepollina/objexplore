@@ -1,4 +1,3 @@
-
 from objexplore.utils import is_selectable
 import pandas as pd
 

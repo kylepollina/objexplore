@@ -2,7 +2,8 @@ all: check format
 
 check:
 	mypy objexplore
-	flake8 .
+	flake8 objexplore/
+	flake8 tests/
 format-check:
 	black --check .
 format:
