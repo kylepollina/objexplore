@@ -1,4 +1,3 @@
-
 def is_selectable(obj):
     try:
         bool(obj)
