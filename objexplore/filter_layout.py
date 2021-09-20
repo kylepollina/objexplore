@@ -148,7 +148,7 @@ class FilterLayout(Layout):
                 Text("\n").join(lines),
                 title="\[filter]",
                 title_align="right",
-                subtitle="[white][dim][u]c[/u]:clear [u]space[/u]:select",
+                subtitle="[dim][u]c[/u]:clear [u]space[/u]:select",
                 subtitle_align="right",
                 style="bright_magenta",
             )
