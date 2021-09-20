@@ -139,6 +139,7 @@ class FilterLayout(Layout):
         return self
 
     def input_box(self):
+        input_box_color = "aquamarine3"
         if len(self.search_filter) == 0:
             search_text = Text("█", style=Style(underline=True, blink=True, reverse=True))
         elif self.cursor_pos == len(self.search_filter):
@@ -146,7 +147,7 @@ class FilterLayout(Layout):
         else:
             search_text = (
                 Text(self.search_filter[:self.cursor_pos])
-                + Text(self.search_filter[self.cursor_pos], style=Style(underline=True, blink=True, color="black", bgcolor="blue"))
+                + Text(self.search_filter[self.cursor_pos], style=Style(underline=True, blink=True, color="black", bgcolor="aquamarine3"))
                 + Text(self.search_filter[self.cursor_pos+1:])
             )
         self.update(
@@ -156,7 +157,7 @@ class FilterLayout(Layout):
                 title_align="right",
                 subtitle="[dim][u]esc[/u]:cancel",
                 subtitle_align="right",
-                style=Style(color="blue")
+                style=Style(color="aquamarine3")
             )
         )
         self.size = 3
