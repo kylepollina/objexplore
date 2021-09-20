@@ -129,7 +129,7 @@ class CachedObject:
             self.text.style = Style(color="blue")
         elif self.isclass:
             self.text.style = Style(color="magenta")
-        if self.isfunction:
+        if self.isfunction or self.ismethod:
             self.text += Text("()", style=Style(color="white"))
         # elif callable(self.obj):
         #     pass
