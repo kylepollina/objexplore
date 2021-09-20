@@ -5,9 +5,9 @@ Objexplore is an interactive Python object explorer for the terminal. Use it whi
 
 ![cibuild](https://github.com/kylepollina/objexplore/actions/workflows/python-app.yml/badge.svg) [![pypi](https://img.shields.io/pypi/v/objexplore.svg)](https://pypi.org/project/objexplore/) [![downloads](https://img.shields.io/pypi/dm/objexplore)](https://pypi.org/project/objexplore/)
 
+https://user-images.githubusercontent.com/13981456/134041697-27f55c44-1075-4139-826c-bad6f0d6bffb.mov
 
 
-https://user-images.githubusercontent.com/13981456/133946377-23444e20-61c9-4fac-85fa-f0f93674bc73.mov
 
 
 
