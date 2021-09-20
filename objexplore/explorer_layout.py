@@ -1,3 +1,4 @@
+from typing import Union, Any, Dict
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
 from rich.layout import Layout
@@ -91,7 +92,7 @@ class ExplorerLayout(Layout):
         except (KeyError, IndexError):
             return CachedObject(None)
 
-    def get_all_attributes(self):
+    def get_all_attributes(self) -> Union[Dict[str, CachedObject], Any]:
         if self.state == ExplorerState.public:
             return self.cached_obj.public_attributes
         elif self.state == ExplorerState.private:

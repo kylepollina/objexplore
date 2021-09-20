@@ -393,7 +393,7 @@ class Explorer:
             subtitle=(
                 "[red][u]q[/u]:quit[/red] "
                 f"[cyan][u]?[/u]:{'exit ' if self.help_layout.visible else ''}help[/] "
-                "[white][dim][u]o[/u]:stack [u]n[/u]:filter [u]r[/u]:return[/dim]"
+                "[white][dim][u]o[/u]:stack [u]n[/u]:filter [u]/[/u]:search [u]r[/u]:return"
             ),
             subtitle_align="left",
             height=self.term.height - 1,

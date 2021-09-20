@@ -8,6 +8,7 @@ from rich.style import Style
 from rich.text import Text
 import rich
 
+from .explorer_layout import ExplorerLayout
 from .cached_object import CachedObject
 
 highlighter = ReprHighlighter()
@@ -16,7 +17,6 @@ highlighter = ReprHighlighter()
 @rich.repr.auto
 class FilterLayout(Layout):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self.filters: Dict[str, List[bool, types.FunctionType]] = {
             "class": [False, lambda cached_obj: cached_obj.isclass],
             "function": [False, lambda cached_obj: cached_obj.isfunction],
@@ -36,6 +36,7 @@ class FilterLayout(Layout):
         self.receiving_input = False
         self.search_filter = ""
         self.cursor_pos = 0
+        super().__init__(*args, **kwargs)
 
     def move_down(self):
         if self.index < len(self.filters) - 1:
@@ -87,7 +88,9 @@ class FilterLayout(Layout):
 
         return lines
 
-    def add_search_char(self, key: str, cached_obj, explorer_layout):
+    def add_search_char(
+        self, key: str, cached_obj: CachedObject, explorer_layout: ExplorerLayout
+    ):
         self.last_key = key
         self.search_filter = (
             self.search_filter[: self.cursor_pos]
@@ -99,9 +102,11 @@ class FilterLayout(Layout):
         if len(explorer_layout.get_all_attributes()) < 200:
             cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
-    def backspace(self, cached_obj, explorer_layout):
-        if self.cursor_pos == 0:
+    def backspace(self, cached_obj: CachedObject, explorer_layout: ExplorerLayout):
+        if self.cursor_pos == 0 and not self.search_filter:
             self.cancel_search(cached_obj)
+        elif self.cursor_pos == 0 and self.search_filter:
+            return
         self.search_filter = (
             self.search_filter[: self.cursor_pos - 1]
             + self.search_filter[self.cursor_pos :]
@@ -111,7 +116,7 @@ class FilterLayout(Layout):
         if len(explorer_layout.get_all_attributes()) < 200:
             cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
-    def cancel_search(self, cached_obj):
+    def cancel_search(self, cached_obj: CachedObject):
         self.search_filter = ""
         self.cursor_pos = 0
         self.visible = False
@@ -126,14 +131,14 @@ class FilterLayout(Layout):
         if self.cursor_pos < len(self.search_filter):
             self.cursor_pos += 1
 
-    def end_search(self, cached_obj):
+    def end_search(self, cached_obj: CachedObject):
         self.receiving_input = False
         self.visible = False
         cached_obj.set_filters(
             self.get_enabled_filters(), search_filter=self.search_filter
         )
 
-    def __call__(self):
+    def __call__(self) -> Layout:
         if self.receiving_input:
             return self.input_box()
 
@@ -151,7 +156,7 @@ class FilterLayout(Layout):
         self.size = len(lines) + 2
         return self
 
-    def input_box(self):
+    def input_box(self) -> Layout:
         if len(self.search_filter) == 0:
             search_text = Text(
                 "█", style=Style(underline=True, blink=True, reverse=True)
