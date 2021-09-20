@@ -26,6 +26,9 @@ version = "1.4.3"
 # TODO truncate public/private -> pub priv -> just public/private
 # TODO +-_= to change the size of the explorer window
 # TODO backspace to close filter/stack
+# TODO auto return on q or r
+# TODO builtin stack explorer? from objexplore import stackexplore
+# TODO filter color the filters the same as the explorer
 
 console = Console()
 
