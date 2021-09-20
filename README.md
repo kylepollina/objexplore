@@ -28,8 +28,8 @@ pip install git+https://github.com/kylepollina/objexplore
 
 ```python
 from objexplore import explore
-import pandas
-explore(pandas)
+import rich
+explore(rich)
 ```
 
 ## Features
