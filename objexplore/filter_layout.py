@@ -6,12 +6,14 @@ from rich.layout import Layout
 from rich.panel import Panel
 from rich.style import Style
 from rich.text import Text
+import rich
 
 from .cached_object import CachedObject
 
 highlighter = ReprHighlighter()
 
 
+@rich.repr.auto
 class FilterLayout(Layout):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -31,6 +33,9 @@ class FilterLayout(Layout):
             "builtin": [False, lambda cached_obj: cached_obj.isbuiltin],
         }
         self.index = 0
+        self.receiving_input = False
+        self.search_filter = ''
+        self.cursor_pos = 0
 
     def move_down(self):
         if self.index < len(self.filters) - 1:
@@ -51,11 +56,12 @@ class FilterLayout(Layout):
         """ Toggle the selected filter on or off and update the cached_obj filters with the new filters """
         filter_name = list(self.filters.keys())[self.index]
         self.filters[filter_name][0] = not self.filters[filter_name][0]
-        cached_obj.set_filters(self.get_enabled_filters())
+        cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
     def clear_filters(self, cached_obj: CachedObject):
         for name, filter_data in self.filters.copy().items():
             self.filters[name][0] = False
+        self.search_filter = ''
         cached_obj.set_filters([])
 
     def get_lines(self) -> List[Text]:
@@ -70,9 +76,54 @@ class FilterLayout(Layout):
             if index == self.index:
                 line.style += Style(reverse=True)  # type: ignore
             lines.append(line)
+
+        if self.search_filter:
+            lines.extend(
+                [Text("Search filter:", style=Style(italic=True, underline=True)), Text(" " + self.search_filter)]
+            )
+
         return lines
 
+    def add_search_char(self, key: str, cached_obj):
+        self.last_key = key
+        self.search_filter = self.search_filter[:self.cursor_pos] + str(key) + self.search_filter[self.cursor_pos:]
+        self.cursor_pos += 1
+        cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
+
+    def backspace(self, cached_obj):
+        if self.cursor_pos == 0:
+            return
+        self.search_filter = self.search_filter[:self.cursor_pos - 1] + self.search_filter[self.cursor_pos:]
+        self.cursor_left()
+        cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
+
+    def cancel_search(self, cached_obj):
+        self.search_filter = ''
+        self.cursor_pos = 0
+        self.visible = False
+        self.receiving_input = False
+        cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
+
+    def cursor_left(self):
+        if self.cursor_pos > 0:
+            self.cursor_pos -= 1
+
+    def cursor_right(self):
+        if self.cursor_pos < len(self.search_filter):
+            self.cursor_pos += 1
+
+    def end_search(self, cached_obj):
+        self.receiving_input = False
+        self.visible = False
+        cached_obj.set_filters(
+            self.get_enabled_filters(),
+            search_filter=self.search_filter
+        )
+
     def __call__(self):
+        if self.receiving_input:
+            return self.input_box()
+
         lines = self.get_lines()
         self.update(
             Panel(
@@ -84,5 +135,29 @@ class FilterLayout(Layout):
                 style="bright_magenta",
             )
         )
-        self.size = len(self.filters) + 2
+        self.size = len(lines) + 2
+        return self
+
+    def input_box(self):
+        if len(self.search_filter) == 0:
+            search_text = Text("█", style=Style(underline=True, blink=True, reverse=True))
+        elif self.cursor_pos == len(self.search_filter):
+            search_text = Text(self.search_filter) + Text("█", style=Style(underline=True, blink=True, reverse=True))
+        else:
+            search_text = (
+                Text(self.search_filter[:self.cursor_pos])
+                + Text(self.search_filter[self.cursor_pos], style=Style(underline=True, blink=True, color="black", bgcolor="blue"))
+                + Text(self.search_filter[self.cursor_pos+1:])
+            )
+        self.update(
+            Panel(
+                search_text,
+                title="search",
+                title_align="right",
+                subtitle="[dim][u]esc[/u]:cancel",
+                subtitle_align="right",
+                style=Style(color="blue")
+            )
+        )
+        self.size = 3
         return self

@@ -114,6 +114,7 @@ class CachedObject:
         self.ismethod = inspect.ismethod(self.obj)
         self.ismodule = inspect.ismodule(self.obj)
         self.filters: List[types.FunctionType] = []
+        self.search_filter: str = ''
 
         # Highlighted attributes
         self.typeof: Text = highlighter(str(type(self.obj)))
@@ -172,16 +173,19 @@ class CachedObject:
 
         self.filter()
 
-    def set_filters(self, filters: List[types.FunctionType]):
+    def set_filters(self, filters: List[types.FunctionType], search_filter: str = ''):
         self.filters = filters
+        self.search_filter = search_filter
         self.filter()
 
     def filter(self):
         self.filtered_public_attributes = {}
-        if not self.filters:
-            self.filtered_public_attributes = self.public_attributes
-        else:
-            for attr, cached_obj in self.public_attributes.items():
+        for attr, cached_obj in self.public_attributes.items():
+            if self.search_filter not in attr.lower():
+                continue
+            if not self.filters:
+                self.filtered_public_attributes[attr] = cached_obj
+            else:
                 # Only keep objects that match the filter
                 for _filter in self.filters:
                     if _filter(cached_obj):
@@ -189,10 +193,12 @@ class CachedObject:
                         break
 
         self.filtered_private_attributes = {}
-        if not self.filters:
-            self.filtered_private_attributes = self.private_attributes
-        else:
-            for attr, cached_obj in self.private_attributes.items():
+        for attr, cached_obj in self.private_attributes.items():
+            if self.search_filter not in attr.lower():
+                continue
+            if not self.filters:
+                self.filtered_private_attributes[attr] = cached_obj
+            else:
                 # Only keep objects that match the filter
                 for _filter in self.filters:
                     if _filter(cached_obj):
