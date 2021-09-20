@@ -140,7 +140,8 @@ class CachedObject:
             self.text += Text("[]", style=Style(color="white"))
         elif type(self.obj) == tuple:
             self.text += Text("()", style=Style(color="white"))
-        elif self.obj in (None, (), {}, [], set()):
+        # TODO fix
+        elif not is_selectable(self.obj):
             self.text.style = Style(dim=True, italic=True)
         # else:
         #     self.text.style = Style()

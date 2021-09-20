@@ -20,9 +20,12 @@ from .overview_layout import OverviewLayout, OverviewState, PreviewState
 from .stack_layout import StackFrame, StackLayout
 from .utils import is_selectable
 
-version = "1.4.2"
+version = "1.4.3"
 
 # TODO custom terminal class
+# TODO truncate public/private -> pub priv -> just public/private
+# TODO +-_= to change the size of the explorer window
+# TODO backspace to close filter/stack
 
 console = Console()
 
@@ -332,6 +335,7 @@ class Explorer:
             return self.explorer_layout.selected_object.obj
 
         elif key == "/" and not self.filter_layout.receiving_input:
+            self.stack.visible = False
             self.filter_layout.receiving_input = True
             self.filter_layout.visible = True
 
@@ -412,6 +416,8 @@ class Explorer:
 def explore(obj: Any) -> Any:
     """ Run the explorer on the given object """
     try:
+        # Get the name of the variable sent to this function
+        # TODO and document
         frame = inspect.currentframe()
         name = frame.f_back.f_code.co_names[1]  # type: ignore
         e = Explorer(obj, name_of_obj=name)

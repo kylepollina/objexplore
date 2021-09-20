@@ -13,6 +13,7 @@ from .cached_object import CachedObject
 
 highlighter = ReprHighlighter()
 
+# TODO scroll search if input longer than panel width
 
 @rich.repr.auto
 class FilterLayout(Layout):
@@ -171,7 +172,7 @@ class FilterLayout(Layout):
                 + Text(
                     self.search_filter[self.cursor_pos],
                     style=Style(
-                        underline=True, blink=True, color="black", bgcolor="aquamarine3"
+                        underline=True, blink=True, color="black", bgcolor="aquamarine1"
                     ),
                 )
                 + Text(self.search_filter[self.cursor_pos + 1 :])
@@ -179,11 +180,11 @@ class FilterLayout(Layout):
         self.update(
             Panel(
                 search_text,
-                title="search",
+                title="\[search]",
                 title_align="right",
                 subtitle="[dim][u]esc[/u]:cancel",
                 subtitle_align="right",
-                style=Style(color="aquamarine3"),
+                style=Style(color="aquamarine1"),
             )
         )
         self.size = 3
