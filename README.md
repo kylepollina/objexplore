@@ -34,16 +34,26 @@ explore(pandas)
 
 ## Features
 
+- [Exploring](#exploring)
+- [Type filters](#type-filters)
+- [Search filters](#search-filters)
+- [Stack view](#stack-view)
+- [Exploring and returning](#exploring-and-returning)
 
-### Dictionary/list/tuple/set explorer
+
+### Exploring
 
 
 https://user-images.githubusercontent.com/13981456/133946740-7bbb2039-24ce-41a8-9589-0888918f9bd8.mov
 
 
-### Filters
+### Type Filters
 
 https://user-images.githubusercontent.com/13981456/133946565-ae2f9809-b724-4439-b5c5-13b77c3be8f6.mov
+
+### Search Filters
+
+https://user-images.githubusercontent.com/13981456/133953511-6b19a7f0-7cd1-4b2f-9842-5f7d4c59efae.mov
 
 
 ### Stack view
@@ -51,7 +61,7 @@ https://user-images.githubusercontent.com/13981456/133946565-ae2f9809-b724-4439-
 https://user-images.githubusercontent.com/13981456/133947144-dbed8d99-1ae8-4e50-a414-2a3b03311327.mov
 
 
-### Explore and return the selected object
+### Exploring and returning
 
 
 https://user-images.githubusercontent.com/13981456/133946981-3bf5cfda-6eac-4514-abb3-e073dd3fb6b2.mov
