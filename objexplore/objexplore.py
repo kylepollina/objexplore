@@ -171,6 +171,9 @@ class Explorer:
             else:
                 self.stack.set_visible()
 
+        elif key.code == self.term.KEY_ESCAPE and self.stack.visible:
+            self.stack.visible = False
+
         elif key == "n":
             if self.filter_layout.visible:
                 self.filter_layout.visible = False
@@ -183,7 +186,7 @@ class Explorer:
         elif key.code == self.term.KEY_ESCAPE and self.filter_layout.visible:
             self.filter_layout.visible = False
 
-        elif key == "c" and self.filter_layout.visible:
+        elif key == "c":
             self.filter_layout.clear_filters(self.cached_obj)
 
         # Switch between public and private attributes

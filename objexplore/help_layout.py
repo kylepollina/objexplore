@@ -53,7 +53,7 @@ class HelpLayout(Layout):
                         n - [cyan]toggle filter view[/cyan]
                         / - [cyan]open search filter[/cyan]
                       Esc - [cyan]close[/cyan]
-                        c - [cyan]clear filters in filter view[/cyan]
+                        c - [cyan]clear filters[/cyan]
                         o - [cyan]toggle stack view[/cyan]
                         f - [cyan]open fullscreen view[/cyan]
                         H - [cyan]open help page on selected attribute[/cyan]
