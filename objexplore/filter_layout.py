@@ -15,6 +15,7 @@ highlighter = ReprHighlighter()
 
 # TODO scroll search if input longer than panel width
 
+
 @rich.repr.auto
 class FilterLayout(Layout):
     def __init__(self, *args, **kwargs):
