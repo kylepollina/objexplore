@@ -6,7 +6,10 @@ Objexplore is an interactive Python object explorer for the terminal. Use it whi
 ![cibuild](https://github.com/kylepollina/objexplore/actions/workflows/python-app.yml/badge.svg) [![pypi](https://img.shields.io/pypi/v/objexplore.svg)](https://pypi.org/project/objexplore/)
 
 
-https://user-images.githubusercontent.com/13981456/133720490-7bd08dc6-4407-48f1-912a-329be6173619.mov
+
+https://user-images.githubusercontent.com/13981456/133946377-23444e20-61c9-4fac-85fa-f0f93674bc73.mov
+
+
 
 
 ## Install
@@ -31,18 +34,28 @@ explore(pandas)
 
 ## Features
 
-### Dictionary explorer
 
-https://user-images.githubusercontent.com/13981456/133894806-c4dd6101-1e03-4b33-8c65-b6cca0a2c03f.mov
+### Dictionary/list/tuple/set explorer
 
 
-### List/tuple explorer
+https://user-images.githubusercontent.com/13981456/133946740-7bbb2039-24ce-41a8-9589-0888918f9bd8.mov
 
-https://user-images.githubusercontent.com/13981456/133889219-0b80d1f4-697a-4532-aa4a-00898267eef5.mov
 
-### Return the selected object
+### Filters
 
-https://user-images.githubusercontent.com/13981456/133894047-b40aecb0-5e0a-48c8-8e4c-2bba89cdbe8f.mov
+https://user-images.githubusercontent.com/13981456/133946565-ae2f9809-b724-4439-b5c5-13b77c3be8f6.mov
+
+
+### Stack view
+
+https://user-images.githubusercontent.com/13981456/133947144-dbed8d99-1ae8-4e50-a414-2a3b03311327.mov
+
+
+### Explore and return the selected object
+
+
+https://user-images.githubusercontent.com/13981456/133946981-3bf5cfda-6eac-4514-abb3-e073dd3fb6b2.mov
+
 
 
 -----
