@@ -1,6 +1,6 @@
 # Contributing
 
-> Beware: This codebase is still very raw and ugly. Each new version it will be cleaned a little bit. _I Promise!_
+> Beware: This codebase is still raw and needs to be cleaned up and documented. It'll get done!
 
 ## Running the [makefile](https://github.com/kylepollina/objexplore/blob/main/Makefile)
 
@@ -9,3 +9,6 @@ Running `make check` will run [mypy](http://mypy-lang.org/) and [flake8](https:/
 
 ### `make format`
 Running `make format` will run the [black](https://pypi.org/project/black/) code formatter to automatically format the code.
+
+### `make test`
+Running `make test` will open up objexplore and explore the `rich` package for testing.
