@@ -20,7 +20,7 @@ from .overview_layout import OverviewLayout, OverviewState, PreviewState
 from .stack_layout import StackFrame, StackLayout
 from .utils import is_selectable
 
-version = "1.3.1"
+version = "1.4.0"
 
 # TODO custom terminal class
 # TODO search filter
