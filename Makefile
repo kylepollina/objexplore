@@ -12,7 +12,7 @@ publish:
 	python3 setup.py sdist bdist_wheel
 	twine upload --skip-existing dist/*
 pytest:
-	PYTHONPATH=$PYTHONPATH:$(pwd) pytest tests/
+	PYTHONPATH=PYTHONPATH:$(pwd) pytest tests/
 test:
 	python3 -c "import objexplore; import rich; objexplore.explore(rich)"
 test-pandas:
