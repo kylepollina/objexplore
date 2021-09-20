@@ -165,6 +165,10 @@ class Explorer:
                 if self.stack[self.stack.index].cached_obj == self.cached_obj:
                     return
                 new_cached_obj = self.stack.select()
+
+            elif self.filter_layout.visible:
+                return
+
             else:
                 new_cached_obj = self.explorer_layout.selected_object
                 if not is_selectable(new_cached_obj.obj):

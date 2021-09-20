@@ -50,6 +50,8 @@ class HelpLayout(Layout):
                       { } - [cyan]switch pane[/cyan]
                         p - [cyan]toggle full preview[/cyan]
                         d - [cyan]toggle full docstring[/cyan]
+                        n - [cyan]toggle filter view[/cyan]
+                        c - [cyan]clear filters in filter view[/cyan]
                         o - [cyan]toggle stack view[/cyan]
                         f - [cyan]open fullscreen view[/cyan]
                         H - [cyan]open help page on selected attribute[/cyan]
