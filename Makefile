@@ -13,4 +13,4 @@ publish:
 test:
 	python3 -c "import objexplore; import rich; objexplore.explore(rich)"
 test-pandas:
-	python3 -c "import objexplore; import pandas; objexplore.explore(pandas)"
+	python3 -c "import objexplore; import pandas; objexplore.explore(pandas.DataFrame())"

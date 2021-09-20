@@ -1,2 +1,8 @@
+
 def is_selectable(obj):
-    return obj not in (None, [], (), {}, set())
+    try:
+        bool(obj)
+    except ValueError:
+        return True
+    else:
+        return obj not in (None, [], (), {}, set())
