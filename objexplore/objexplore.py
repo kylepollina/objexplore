@@ -93,7 +93,7 @@ class Explorer:
                         raise err
 
                 except StopIteration:
-                    return
+                    return None
 
         return res
 
@@ -102,7 +102,7 @@ class Explorer:
 
         if self.filter_layout.receiving_input:
             if key.code == self.term.KEY_BACKSPACE:
-                self.filter_layout.backspace(self.cached_obj)
+                self.filter_layout.backspace(self.cached_obj, self.explorer_layout)
             elif key.code == self.term.KEY_ESCAPE:
                 self.filter_layout.cancel_search(self.cached_obj)
             elif key == "\n":
@@ -114,7 +114,9 @@ class Explorer:
             elif key.code in (self.term.KEY_UP, self.term.KEY_DOWN):
                 return
             else:
-                self.filter_layout.add_search_char(key, self.cached_obj)
+                self.filter_layout.add_search_char(
+                    key, self.cached_obj, self.explorer_layout
+                )
             return
 
         if key in ("q", "Q"):
@@ -321,7 +323,6 @@ class Explorer:
 
         elif key == "G":
             self.explorer_layout.move_bottom(self.panel_height, self.cached_obj)
-
 
         # Other ################################################################
 

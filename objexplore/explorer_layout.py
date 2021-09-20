@@ -91,6 +91,14 @@ class ExplorerLayout(Layout):
         except (KeyError, IndexError):
             return CachedObject(None)
 
+    def get_all_attributes(self):
+        if self.state == ExplorerState.public:
+            return self.cached_obj.public_attributes
+        elif self.state == ExplorerState.private:
+            return self.cached_obj.private_attributes
+        else:
+            return self.cached_obj.obj
+
     def dict_layout(self, term_width: int, term_height: int) -> Layout:
         """ Return the dictionary explorer layout """
 

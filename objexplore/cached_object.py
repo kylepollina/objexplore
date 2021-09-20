@@ -114,7 +114,7 @@ class CachedObject:
         self.ismethod = inspect.ismethod(self.obj)
         self.ismodule = inspect.ismodule(self.obj)
         self.filters: List[types.FunctionType] = []
-        self.search_filter: str = ''
+        self.search_filter: str = ""
 
         # Highlighted attributes
         self.typeof: Text = highlighter(str(type(self.obj)))
@@ -155,6 +155,7 @@ class CachedObject:
         return title
 
     def cache(self):
+        # TODO find some places to speed this up
         if not self.public_attributes:
             for attr in self.plain_public_attributes:
                 self.public_attributes[attr] = CachedObject(
@@ -173,7 +174,7 @@ class CachedObject:
 
         self.filter()
 
-    def set_filters(self, filters: List[types.FunctionType], search_filter: str = ''):
+    def set_filters(self, filters: List[types.FunctionType], search_filter: str = ""):
         self.filters = filters
         self.search_filter = search_filter
         self.filter()
@@ -226,18 +227,18 @@ class CachedObject:
 
                 line = Text(" ") + repr_key + Text(": ") + repr_val
                 line.overflow = "ellipsis"
-                self.filtered_dict[key] = (
-                    line,
-                    CachedObject(val, parent_path=self.dotpath, index=key),
-                )
-            if self.filters:
-                for attr, (line, cached_obj) in self.filtered_dict.copy().items():
+
+                cached_obj = CachedObject(val, parent_path=self.dotpath, index=key)
+
+                if type(key) == str and self.search_filter not in key.lower():
+                    continue
+                if self.filters:
                     for _filter in self.filters:
                         if _filter(cached_obj):
-                            self.filtered_dict[attr] = (line, cached_obj)
+                            self.filtered_dict[key] = (line, cached_obj)
                             break
-                    else:
-                        del self.filtered_dict[attr]
+                else:
+                    self.filtered_dict[key] = (line, cached_obj)
 
         self.filtered_list: List[Tuple[Text, CachedObject]] = []
         if type(self.obj) in (list, tuple, set):
@@ -263,6 +264,12 @@ class CachedObject:
                             new_filtered_list.append((line, cached_obj))
                             break
                 self.filtered_list = new_filtered_list
+
+    def current_visible_attributes(self):
+        if self.filtered_dict:
+            return self.filtered_dict
+        elif self.filtered_list:
+            return self.filtered_list
 
     def get_source(
         self, term_height: int = 0, fullscreen: bool = False
