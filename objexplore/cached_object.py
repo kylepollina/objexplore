@@ -177,7 +177,7 @@ class CachedObject:
 
     def set_filters(self, filters: List[types.FunctionType], search_filter: str = ""):
         self.filters = filters
-        self.search_filter = search_filter
+        self.search_filter = search_filter.lower()
         self.filter()
 
     def filter(self):
