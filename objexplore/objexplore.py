@@ -36,15 +36,14 @@ version = "1.4.4"
 console = Console()
 
 
-class Explorer:
-    """ Explorer class used to interactively explore Python Objects """
+class ObjExploreApp:
+    """ Main Application class """
 
     def __init__(self, obj: Any, name_of_obj: str):
         cached_obj = CachedObject(obj, attr_name=name_of_obj)
         # Figure out all the attributes of the current obj's attributes
         cached_obj.cache()
 
-        # self.head_obj = cached_obj
         self.cached_obj: CachedObject = cached_obj
         self.stack = StackLayout(head_obj=self.cached_obj, visible=False)
         self.help_layout = HelpLayout(version, visible=False, ratio=3)
@@ -64,8 +63,8 @@ class Explorer:
         # Run self.draw() whenever the win change signal is caught
         try:
             signal.signal(signal.SIGWINCH, self.draw)
+        # Windows does not have SIGWINCH signal
         except AttributeError:
-            # OS does not have SIGWINCH signal
             pass
 
     def explore(self) -> Optional[Any]:
@@ -112,7 +111,7 @@ class Explorer:
                 self.filter_layout.backspace(self.cached_obj, self.explorer_layout)
             elif key.code == self.term.KEY_ESCAPE:
                 self.filter_layout.cancel_search(self.cached_obj)
-            elif key == "\n":
+            elif key.code == self.term.KEY_ENTER:
                 self.filter_layout.end_search(self.cached_obj)
             elif key.code == self.term.KEY_LEFT:
                 self.filter_layout.cursor_left()
@@ -291,10 +290,17 @@ class Explorer:
                     self.term.explorer_panel_height, self.cached_obj
                 )
 
-        elif key in ("\n", " ") and self.filter_layout.visible:
+        elif (
+            key.code in (self.term.KEY_ENTER, self.term.KEY_SPACE)
+            and self.filter_layout.visible
+        ):
             self.filter_layout.toggle(cached_obj=self.cached_obj)
 
-        elif key in ("\n", "l", " ") or key.code == self.term.KEY_RIGHT:
+        elif key == "l" or key.code in (
+            self.term.KEY_SPACE,
+            self.term.KEY_ENTER,
+            self.term.KEY_RIGHT,
+        ):
 
             if self.stack.visible:
                 # If you are choosing the same frame as the current obj, then don't do anything
@@ -418,11 +424,14 @@ def explore(obj: Any) -> Any:
     """ Run the explorer on the given object """
     try:
         # Get the name of the variable sent to this function
-        # TODO and document
+        # If someone calls this function like:
+        # >>> df = pandas.DataFrame()
+        # >>> explore(df)
+        # Then we want to extract `name` == 'df'
         frame = inspect.currentframe()
         name = frame.f_back.f_code.co_names[1]  # type: ignore
-        e = Explorer(obj, name_of_obj=name)
-        return e.explore()
+        app = ObjExploreApp(obj, name_of_obj=name)
+        return app.explore()
     except Exception as err:
         console.print_exception(show_locals=True)
         print()
