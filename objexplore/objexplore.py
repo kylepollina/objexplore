@@ -5,7 +5,6 @@ from typing import Any, Optional, Union
 
 import blessed
 import rich
-from blessed import Terminal
 from rich.console import Console
 from rich.layout import Layout
 from rich.panel import Panel
@@ -18,17 +17,21 @@ from .filter_layout import FilterLayout
 from .help_layout import HelpLayout, HelpState, random_error_quote
 from .overview_layout import OverviewLayout, OverviewState, PreviewState
 from .stack_layout import StackFrame, StackLayout
+from .terminal import Terminal
 from .utils import is_selectable
 
 version = "1.4.4"
 
-# TODO custom terminal class
+# TODO disable G/g if stack/filter open
+# TODO figure out how to dim empty dict/list/etc
 # TODO truncate public/private -> pub priv -> just public/private
+# TODO truncate explorer subtitle as well
 # TODO +-_= to change the size of the explorer window
 # TODO backspace to close filter/stack
 # TODO auto return on q or r
-# TODO builtin stack explorer? from objexplore import stackexplore
+# TODO builtin frame/stack explorer? from objexplore import stackexplore
 # TODO filter color the filters the same as the explorer
+# TODO Fix window when searching, then G, window does not move all the way to the bottom
 
 console = Console()
 
@@ -43,12 +46,12 @@ class Explorer:
 
         # self.head_obj = cached_obj
         self.cached_obj: CachedObject = cached_obj
-        self.term = Terminal()
         self.stack = StackLayout(head_obj=self.cached_obj, visible=False)
         self.help_layout = HelpLayout(version, visible=False, ratio=3)
         self.explorer_layout = ExplorerLayout(cached_obj=cached_obj)
         self.overview_layout = OverviewLayout(ratio=3)
         self.filter_layout = FilterLayout(visible=False)
+        self.term = Terminal(stack=self.stack)
 
         self.stack.append(
             StackFrame(
@@ -280,11 +283,13 @@ class Explorer:
 
         elif key == "j" or key.code == self.term.KEY_DOWN:
             if self.stack.visible:
-                self.stack.move_down(self.panel_height)
+                self.stack.move_down(self.term.explorer_panel_height)
             elif self.filter_layout.visible:
                 self.filter_layout.move_down()
             else:
-                self.explorer_layout.move_down(self.panel_height, self.cached_obj)
+                self.explorer_layout.move_down(
+                    self.term.explorer_panel_height, self.cached_obj
+                )
 
         elif key in ("\n", " ") and self.filter_layout.visible:
             self.filter_layout.toggle(cached_obj=self.cached_obj)
@@ -329,7 +334,9 @@ class Explorer:
             self.explorer_layout.move_top()
 
         elif key == "G":
-            self.explorer_layout.move_bottom(self.panel_height, self.cached_obj)
+            self.explorer_layout.move_bottom(
+                self.term.explorer_panel_height, self.cached_obj
+            )
 
         # Other ################################################################
 
@@ -405,15 +412,6 @@ class Explorer:
             style="blue",
         )
         rich.print(object_explorer, end="")
-
-    @property
-    def panel_height(self) -> int:
-        # TODO think about putting this somewhere else?
-        # TODO maybe a custom terminal object
-        if self.stack.visible:
-            return (self.term.height - 10) // 2
-        else:
-            return self.term.height - 6
 
 
 def explore(obj: Any) -> Any:
