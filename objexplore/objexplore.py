@@ -239,6 +239,12 @@ class ObjExploreApp:
         elif (key == "k" or key.code == self.term.KEY_CODE) and self.filter_layout.visible:
             self.filter_layout.move_up()
 
+        elif key == "g" and self.filter_layout.visible:
+            self.filter_layout.move_top()
+
+        elif key == "G" and self.filter_layout.visible:
+            self.filter_layout.move_bottom()
+
         elif key == "c":
             self.filter_layout.clear_filters(self.cached_obj)
 

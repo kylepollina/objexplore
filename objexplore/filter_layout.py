@@ -48,6 +48,12 @@ class FilterLayout(Layout):
         if self.index > 0:
             self.index -= 1
 
+    def move_top(self):
+        self.index = 0
+
+    def move_bottom(self):
+        self.index = len(self.filters) - 1
+
     def get_enabled_filters(self) -> List[types.FunctionType]:
         return [
             method
