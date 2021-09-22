@@ -20,7 +20,7 @@ from .stack_layout import StackFrame, StackLayout
 from .terminal import Terminal
 from .utils import is_selectable
 
-version = "1.4.4"
+version = "1.4.7"
 
 # TODO Backspace exit help
 # TODO support ctrl-a + (whatever emacs keybinding to go to end of line)
