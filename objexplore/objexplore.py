@@ -22,6 +22,7 @@ from .utils import is_selectable
 
 version = "1.4.91"
 
+# TODO object highlighted on stack view should be shown on the overview
 # TODO Backspace exit help
 # TODO support ctrl-a + (whatever emacs keybinding to go to end of line)
 #  https://www.gnu.org/software/bash/manual/html_node/Commands-For-Moving.html

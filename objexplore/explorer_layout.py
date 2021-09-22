@@ -34,6 +34,8 @@ class ExplorerLayout(Layout):
             self.state = ExplorerState.list
         elif _type == tuple:
             self.state = ExplorerState.tuple
+        elif _type == set:
+            self.state = ExplorerState.set
         else:
             self.state = ExplorerState.public
         self.public_index = self.private_index = 0
@@ -56,7 +58,7 @@ class ExplorerLayout(Layout):
         if self.state == ExplorerState.dict:
             return self.dict_layout(term_width, term_height)
 
-        elif self.state in (ExplorerState.list, ExplorerState.tuple):
+        elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
             return self.list_layout(term_width, term_height)
 
         else:
@@ -347,7 +349,7 @@ class ExplorerLayout(Layout):
             elif self.dict_window == 1:
                 self.dict_window -= 1
 
-        elif self.state in (ExplorerState.list, ExplorerState.tuple):
+        elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
             if self.list_index > 0:
                 self.list_index -= 1
                 if self.list_index < self.list_window - 1:
@@ -379,7 +381,7 @@ class ExplorerLayout(Layout):
             ):
                 self.dict_window += 1
 
-        elif self.state in (ExplorerState.list, ExplorerState.tuple):
+        elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
             if self.list_index < len(cached_obj.obj) - 1:
                 self.list_index += 1
                 if self.list_index > self.list_window + panel_height - 1:
@@ -399,7 +401,7 @@ class ExplorerLayout(Layout):
         elif self.state == ExplorerState.dict:
             self.dict_index = self.dict_window = 0
 
-        elif self.state in (ExplorerState.list, ExplorerState.tuple):
+        elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
             self.list_index = self.list_window = 0
 
     def move_bottom(self, panel_height: int, cached_obj: CachedObject):
@@ -415,6 +417,6 @@ class ExplorerLayout(Layout):
             self.dict_index = len(cached_obj.obj.keys()) - 1
             self.dict_window = max(0, self.dict_index - panel_height + 2)
 
-        elif self.state in (ExplorerState.list, ExplorerState.tuple):
+        elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
             self.list_index = len(cached_obj.obj) - 1
             self.list_window = max(0, self.list_index - panel_height + 2)
