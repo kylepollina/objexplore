@@ -112,6 +112,7 @@ class CachedObject:
         self.isclass = inspect.isclass(self.obj)
         self.isfunction = inspect.isfunction(self.obj)
         self.ismethod = inspect.ismethod(self.obj)
+        self.ismethoddescriptor = inspect.ismethoddescriptor(self.obj)
         self.ismodule = inspect.ismodule(self.obj)
         self.filters: List[types.FunctionType] = []
         self.search_filter: str = ""
@@ -129,17 +130,23 @@ class CachedObject:
             self.text.style = Style(color="blue")
         elif self.isclass:
             self.text.style = Style(color="magenta")
-        if self.isfunction or self.ismethod:
+        if self.isfunction or self.ismethod or self.ismethoddescriptor:
             self.text += Text("()", style=Style(color="white"))
         # elif callable(self.obj):
         #     pass
         #     # self.text.style = Style(color="yellow", dim=True)
-        elif type(self.obj) in (dict, set):
-            self.text += Text("{}", style=Style(color="white"))
+        elif type(self.obj) == dict:
+            self.text.style = Style(color="light_sea_green")
+            self.text = Text("{**", style=Style(color="white")) + self.text + Text("}", style=Style(color="white"))
         elif type(self.obj) == list:
-            self.text += Text("[]", style=Style(color="white"))
+            self.text.style = Style(color="indian_red")
+            self.text = Text("[*", style=Style(color="white")) + self.text + Text("]", style=Style(color="white"))
         elif type(self.obj) == tuple:
-            self.text += Text("()", style=Style(color="white"))
+            self.text.style = Style(color="pale_violet_red1")
+            self.text = Text("(*", style=Style(color="white")) + self.text + Text(")", style=Style(color="white"))
+        elif type(self.obj) == set:
+            self.text.style = Style(color="light_goldenrod3")
+            self.text = Text("{*", style=Style(color="white")) + self.text + Text("}", style=Style(color="white"))
         # TODO fix
         elif not is_selectable(self.obj):
             self.text.style = Style(dim=True, italic=True)

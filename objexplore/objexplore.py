@@ -22,17 +22,16 @@ from .utils import is_selectable
 
 version = "1.4.4"
 
-# TODO add a specific try/catch around the index error filter bug
+# TODO support ctrl-a + (whatever emacs keybinding to go to end of line)
+#  https://www.gnu.org/software/bash/manual/html_node/Commands-For-Moving.html
 # TODO add () to text for builtin-methods
 # TODO add a "searching..." title to search filter
 # TODO move stack/filter into the explorer object
 # TODO move help into the overview layout
-# TODO disable G/g if stack/filter open
 # TODO figure out how to dim empty dict/list/etc
 # TODO truncate public/private -> pub priv -> just public/private
 # TODO truncate explorer subtitle as well
 # TODO +-_= to change the size of the explorer window
-# TODO backspace to close filter/stack
 # TODO auto return on q or r
 # TODO builtin frame/stack explorer? from objexplore import stackexplore
 # TODO filter color the filters the same as the explorer
@@ -54,8 +53,8 @@ class ObjExploreApp:
         self.help_layout = HelpLayout(version, visible=False, ratio=3)
         self.explorer_layout = ExplorerLayout(cached_obj=cached_obj)
         self.overview_layout = OverviewLayout(ratio=3)
-        self.filter_layout = FilterLayout(visible=False)
         self.term = Terminal(stack=self.stack)
+        self.filter_layout = FilterLayout(term=self.term, visible=False)
 
         self.stack.append(
             StackFrame(
@@ -182,7 +181,7 @@ class ObjExploreApp:
             else:
                 self.stack.set_visible()
 
-        elif key.code == self.term.KEY_BACKSPACE and self.stack.visible:
+        elif key.code in (self.term.KEY_BACKSPACE, self.term.KEY_ESCAPE) and self.stack.visible:
             self.stack.visible = False
 
         elif (key == " " or key.code == self.term.KEY_ENTER) and self.stack.visible:

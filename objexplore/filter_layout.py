@@ -10,6 +10,7 @@ import rich
 
 from .explorer_layout import ExplorerLayout
 from .cached_object import CachedObject
+from .terminal import Terminal
 
 highlighter = ReprHighlighter()
 
@@ -18,7 +19,7 @@ highlighter = ReprHighlighter()
 
 @rich.repr.auto
 class FilterLayout(Layout):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, term: Terminal, *args, **kwargs):
         self.filters: Dict[str, List[bool, types.FunctionType]] = {
             "class": [False, lambda cached_obj: cached_obj.isclass],
             "function": [False, lambda cached_obj: cached_obj.isfunction],
@@ -34,6 +35,7 @@ class FilterLayout(Layout):
             "set": [False, lambda cached_obj: type(cached_obj.obj) == set],
             "builtin": [False, lambda cached_obj: cached_obj.isbuiltin],
         }
+        self.term = term
         self.index = 0
         self.receiving_input = False
         self.search_filter = ""
@@ -174,16 +176,22 @@ class FilterLayout(Layout):
                 "█", style=Style(underline=True, blink=True, reverse=True)
             )
         else:
-            search_text = (
-                Text(self.search_filter[: self.cursor_pos])
-                + Text(
-                    self.search_filter[self.cursor_pos],
-                    style=Style(
-                        underline=True, blink=True, color="black", bgcolor="aquamarine1"
-                    ),
+            try:
+                search_text = (
+                    Text(self.search_filter[: self.cursor_pos])
+                    + Text(
+                        self.search_filter[self.cursor_pos],
+                        style=Style(
+                            underline=True, blink=True, color="black", bgcolor="aquamarine1"
+                        ),
+                    )
+                    + Text(self.search_filter[self.cursor_pos + 1 :])
                 )
-                + Text(self.search_filter[self.cursor_pos + 1 :])
-            )
+            except IndexError:
+                raise IndexError("Nice! You caught the special search filter bug. I've been looking for that!",
+                                 f"search_filter={self.search_filter}", f"index={self.index}",
+                                 f"cursor_pos={self.cursor_pos}", f"last_key={self.last_key}")
+
         self.update(
             Panel(
                 search_text,

@@ -7,6 +7,10 @@ class Terminal(BlessedTerminal):
         self.stack = stack
 
     @property
+    def explorer_panel_width(self):
+        ...
+
+    @property
     def explorer_panel_height(self):
         if self.stack.visible:
             return (self.height - 10) // 2
