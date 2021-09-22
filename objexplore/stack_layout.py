@@ -26,7 +26,6 @@ class StackLayout(Layout):
         self.head_obj = head_obj
         self.stack: List[StackFrame] = []
         self.index = 0
-        self.window = 0
 
     def append(self, stack_frame: StackFrame):
         self.stack.append(stack_frame)
@@ -89,14 +88,16 @@ class StackLayout(Layout):
     def move_up(self):
         if self.index > 0:
             self.index -= 1
-            if self.index < self.window:
-                self.window -= 1
 
     def move_down(self, panel_height: int):
         if self.index < len(self.stack) - 1:
             self.index += 1
-            if self.index > self.window + panel_height:
-                self.window += 1
+
+    def move_top(self):
+        self.index = 0
+
+    def move_bottom(self):
+        self.index = len(self.stack) - 1
 
     def select(self) -> CachedObject:
         """The stack always contains every stack frame including the current frame

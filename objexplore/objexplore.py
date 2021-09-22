@@ -211,6 +211,12 @@ class ObjExploreApp:
         elif (key == "k" or key.code == self.term.KEY_UP) and self.stack.visible:
             self.stack.move_up()
 
+        elif key == "g" and self.stack.visible:
+            self.stack.move_top()
+
+        elif key == "G" and self.stack.visible:
+            self.stack.move_bottom()
+
         # Filter ##############################################################
 
         elif key == "n":
