@@ -20,7 +20,7 @@ from .stack_layout import StackFrame, StackLayout
 from .terminal import Terminal
 from .utils import is_selectable
 
-version = "1.4.4"
+version = "1.4.5"
 
 # TODO support ctrl-a + (whatever emacs keybinding to go to end of line)
 #  https://www.gnu.org/software/bash/manual/html_node/Commands-For-Moving.html
@@ -30,7 +30,6 @@ version = "1.4.4"
 # TODO move help into the overview layout
 # TODO truncate public/private -> pub priv -> just public/private
 # TODO truncate explorer subtitle as well
-# TODO +-_= to change the size of the explorer window
 # TODO auto return on q or r
 # TODO builtin frame/stack explorer? from objexplore import stackexplore
 # TODO filter color the filters the same as the explorer
