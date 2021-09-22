@@ -101,7 +101,7 @@ class FilterLayout(Layout):
         )
         self.cursor_pos += 1
 
-        if len(explorer_layout.get_all_attributes()) < 200:
+        if len(explorer_layout.get_all_attributes()) < 130:
             cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
     def backspace(self, cached_obj: CachedObject, explorer_layout: ExplorerLayout):
@@ -115,7 +115,7 @@ class FilterLayout(Layout):
         )
         self.cursor_left()
 
-        if len(explorer_layout.get_all_attributes()) < 200:
+        if len(explorer_layout.get_all_attributes()) < 130:
             cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
     def cancel_search(self, cached_obj: CachedObject):
