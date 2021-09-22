@@ -1,5 +1,5 @@
 import types
-from typing import Dict, List, Union
+from typing import Dict, List
 
 from rich.highlighter import ReprHighlighter
 from rich.layout import Layout
@@ -20,7 +20,7 @@ highlighter = ReprHighlighter()
 @rich.repr.auto
 class FilterLayout(Layout):
     def __init__(self, term: Terminal, *args, **kwargs):
-        self.filters: Dict[str, List[Union[bool, types.FunctionType]]] = {
+        self.filters: Dict[str, List[bool, types.FunctionType]] = {
             "class": [False, lambda cached_obj: cached_obj.isclass],
             "function": [False, lambda cached_obj: cached_obj.isfunction],
             "method": [False, lambda cached_obj: cached_obj.ismethod],
@@ -153,17 +153,13 @@ class FilterLayout(Layout):
         if self.receiving_input:
             return self.input_box()
 
-        subtitle = "[dim][u]c[/u]:clear [u]space[/u]:select"
-        if self.term.explorer_panel_width <= 25:
-            subtitle = "[dim][u]space[/u]:select"
-
         lines = self.get_lines()
         self.update(
             Panel(
                 Text("\n").join(lines),
                 title="\[filter]",
                 title_align="right",
-                subtitle=subtitle,
+                subtitle="[dim][u]c[/u]:clear [u]space[/u]:select",
                 subtitle_align="right",
                 style="bright_magenta",
             )
@@ -187,21 +183,15 @@ class FilterLayout(Layout):
                     + Text(
                         self.search_filter[self.cursor_pos],
                         style=Style(
-                            underline=True,
-                            blink=True,
-                            color="black",
-                            bgcolor="aquamarine1",
+                            underline=True, blink=True, color="black", bgcolor="aquamarine1"
                         ),
                     )
                     + Text(self.search_filter[self.cursor_pos + 1 :])
                 )
             except IndexError:
-                raise IndexError(
-                    "Nice! You caught the special search filter bug. I've been looking for that one.",
-                    f"search_filter={self.search_filter}",
-                    f"cursor_pos={self.cursor_pos}",
-                    f"key_history={self.key_history}",
-                )
+                raise IndexError("Nice! You caught the special search filter bug. I've been looking for that one.",
+                                 f"search_filter={self.search_filter}",
+                                 f"cursor_pos={self.cursor_pos}", f"key_history={self.key_history}")
 
         self.update(
             Panel(

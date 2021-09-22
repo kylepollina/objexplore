@@ -18,7 +18,7 @@ class Terminal(BlessedTerminal):
 
     @property
     def explorer_panel_width(self):
-        return max(10, (self.width - 2) // 4 + self.explorer_size_extra)
+        ...
 
     @property
     def explorer_panel_height(self):

@@ -20,7 +20,7 @@ from .stack_layout import StackFrame, StackLayout
 from .terminal import Terminal
 from .utils import is_selectable
 
-version = "1.4.5"
+version = "1.4.6"
 
 # TODO support ctrl-a + (whatever emacs keybinding to go to end of line)
 #  https://www.gnu.org/software/bash/manual/html_node/Commands-For-Moving.html
