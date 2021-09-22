@@ -24,9 +24,10 @@ highlighter = ReprHighlighter()
 
 
 class ExplorerLayout(Layout):
-    def __init__(self, cached_obj: CachedObject, *args, **kwargs):
+    def __init__(self, cached_obj: CachedObject, term, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cached_obj = cached_obj
+        self.term = term
         _type = type(cached_obj.obj)
         if _type == dict:
             self.state = ExplorerState.dict
@@ -41,17 +42,11 @@ class ExplorerLayout(Layout):
         self.dict_index = self.dict_window = 0
         self.list_index = self.list_window = 0
 
-    @staticmethod
-    def get_panel_width(term_width: int) -> int:
-        return (term_width - 4) // 4 - 4
-
-    @staticmethod
-    def get_panel_height(term_height: int) -> int:
-        return term_height - 5
-
     def __call__(self, term_width: int, term_height: int) -> Layout:
         """ Return the layout of the object explorer. This will be a list of lines representing the object attributes/keys/vals we are exploring """
         # TODO change to just accept term object
+
+        self.size = self.term.explorer_panel_width
 
         if self.state == ExplorerState.dict:
             return self.dict_layout(term_width, term_height)
@@ -108,23 +103,21 @@ class ExplorerLayout(Layout):
         if self.dict_index >= len(self.cached_obj.filtered_dict):
             self.dict_index = max(0, len(self.cached_obj.filtered_dict) - 1)
             self.dict_window = max(
-                0, self.dict_index - self.get_panel_height(term_height)
+                0, self.dict_index - self.term.explorer_panel_height
             )
 
-        panel_width = self.get_panel_width(term_width)
-        panel_height = self.get_panel_height(term_height)
         lines = []
 
         if self.dict_window == 0:
             lines.append(Text("{"))
             start = 0
-            num_lines = panel_height - 1
+            num_lines = self.term.explorer_panel_height - 1
         elif self.dict_window == 1:
             start = 0
-            num_lines = panel_height
+            num_lines = self.term.explorer_panel_height
         else:
             start = self.dict_window - 1
-            num_lines = panel_height
+            num_lines = self.term.explorer_panel_height
 
         end = start + num_lines
         index = start
@@ -136,7 +129,7 @@ class ExplorerLayout(Layout):
             if index == self.dict_index:
                 new_line.style = Style(reverse=True)
 
-            new_line.truncate(panel_width)
+            new_line.truncate(self.term.explorer_panel_width)
             lines.append(new_line)
             index += 1
 
@@ -163,11 +156,9 @@ class ExplorerLayout(Layout):
         if self.list_index >= len(self.cached_obj.filtered_list):
             self.list_index = max(0, len(self.cached_obj.filtered_list) - 1)
             self.list_window = max(
-                0, self.list_index - self.get_panel_height(term_height)
+                0, self.list_index - self.term.explorer_panel_height
             )
 
-        panel_width = self.get_panel_width(term_width)
-        panel_height = self.get_panel_height(term_height)
         lines = []
 
         type_map = {
@@ -179,13 +170,13 @@ class ExplorerLayout(Layout):
         if self.list_window == 0:
             lines.append(Text(type_map[self.state][0]))
             start = 0
-            num_lines = panel_height - 1
+            num_lines = self.term.explorer_panel_height - 1
         elif self.list_window == 1:
             start = 0
-            num_lines = panel_height
+            num_lines = self.term.explorer_panel_height
         else:
             start = self.list_window - 1
-            num_lines = panel_height
+            num_lines = self.term.explorer_panel_height
 
         end = start + num_lines
         index = start
@@ -196,7 +187,7 @@ class ExplorerLayout(Layout):
             if index == self.list_index:
                 new_line.style = Style(reverse=True)
 
-            new_line.truncate(panel_width)
+            new_line.truncate(self.term.explorer_panel_width)
             lines.append(new_line)
             index += 1
 
@@ -218,7 +209,6 @@ class ExplorerLayout(Layout):
 
     def dir_layout(self, term_width: int, term_height: int) -> Layout:
         lines = []
-        panel_width = self.get_panel_width(term_width)
 
         if self.state == ExplorerState.public:
             # Reset the public index / window in case applying a filter has now moved the index
@@ -228,7 +218,7 @@ class ExplorerLayout(Layout):
                     0, len(self.cached_obj.filtered_public_attributes) - 1
                 )
                 self.public_window = max(
-                    0, self.public_index - self.get_panel_height(term_height)
+                    0, self.public_index - self.term.explorer_panel_height
                 )
 
             for index, (attr, cached_obj) in enumerate(
@@ -246,7 +236,7 @@ class ExplorerLayout(Layout):
                 #     + dim_typeof
                 # )
 
-                line.truncate(panel_width)
+                line.truncate(self.term.explorer_panel_width)
                 lines.append(line)
 
             title = "[i][cyan]dir[/cyan]()[/i] | [u]public[/u] [dim]private[/dim]"
@@ -272,7 +262,7 @@ class ExplorerLayout(Layout):
                     0, len(self.cached_obj.filtered_private_attributes) - 1
                 )
                 self.private_window = max(
-                    0, self.private_index - self.get_panel_height(term_height)
+                    0, self.private_index - self.term.explorer_panel_height
                 )
 
             for index, (attr, cached_obj) in enumerate(
@@ -291,7 +281,7 @@ class ExplorerLayout(Layout):
                 #     + dim_typeof
                 # )
 
-                line.truncate(panel_width)
+                line.truncate(self.term.explorer_panel_width)
                 lines.append(line)
 
             title = "[i][cyan]dir[/cyan]()[/i] | [dim]public[/dim] [u]private[/u]"
@@ -360,31 +350,31 @@ class ExplorerLayout(Layout):
         if self.state == ExplorerState.public:
             if self.public_index < len(cached_obj.filtered_public_attributes) - 1:
                 self.public_index += 1
-                if self.public_index > self.public_window + panel_height:
+                if self.public_index > self.public_window + self.term.explorer_panel_height:
                     self.public_window += 1
 
         elif self.state == ExplorerState.private:
             if self.private_index < len(cached_obj.filtered_private_attributes) - 1:
                 self.private_index += 1
-                if self.private_index > self.private_window + panel_height:
+                if self.private_index > self.private_window + self.term.explorer_panel_height:
                     self.private_window += 1
 
         elif self.state == ExplorerState.dict:
             if self.dict_index < len(cached_obj.filtered_dict.keys()) - 1:
                 self.dict_index += 1
-                if self.dict_index > self.dict_window + panel_height - 1:
+                if self.dict_index > self.dict_window + self.term.explorer_panel_height - 1:
                     self.dict_window += 1
             elif (
-                self.dict_window == len(cached_obj.filtered_dict.keys()) - panel_height
+                self.dict_window == len(cached_obj.filtered_dict.keys()) - self.term.explorer_panel_height
             ):
                 self.dict_window += 1
 
         elif self.state in (ExplorerState.list, ExplorerState.tuple):
             if self.list_index < len(cached_obj.obj) - 1:
                 self.list_index += 1
-                if self.list_index > self.list_window + panel_height - 1:
+                if self.list_index > self.list_window + self.term.explorer_panel_height - 1:
                     self.list_window += 1
-            elif self.list_window == len(cached_obj.obj) - panel_height:
+            elif self.list_window == len(cached_obj.obj) - self.term.explorer_panel_height:
                 self.list_window += 1
 
     def move_top(self):
@@ -405,16 +395,16 @@ class ExplorerLayout(Layout):
     def move_bottom(self, panel_height: int, cached_obj: CachedObject):
         if self.state == ExplorerState.public:
             self.public_index = len(cached_obj.filtered_public_attributes) - 1
-            self.public_window = max(0, self.public_index - panel_height)
+            self.public_window = max(0, self.public_index - self.term.explorer_panel_height)
 
         elif self.state == ExplorerState.private:
             self.private_index = len(cached_obj.filtered_private_attributes) - 1
-            self.private_window = max(0, self.private_index - panel_height)
+            self.private_window = max(0, self.private_index - self.term.explorer_panel_height)
 
         elif self.state == ExplorerState.dict:
             self.dict_index = len(cached_obj.obj.keys()) - 1
-            self.dict_window = max(0, self.dict_index - panel_height + 2)
+            self.dict_window = max(0, self.dict_index - self.term.explorer_panel_height + 2)
 
         elif self.state in (ExplorerState.list, ExplorerState.tuple):
             self.list_index = len(cached_obj.obj) - 1
-            self.list_window = max(0, self.list_index - panel_height + 2)
+            self.list_window = max(0, self.list_index - self.term.explorer_panel_height + 2)

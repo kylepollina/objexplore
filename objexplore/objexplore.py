@@ -22,7 +22,6 @@ from .utils import is_selectable
 
 version = "1.4.4"
 
-# TODO Backspace exit help
 # TODO support ctrl-a + (whatever emacs keybinding to go to end of line)
 #  https://www.gnu.org/software/bash/manual/html_node/Commands-For-Moving.html
 # TODO add () to text for builtin-methods
@@ -50,10 +49,10 @@ class ObjExploreApp:
 
         self.cached_obj: CachedObject = cached_obj
         self.stack = StackLayout(head_obj=self.cached_obj, visible=False)
-        self.help_layout = HelpLayout(version, visible=False, ratio=3)
-        self.explorer_layout = ExplorerLayout(cached_obj=cached_obj)
-        self.overview_layout = OverviewLayout(ratio=3)
+        self.help_layout = HelpLayout(version, visible=False)
+        self.overview_layout = OverviewLayout()
         self.term = Terminal(stack=self.stack)
+        self.explorer_layout = ExplorerLayout(cached_obj=cached_obj, term=self.term)
         self.filter_layout = FilterLayout(term=self.term, visible=False)
 
         self.stack.append(
@@ -136,7 +135,7 @@ class ObjExploreApp:
 
         if self.help_layout.visible:
             # Close help page
-            if key == "?" or key.code == self.term.KEY_ESCAPE:
+            if key == "?" or key.code in (self.term.KEY_ESCAPE, self.term.KEY_BACKSPACE):
                 self.help_layout.visible = False
                 return
 
@@ -195,7 +194,7 @@ class ObjExploreApp:
             # TODO abstract the following
             if not is_selectable(new_cached_obj.obj):
                 return
-            self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
+            self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj, term=self.term)
             self.cached_obj = new_cached_obj
             self.cached_obj.cache()
             self.filter_layout.cancel_search(self.cached_obj)
@@ -284,7 +283,7 @@ class ObjExploreApp:
             if not is_selectable(new_cached_obj.obj):
                 return
 
-            self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
+            self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj, term=self.term)
             self.cached_obj = new_cached_obj
             self.cached_obj.cache()
             self.filter_layout.cancel_search(self.cached_obj)
@@ -295,6 +294,15 @@ class ObjExploreApp:
                     overview_layout=self.overview_layout,
                 )
             )
+
+        elif key == "+":
+            self.term.increase_explorer_size()
+
+        elif key in ("-", "_"):
+            self.term.decrease_explorer_size()
+
+        elif key == "=":
+            self.term.explorer_size_extra = 0
 
         # Go back to parent
         elif (key == "h" or key.code == self.term.KEY_LEFT) and self.stack.stack:
