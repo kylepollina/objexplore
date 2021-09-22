@@ -139,7 +139,7 @@ class CachedObject:
             self.text.style = Style(color="light_sea_green")
             self.text = Text("{**", style=Style(color="white")) + self.text + Text("}", style=Style(color="white"))
         elif type(self.obj) == list:
-            self.text.style = Style(color="indian_red")
+            self.text.style = Style(color="indian_red1")
             self.text = Text("[*", style=Style(color="white")) + self.text + Text("]", style=Style(color="white"))
         elif type(self.obj) == tuple:
             self.text.style = Style(color="pale_violet_red1")
@@ -147,11 +147,8 @@ class CachedObject:
         elif type(self.obj) == set:
             self.text.style = Style(color="light_goldenrod3")
             self.text = Text("{*", style=Style(color="white")) + self.text + Text("}", style=Style(color="white"))
-        # TODO fix
-        elif not is_selectable(self.obj):
-            self.text.style = Style(dim=True, italic=True)
-        # else:
-        #     self.text.style = Style()
+        if not is_selectable(self.obj):
+            self.text.style += Style(dim=True)
 
     @property
     def title(self):

@@ -28,7 +28,6 @@ version = "1.4.4"
 # TODO add a "searching..." title to search filter
 # TODO move stack/filter into the explorer object
 # TODO move help into the overview layout
-# TODO figure out how to dim empty dict/list/etc
 # TODO truncate public/private -> pub priv -> just public/private
 # TODO truncate explorer subtitle as well
 # TODO +-_= to change the size of the explorer window
