@@ -22,6 +22,7 @@ from .utils import is_selectable
 
 version = "1.4.4"
 
+# TODO Backspace exit help
 # TODO support ctrl-a + (whatever emacs keybinding to go to end of line)
 #  https://www.gnu.org/software/bash/manual/html_node/Commands-For-Moving.html
 # TODO add () to text for builtin-methods
@@ -451,17 +452,18 @@ class ObjExploreApp:
 
 def explore(obj: Any) -> Any:
     """ Run the explorer on the given object """
+    # Get the name of the variable sent to this function
+    # If someone calls this function like:
+    # >>> df = pandas.DataFrame()
+    # >>> explore(df)
+    # Then we want to extract `name` == 'df'
+    frame = inspect.currentframe()
+    name = frame.f_back.f_code.co_names[1]  # type: ignore
+    app = ObjExploreApp(obj, name_of_obj=name)
     try:
-        # Get the name of the variable sent to this function
-        # If someone calls this function like:
-        # >>> df = pandas.DataFrame()
-        # >>> explore(df)
-        # Then we want to extract `name` == 'df'
-        frame = inspect.currentframe()
-        name = frame.f_back.f_code.co_names[1]  # type: ignore
-        app = ObjExploreApp(obj, name_of_obj=name)
         return app.explore()
     except Exception as err:
+        print(app.term.move_down(app.term.height))
         console.print_exception(show_locals=True)
         print()
         rich.print(f"[red]{random_error_quote()}")

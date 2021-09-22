@@ -126,27 +126,42 @@ class CachedObject:
         self.pretty = Pretty(self.obj)
 
         self.text = Text(self.attr_name, style=Style(), overflow="ellipsis")
+
         if self.ismodule:
             self.text.style = Style(color="blue")
         elif self.isclass:
             self.text.style = Style(color="magenta")
-        if self.isfunction or self.ismethod or self.ismethoddescriptor:
+        elif self.isfunction or self.ismethod or self.ismethoddescriptor:
             self.text += Text("()", style=Style(color="white"))
-        # elif callable(self.obj):
-        #     pass
-        #     # self.text.style = Style(color="yellow", dim=True)
         elif type(self.obj) == dict:
             self.text.style = Style(color="light_sea_green")
-            self.text = Text("{**", style=Style(color="white")) + self.text + Text("}", style=Style(color="white"))
+            self.text = (
+                Text("{**", style=Style(color="white"))
+                + self.text
+                + Text("}", style=Style(color="white"))
+            )
         elif type(self.obj) == list:
             self.text.style = Style(color="indian_red1")
-            self.text = Text("[*", style=Style(color="white")) + self.text + Text("]", style=Style(color="white"))
+            self.text = (
+                Text("[*", style=Style(color="white"))
+                + self.text
+                + Text("]", style=Style(color="white"))
+            )
         elif type(self.obj) == tuple:
             self.text.style = Style(color="pale_violet_red1")
-            self.text = Text("(*", style=Style(color="white")) + self.text + Text(")", style=Style(color="white"))
+            self.text = (
+                Text("(*", style=Style(color="white"))
+                + self.text
+                + Text(")", style=Style(color="white"))
+            )
         elif type(self.obj) == set:
             self.text.style = Style(color="light_goldenrod3")
-            self.text = Text("{*", style=Style(color="white")) + self.text + Text("}", style=Style(color="white"))
+            self.text = (
+                Text("{*", style=Style(color="white"))
+                + self.text
+                + Text("}", style=Style(color="white"))
+            )
+
         if not is_selectable(self.obj):
             self.text.style += Style(dim=True)
 
@@ -227,7 +242,7 @@ class CachedObject:
                 repr_val = highlighter(str(type(val)))
 
                 if not is_selectable(val):
-                    repr_val.style += " dim italic"
+                    repr_val.style += " dim"
                     repr_val.style = repr_val.style.strip()
 
                 line = Text(" ") + repr_key + Text(": ") + repr_val
@@ -256,7 +271,7 @@ class CachedObject:
                     + highlighter(str(type(item)))
                 )
                 if not is_selectable(item):
-                    line.style += Style(dim=True, italic=True)
+                    line.style += Style(dim=True)
 
                 self.filtered_list.append(
                     (line, CachedObject(item, parent_path=self.dotpath, index=index))

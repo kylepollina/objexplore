@@ -40,6 +40,7 @@ class FilterLayout(Layout):
         self.receiving_input = False
         self.search_filter = ""
         self.cursor_pos = 0
+        self.key_history = []
         super().__init__(*args, **kwargs)
 
     def move_down(self):
@@ -101,7 +102,7 @@ class FilterLayout(Layout):
     def add_search_char(
         self, key: str, cached_obj: CachedObject, explorer_layout: ExplorerLayout
     ):
-        self.last_key = key
+        self.key_history.append(key)
         self.search_filter = (
             self.search_filter[: self.cursor_pos]
             + str(key)
@@ -188,9 +189,9 @@ class FilterLayout(Layout):
                     + Text(self.search_filter[self.cursor_pos + 1 :])
                 )
             except IndexError:
-                raise IndexError("Nice! You caught the special search filter bug. I've been looking for that!",
-                                 f"search_filter={self.search_filter}", f"index={self.index}",
-                                 f"cursor_pos={self.cursor_pos}", f"last_key={self.last_key}")
+                raise IndexError("Nice! You caught the special search filter bug. I've been looking for that one.",
+                                 f"search_filter={self.search_filter}",
+                                 f"cursor_pos={self.cursor_pos}", f"key_history={self.key_history}")
 
         self.update(
             Panel(
