@@ -20,7 +20,7 @@ from .stack_layout import StackFrame, StackLayout
 from .terminal import Terminal
 from .utils import is_selectable
 
-version = "1.4.91"
+version = "1.4.10"
 
 # TODO object highlighted on stack view should be shown on the overview
 # TODO Backspace exit help
