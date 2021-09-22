@@ -181,7 +181,10 @@ class ObjExploreApp:
             else:
                 self.stack.set_visible()
 
-        elif key.code in (self.term.KEY_BACKSPACE, self.term.KEY_ESCAPE) and self.stack.visible:
+        elif (
+            key.code in (self.term.KEY_BACKSPACE, self.term.KEY_ESCAPE)
+            and self.stack.visible
+        ):
             self.stack.visible = False
 
         elif (key == " " or key.code == self.term.KEY_ENTER) and self.stack.visible:
@@ -232,16 +235,24 @@ class ObjExploreApp:
             self.filter_layout.receiving_input = True
             self.filter_layout.visible = True
 
-        elif (key == ' ' or key.code == self.term.KEY_ENTER) and self.filter_layout.visible:
+        elif (
+            key == " " or key.code == self.term.KEY_ENTER
+        ) and self.filter_layout.visible:
             self.filter_layout.toggle(cached_obj=self.cached_obj)
 
-        elif (key.code in (self.term.KEY_ESCAPE, self.term.KEY_BACKSPACE)) and self.filter_layout.visible:
+        elif (
+            key.code in (self.term.KEY_ESCAPE, self.term.KEY_BACKSPACE)
+        ) and self.filter_layout.visible:
             self.filter_layout.visible = False
 
-        elif (key == "j" or key.code == self.term.KEY_DOWN) and self.filter_layout.visible:
+        elif (
+            key == "j" or key.code == self.term.KEY_DOWN
+        ) and self.filter_layout.visible:
             self.filter_layout.move_down()
 
-        elif (key == "k" or key.code == self.term.KEY_CODE) and self.filter_layout.visible:
+        elif (
+            key == "k" or key.code == self.term.KEY_CODE
+        ) and self.filter_layout.visible:
             self.filter_layout.move_up()
 
         elif key == "g" and self.filter_layout.visible:
@@ -266,7 +277,7 @@ class ObjExploreApp:
         elif key in ("l", " ") or key.code in (
             self.term.KEY_ENTER,
             self.term.KEY_RIGHT,
-            self.term.KEY
+            self.term.KEY,
         ):
             new_cached_obj = self.explorer_layout.selected_object
             # TODO abstract the following
@@ -292,7 +303,6 @@ class ObjExploreApp:
             self.filter_layout.clear_filters(self.cached_obj)
             self.explorer_layout = self.stack[-1].explorer_layout
             self.overview_layout = self.stack[-1].overview_layout
-
 
         elif key == "g":
             self.explorer_layout.move_top()
