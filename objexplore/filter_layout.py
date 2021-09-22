@@ -74,6 +74,7 @@ class FilterLayout(Layout):
         for name, filter_data in self.filters.copy().items():
             self.filters[name][0] = False
         self.search_filter = ""
+        self.cursor_pos = 0
         cached_obj.set_filters([])
 
     def get_lines(self) -> List[Text]:
@@ -181,27 +182,19 @@ class FilterLayout(Layout):
                 "█", style=Style(underline=True, blink=True, reverse=True)
             )
         else:
-            try:
-                search_text = (
-                    Text(self.search_filter[: self.cursor_pos])
-                    + Text(
-                        self.search_filter[self.cursor_pos],
-                        style=Style(
-                            underline=True,
-                            blink=True,
-                            color="black",
-                            bgcolor="aquamarine1",
-                        ),
-                    )
-                    + Text(self.search_filter[self.cursor_pos + 1 :])
+            search_text = (
+                Text(self.search_filter[: self.cursor_pos])
+                + Text(
+                    self.search_filter[self.cursor_pos],
+                    style=Style(
+                        underline=True,
+                        blink=True,
+                        color="black",
+                        bgcolor="aquamarine1",
+                    ),
                 )
-            except IndexError:
-                raise IndexError(
-                    "Nice! You caught the special search filter bug. I've been looking for that one.",
-                    f"search_filter={self.search_filter}",
-                    f"cursor_pos={self.cursor_pos}",
-                    f"key_history={self.key_history}",
-                )
+                + Text(self.search_filter[self.cursor_pos + 1 :])
+            )
 
         self.update(
             Panel(
