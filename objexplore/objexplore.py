@@ -20,7 +20,7 @@ from .stack_layout import StackFrame, StackLayout
 from .terminal import Terminal
 from .utils import is_selectable
 
-version = "1.4.9"
+version = "1.4.91"
 
 # TODO Backspace exit help
 # TODO support ctrl-a + (whatever emacs keybinding to go to end of line)
@@ -462,7 +462,6 @@ class ObjExploreApp:
 
 def explore(obj: Any) -> Any:
     """ Run the explorer on the given object """
-    breakpoint()
     # Get the name of the variable sent to this function
     # If someone calls this function like:
     # >>> df = pandas.DataFrame()
