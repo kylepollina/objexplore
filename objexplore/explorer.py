@@ -49,8 +49,7 @@ class Explorer:
         self.dict_index = self.dict_window = 0
         self.list_index = self.list_window = 0
 
-    @property
-    def layout(self) -> Layout:
+    def get_layout(self) -> Layout:
         """ Return the layout of the object explorer. This will be a list of lines representing the object attributes/keys/vals we are exploring """
 
         if self.state == ExplorerState.dict:

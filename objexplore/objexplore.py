@@ -437,7 +437,7 @@ class ObjExploreApp:
         """ Draw the application. the *args argument is due to resize events and are unused """
         print(self.term.home, end="")
         layout = Layout()
-        layout.split_row(self.explorer.layout, self.overview.get_layout(self.explorer.selected_object))
+        layout.split_row(self.explorer.get_layout(), self.overview.get_layout(self.explorer.selected_object))
 
         title = (
             self.cached_obj.dotpath
