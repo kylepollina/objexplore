@@ -26,11 +26,7 @@ class Overview:
         self.state = OverviewState.all
         self.preview_state = PreviewState.repr
 
-    @property
-    def layout(self):
-        return self._layout
-
-    def __call__(self, cached_obj: CachedObject, term_height: int, console) -> Layout:
+    def get_layout(self, cached_obj: CachedObject):
         """
         :param cached_obj: The selected cached object given by the explorer layout
         """
@@ -38,30 +34,29 @@ class Overview:
             self.update(
                 self.get_docstring_panel(
                     cached_obj=cached_obj,
-                    term_height=term_height,
+                    term_height=self.term.height,
                 )
             )
             return self
 
         elif self.state == OverviewState.value:
-            self.update(self.get_value_panel(cached_obj, term_height))
-            return self
+            self._layout.update(self.get_value_panel(cached_obj))
+            return self._layout
 
-        else:
+        elif self.state == OverviewState.all:
             layout = Layout(ratio=3)
             layout.split_column(
-                Layout(self.get_value_panel(cached_obj, term_height), name="obj_value"),
+                Layout(self.get_value_panel(cached_obj)),
                 self.get_info_layout(cached_obj),
                 Layout(
                     self.get_docstring_panel(
-                        cached_obj=cached_obj, term_height=term_height
+                        cached_obj=cached_obj, term_height=self.term.height
                     ),
-                    name="obj_doc",
                 ),
             )
             return layout
 
-    def get_value_panel(self, cached_obj: CachedObject, term_height: int):
+    def get_value_panel(self, cached_obj: CachedObject):
         renderable: Union[str, Pretty, Syntax]
         if not callable(cached_obj.obj):
             title = "[i]preview[/i] | [i][cyan]repr[/cyan]()[/i]"
@@ -69,9 +64,9 @@ class Overview:
             renderable = cached_obj.pretty
 
             if self.state == OverviewState.all:
-                renderable.max_length = max((term_height - 6) // 2 - 7, 1)
+                renderable.max_length = max((self.term.height - 6) // 2 - 7, 1)
             else:
-                renderable.max_length = max(term_height - 9, 1)
+                renderable.max_length = max(self.term.height - 9, 1)
 
         else:
             if self.preview_state == PreviewState.repr:
@@ -79,7 +74,7 @@ class Overview:
                 title = "[i]preview[/i] | [i][cyan]repr[/cyan]()[/i] [dim]source"
 
             if self.preview_state == PreviewState.source:
-                renderable = cached_obj.get_source(term_height)
+                renderable = cached_obj.get_source(self.term.height)
                 title = (
                     "[i]preview[/i] | [dim][cyan]repr[/cyan]()[/dim] [underline]source"
                 )

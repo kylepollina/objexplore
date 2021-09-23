@@ -436,10 +436,8 @@ class ObjExploreApp:
     def draw(self, *args):
         """ Draw the application. the *args argument is due to resize events and are unused """
         print(self.term.home, end="")
-        layout = Layout(self.explorer.layout)
-
-        # layout.split_row(self.get_explorer_layout(), self.get_overview_layout())
-        # layout.split(self.explorer.layout, self.overview.layout)
+        layout = Layout()
+        layout.split_row(self.explorer.layout, self.overview.get_layout(self.explorer.selected_object))
 
         title = (
             self.cached_obj.dotpath
