@@ -15,6 +15,9 @@ from .filter import Filter
 console = Console()
 
 
+# TODO fix truncating bug when width = 111
+# TODO hide filter/stack/explorere subtitle if screen too small
+
 class ExplorerState:
     public = "ExplorerState.public"
     private = "ExplorerState.private"
@@ -120,11 +123,15 @@ class Explorer:
                 lines.append(line)
 
             title = "[i][cyan]dir[/cyan]()[/i] | [u]public[/u] [dim]private[/dim]"
-            subtitle = (
-                "[dim][u][][/u]:switch pane [/dim]"
+            subtitle_help = "[dim][u][][/u]:switch pane [/dim]"
+            subtitle_index = (
                 f"[white]([/white][magenta]{self.public_index + 1 if self.cached_obj.filtered_public_attributes else 0}"
                 f"[/magenta][white]/[/white][magenta]{len(self.cached_obj.filtered_public_attributes)}[/magenta][white])"
             )
+            if len(console.render_str(subtitle_help + subtitle_index)) >= self.width - 2:
+                subtitle = subtitle_index
+            else:
+                subtitle = subtitle_help + subtitle_index
             if lines == []:
                 lines.append(
                     Text("No public attributes", style=Style(color="red", italic=True))
@@ -180,7 +187,7 @@ class Explorer:
             )
 
         # If terminal is too small don't show the 'dir()' part of the title
-        if self.width < 28:
+        if self.width < len(console.render_str(title)) + 3:
             title = title.split("|")[-1].strip()
 
         self.layout.update(
