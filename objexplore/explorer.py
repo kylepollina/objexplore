@@ -6,7 +6,7 @@ from rich.panel import Panel
 from rich.style import Style
 from rich.text import Text
 
-from .terminal import Terminal
+from blessed import Terminal
 
 from .cached_object import CachedObject
 
@@ -26,10 +26,10 @@ highlighter = ReprHighlighter()
 
 
 class Explorer:
-    def __init__(self, term: Terminal, cached_obj: CachedObject):
-        # super().__init__(*args, **kwargs)
+    def __init__(self, term: Terminal, stack: "StackLayout", cached_obj: CachedObject):
         self.cached_obj = cached_obj
         self.term = term
+        self.stack = stack
         self._layout = Layout()
 
         _type = type(cached_obj.obj)
@@ -50,29 +50,17 @@ class Explorer:
         self.list_index = self.list_window = 0
 
     @property
-    def layout(self):
-        return self._layout
-
-    @staticmethod
-    def get_panel_width(term_width: int) -> int:
-        return (term_width - 4) // 4 - 4
-
-    @staticmethod
-    def get_panel_height(term_height: int) -> int:
-        return term_height - 5
-
-    def __call__(self, term_width: int, term_height: int) -> Layout:
+    def layout(self) -> Layout:
         """ Return the layout of the object explorer. This will be a list of lines representing the object attributes/keys/vals we are exploring """
-        # TODO change to just accept term object
 
         if self.state == ExplorerState.dict:
-            return self.dict_layout(term_width, term_height)
+            return self.dict_layout(self.term.width, self.term.height)
 
         elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
-            return self.list_layout(term_width, term_height)
+            return self.list_layout(self.term.width, self.term.height)
 
         else:
-            return self.dir_layout(term_width, term_height)
+            return self.dir_layout()
 
     @property
     def selected_object(self) -> CachedObject:  # type: ignore
@@ -156,7 +144,7 @@ class Explorer:
 
         text = Text("\n").join(lines)
 
-        self.update(
+        self.layout.update(
             Panel(
                 text,
                 title="[i][cyan]dict[/cyan]()",
@@ -166,7 +154,7 @@ class Explorer:
                 style="white",
             )
         )
-        return self
+        return self.layout
 
     def list_layout(self, term_width: int, term_height: int) -> Layout:
 
@@ -216,7 +204,7 @@ class Explorer:
 
         text = Text("\n").join(lines)
 
-        self.update(
+        self.layout.update(
             Panel(
                 text,
                 title=f"[i][cyan]{type_map[self.state][2]}[/cyan]()",
@@ -226,11 +214,22 @@ class Explorer:
                 style="white",
             )
         )
-        return self
+        return self.layout
 
-    def dir_layout(self, term_width: int, term_height: int) -> Layout:
+    @property
+    def width(self):
+        return self.term.width // 4
+
+    @property
+    def height(self):
+        if self.stack.visible:
+            return (self.term.height - 10) // 2
+        else:
+            return self.term.height - 6
+
+    def dir_layout(self) -> Layout:
         lines = []
-        panel_width = self.get_panel_width(term_width)
+        panel_width = self.width
 
         if self.state == ExplorerState.public:
             # Reset the public index / window in case applying a filter has now moved the index
@@ -240,7 +239,7 @@ class Explorer:
                     0, len(self.cached_obj.filtered_public_attributes) - 1
                 )
                 self.public_window = max(
-                    0, self.public_index - self.get_panel_height(term_height)
+                    0, self.public_index - self.height
                 )
 
             for index, (attr, cached_obj) in enumerate(
@@ -273,7 +272,7 @@ class Explorer:
                 )
 
             renderable = Text("\n").join(
-                lines[self.public_window : self.public_window + term_height]
+                lines[self.public_window : self.public_window + self.height]
             )
 
         elif self.state == ExplorerState.private:
@@ -322,10 +321,10 @@ class Explorer:
             )
 
         # If terminal is too small don't show the 'dir()' part of the title
-        if term_width / 4 < 28:
+        if self.width < 28:
             title = title.split("|")[-1].strip()
 
-        self.update(
+        self._layout.update(
             Panel(
                 renderable,
                 title=title,
@@ -335,7 +334,7 @@ class Explorer:
                 style="white",
             )
         )
-        return self
+        return self._layout
 
     def move_up(self):
         """ Move the current selection up one """

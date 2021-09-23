@@ -17,7 +17,7 @@ from .filter_layout import FilterLayout
 from .help_layout import HelpLayout, HelpState, random_error_quote
 from .overview import Overview, OverviewState, PreviewState
 from .stack_layout import StackFrame, StackLayout
-from .terminal import Terminal
+from blessed import Terminal
 from .utils import is_selectable
 
 version = "1.4.10"
@@ -52,18 +52,18 @@ class ObjExploreApp:
         self.cached_obj: CachedObject = cached_obj
         self.stack = StackLayout(head_obj=self.cached_obj, visible=False)
         self.help_layout = HelpLayout(version, visible=False, ratio=3)
-        self.term = Terminal(stack=self.stack)
-        self.explorer = Explorer(term=self.term, cached_obj=cached_obj)
+        self.term = Terminal()
+        self.explorer = Explorer(term=self.term, stack=self.stack, cached_obj=cached_obj)
         self.overview = Overview(term=self.term)
         self.filter_layout = FilterLayout(term=self.term, visible=False)
 
-        self.stack.append(
-            StackFrame(
-                cached_obj=self.cached_obj,
-                explorer_layout=self.explorer.layout,
-                overview_layout=self.overview.layout,
-            )
-        )
+        # self.stack.append(
+        #     StackFrame(
+        #         cached_obj=self.cached_obj,
+        #         explorer_layout=self.explorer.layout,
+        #         overview_layout=self.overview.layout,
+        #     )
+        # )
 
         # Run self.draw() whenever the win change signal is caught
         try:
@@ -196,7 +196,7 @@ class ObjExploreApp:
             # TODO abstract the following
             if not is_selectable(new_cached_obj.obj):
                 return
-            self.explorer.layout = Explorer(cached_obj=new_cached_obj)
+            self.explorer.layout = Explorer(cached_obj=new_cached_obj, stack=self.stack)
             self.cached_obj = new_cached_obj
             self.cached_obj.cache()
             self.filter_layout.cancel_search(self.cached_obj)
@@ -268,10 +268,10 @@ class ObjExploreApp:
         # Explorer ############################################################
 
         elif key == "k" or key.code == self.term.KEY_UP:
-            self.explorer.layout.move_up()
+            self.explorer.move_up()
 
         elif key == "j" or key.code == self.term.KEY_DOWN:
-            self.explorer.layout.move_down(
+            self.explorer.move_down(
                 self.term.explorer_panel_height, self.cached_obj
             )
 
@@ -436,10 +436,10 @@ class ObjExploreApp:
     def draw(self, *args):
         """ Draw the application. the *args argument is due to resize events and are unused """
         print(self.term.home, end="")
-        layout = Layout()
+        layout = Layout(self.explorer.layout)
 
         # layout.split_row(self.get_explorer_layout(), self.get_overview_layout())
-        layout.split(self.explorer.layout, self.overview.layout)
+        # layout.split(self.explorer.layout, self.overview.layout)
 
         title = (
             self.cached_obj.dotpath

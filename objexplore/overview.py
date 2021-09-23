@@ -8,7 +8,7 @@ from rich.pretty import Pretty
 from rich.syntax import Syntax
 
 from .cached_object import CachedObject
-from .terminal import Terminal
+from blessed import Terminal
 
 
 class OverviewState:

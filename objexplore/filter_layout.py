@@ -10,7 +10,7 @@ import rich
 
 from .explorer import Explorer
 from .cached_object import CachedObject
-from .terminal import Terminal
+from blessed import Terminal
 
 highlighter = ReprHighlighter()
 
