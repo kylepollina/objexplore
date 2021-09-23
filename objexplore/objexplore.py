@@ -271,9 +271,7 @@ class ObjExploreApp:
             self.explorer.move_up()
 
         elif key == "j" or key.code == self.term.KEY_DOWN:
-            self.explorer.move_down(
-                self.term.explorer_panel_height, self.cached_obj
-            )
+            self.explorer.move_down(self.cached_obj)
 
         elif key in ("l", " ") or key.code in (
             self.term.KEY_ENTER,
@@ -306,12 +304,10 @@ class ObjExploreApp:
             self.overview.layout = self.stack[-1].overview_layout
 
         elif key == "g":
-            self.explorer.layout.move_top()
+            self.explorer.move_top()
 
         elif key == "G":
-            self.explorer.layout.move_bottom(
-                self.term.explorer_panel_height, self.cached_obj
-            )
+            self.explorer.move_bottom(self.cached_obj)
 
         # Overview ############################################################
 
