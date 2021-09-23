@@ -100,7 +100,7 @@ class ObjExploreApp:
 
         if self.explorer.filter.receiving_input:
             if key.code == self.term.KEY_BACKSPACE:
-                self.explorer.filter.backspace(self.cached_obj, self.explorer.layout)
+                self.explorer.filter.backspace(self.cached_obj, self.explorer)
             elif key.code == self.term.KEY_ESCAPE:
                 self.explorer.filter.cancel_search(self.cached_obj)
             elif key.code == self.term.KEY_ENTER:
@@ -113,7 +113,7 @@ class ObjExploreApp:
                 return
             else:
                 self.explorer.filter.add_search_char(
-                    key, self.cached_obj, self.explorer.layout
+                    key, self.cached_obj, self.explorer
                 )
             return
 

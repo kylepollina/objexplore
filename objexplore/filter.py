@@ -104,7 +104,7 @@ class Filter:
         return lines
 
     def add_search_char(
-        self, key: str, cached_obj: CachedObject, explorer_layout: "Explorer"
+        self, key: str, cached_obj: CachedObject, explorer: "Explorer"
     ):
         self.key_history.append(key)
         self.search_filter = (
@@ -114,7 +114,7 @@ class Filter:
         )
         self.cursor_pos += 1
 
-        if len(explorer_layout.get_all_attributes()) < 130:
+        if len(explorer.get_all_attributes()) < 130:
             cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
     def backspace(self, cached_obj: CachedObject, explorer_layout: "Explorer"):
@@ -134,7 +134,7 @@ class Filter:
     def cancel_search(self, cached_obj: CachedObject):
         self.search_filter = ""
         self.cursor_pos = 0
-        self.visible = False
+        self.layout.visible = False
         self.receiving_input = False
         cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
@@ -148,14 +148,14 @@ class Filter:
 
     def end_search(self, cached_obj: CachedObject):
         self.receiving_input = False
-        self.visible = False
+        self.layout.visible = False
         cached_obj.set_filters(
             self.get_enabled_filters(), search_filter=self.search_filter
         )
 
     def get_layout(self, width: int) -> Layout:
         if self.receiving_input:
-            return self.input_box()
+            return self.get_input_layout()
 
         subtitle = "[dim][u]c[/u]:clear [u]space[/u]:select"
         if width <= 25:
@@ -175,7 +175,7 @@ class Filter:
         self.layout.size = len(lines) + 2
         return self.layout
 
-    def input_box(self) -> Layout:
+    def get_input_layout(self) -> Layout:
         if len(self.search_filter) == 0:
             search_text = Text(
                 "█", style=Style(underline=True, blink=True, reverse=True)
@@ -199,7 +199,7 @@ class Filter:
                 + Text(self.search_filter[self.cursor_pos + 1 :])
             )
 
-        self.update(
+        self.layout.update(
             Panel(
                 search_text,
                 title="\[search]",
@@ -209,5 +209,5 @@ class Filter:
                 style=Style(color="aquamarine1"),
             )
         )
-        self.size = 3
-        return self
+        self.layout.size = 3
+        return self.layout
