@@ -8,7 +8,6 @@ from rich.style import Style
 from rich.text import Text
 import rich
 
-from .explorer import Explorer
 from .cached_object import CachedObject
 from blessed import Terminal
 
@@ -18,8 +17,10 @@ highlighter = ReprHighlighter()
 
 
 @rich.repr.auto
-class FilterLayout(Layout):
-    def __init__(self, term: Terminal, *args, **kwargs):
+class Filter:
+    def __init__(self, term: Terminal):
+        self.term = term
+        self.layout = Layout()
         self.filters: Dict[str, List[Union[bool, types.FunctionType]]] = {
             "class": [False, lambda cached_obj: cached_obj.isclass],
             "function": [False, lambda cached_obj: cached_obj.isfunction],
@@ -35,13 +36,11 @@ class FilterLayout(Layout):
             "set": [False, lambda cached_obj: type(cached_obj.obj) == set],
             "builtin": [False, lambda cached_obj: cached_obj.isbuiltin],
         }
-        self.term = term
         self.index = 0
         self.receiving_input = False
         self.search_filter = ""
         self.cursor_pos = 0
         self.key_history = []
-        super().__init__(*args, **kwargs)
 
     def move_down(self):
         if self.index < len(self.filters) - 1:
@@ -101,7 +100,7 @@ class FilterLayout(Layout):
         return lines
 
     def add_search_char(
-        self, key: str, cached_obj: CachedObject, explorer_layout: Explorer
+        self, key: str, cached_obj: CachedObject, explorer_layout: "Explorer"
     ):
         self.key_history.append(key)
         self.search_filter = (
@@ -114,7 +113,7 @@ class FilterLayout(Layout):
         if len(explorer_layout.get_all_attributes()) < 130:
             cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
-    def backspace(self, cached_obj: CachedObject, explorer_layout: Explorer):
+    def backspace(self, cached_obj: CachedObject, explorer_layout: "Explorer"):
         if self.cursor_pos == 0 and not self.search_filter:
             self.cancel_search(cached_obj)
         elif self.cursor_pos == 0 and self.search_filter:

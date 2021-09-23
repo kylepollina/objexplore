@@ -10,6 +10,7 @@ from rich.syntax import Syntax
 from .cached_object import CachedObject
 from blessed import Terminal
 
+from .help_layout import HelpLayout, HelpState, random_error_quote
 
 class OverviewState:
     all, docstring, value = range(3)
@@ -20,9 +21,10 @@ class PreviewState:
 
 
 class Overview:
-    def __init__(self, term: Terminal):
+    def __init__(self, term: Terminal, version: str):
         self.term = term
-        self._layout = Layout()
+        self.layout = Layout()
+        self.help_layout = HelpLayout(version, visible=False, ratio=3)
         self.state = OverviewState.all
         self.preview_state = PreviewState.repr
 
@@ -30,7 +32,10 @@ class Overview:
         """
         :param cached_obj: The selected cached object given by the explorer layout
         """
-        if self.state == OverviewState.docstring:
+        if self.help_layout.visible:
+            return self.help_layout()
+
+        elif self.state == OverviewState.docstring:
             self.update(
                 self.get_docstring_panel(
                     cached_obj=cached_obj,
@@ -40,8 +45,8 @@ class Overview:
             return self
 
         elif self.state == OverviewState.value:
-            self._layout.update(self.get_value_panel(cached_obj))
-            return self._layout
+            self.layout.update(self.get_value_panel(cached_obj))
+            return self.layout
 
         elif self.state == OverviewState.all:
             layout = Layout(ratio=3)

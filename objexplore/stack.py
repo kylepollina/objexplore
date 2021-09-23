@@ -7,7 +7,6 @@ from rich.text import Text
 from rich.tree import Tree
 
 from .cached_object import CachedObject
-from .explorer import Explorer
 from .overview import Overview
 
 
@@ -16,16 +15,16 @@ class StackFrame:
     """ Datastructure to store a frame in the object stack """
 
     cached_obj: CachedObject
-    explorer_layout: Explorer
+    explorer_layout: "Explorer"
     overview_layout: Overview
 
 
-class StackLayout(Layout):
-    def __init__(self, head_obj: CachedObject, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class Stack:
+    def __init__(self, head_obj: CachedObject):
         self.head_obj = head_obj
         self.stack: List[StackFrame] = []
         self.index = 0
+        self.layout = Layout(visible=False)
 
     def append(self, stack_frame: StackFrame):
         self.stack.append(stack_frame)

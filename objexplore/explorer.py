@@ -9,10 +9,10 @@ from rich.text import Text
 from blessed import Terminal
 
 from .cached_object import CachedObject
+from .stack import Stack, StackFrame
+from .filter import Filter
 
 console = Console()
-
-# TODO truncate lines
 
 
 class ExplorerState:
@@ -30,6 +30,7 @@ highlighter = ReprHighlighter()
 class Explorer:
     """
     Class representing the explorer object on the left hand side
+    This class contains references to the filter and stack objects
 
     ┌──────────┐ ┌──────────────────┐
     │          │ │                  │
@@ -38,16 +39,14 @@ class Explorer:
     │ (Filter) │ │                  │
     │ (Stack)  │ │                  │
     └──────────┘ └──────────────────┘
-
-    TODO
-    This class contains references to the filter and stack objects
     """
 
-    def __init__(self, term: Terminal, stack: "StackLayout", cached_obj: CachedObject):
+    def __init__(self, term: Terminal, cached_obj: CachedObject):
         self.cached_obj = cached_obj
         self.term = term
-        self.stack = stack
-        self._layout = Layout()
+        self.stack = Stack(head_obj=self.cached_obj)
+        self.filter = Filter(term=self.term)
+        self.layout = Layout()
 
         _type = type(cached_obj.obj)
         if _type == dict:
@@ -134,7 +133,7 @@ class Explorer:
                     0, len(self.cached_obj.filtered_private_attributes) - 1
                 )
                 self.private_window = max(
-                    0, self.private_index - self.get_panel_height(term_height)
+                    0, self.private_index - self.get_panel_height(self.height)
                 )
 
             for index, (attr, cached_obj) in enumerate(
@@ -175,7 +174,7 @@ class Explorer:
         if self.width < 28:
             title = title.split("|")[-1].strip()
 
-        self._layout.update(
+        self.layout.update(
             Panel(
                 renderable,
                 title=title,
@@ -185,7 +184,7 @@ class Explorer:
                 style="white",
             )
         )
-        return self._layout
+        return self.layout
 
     def dict_layout(self, term_width: int, term_height: int) -> Layout:
         """ Return the dictionary explorer layout """
@@ -333,17 +332,13 @@ class Explorer:
             return CachedObject(None)
 
     @property
-    def height(self):
-        return self.term.height - 6
-
-    @property
     def width(self):
         """ Return the width of text allowed within the panel """
         return (self.term.width - 2) // 4 - 4
 
     @property
     def height(self):
-        if self.stack.visible:
+        if self.stack.layout.visible:
             return (self.term.height - 10) // 2
         else:
             return self.term.height - 6
