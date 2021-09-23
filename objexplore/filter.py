@@ -20,7 +20,7 @@ highlighter = ReprHighlighter()
 class Filter:
     def __init__(self, term: Terminal):
         self.term = term
-        self.layout = Layout()
+        self.layout = Layout(visible=False)
         self.filters: Dict[str, List[Union[bool, types.FunctionType]]] = {
             "class": [False, lambda cached_obj: cached_obj.isclass],
             "function": [False, lambda cached_obj: cached_obj.isfunction],

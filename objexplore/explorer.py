@@ -79,7 +79,6 @@ class Explorer:
 
     def dir_layout(self) -> Layout:
         lines = []
-        panel_width = self.width
 
         if self.state == ExplorerState.public:
             # Reset the public index / window in case applying a filter has now moved the index
@@ -107,7 +106,7 @@ class Explorer:
                 #     + dim_typeof
                 # )
 
-                line.truncate(panel_width)
+                line.truncate(self.width)
                 lines.append(line)
 
             title = "[i][cyan]dir[/cyan]()[/i] | [u]public[/u] [dim]private[/dim]"
@@ -152,7 +151,7 @@ class Explorer:
                 #     + dim_typeof
                 # )
 
-                line.truncate(panel_width)
+                line.truncate(self.width)
                 lines.append(line)
 
             title = "[i][cyan]dir[/cyan]()[/i] | [dim]public[/dim] [u]private[/u]"
