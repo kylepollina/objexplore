@@ -15,9 +15,10 @@ highlighter = ReprHighlighter()
 
 # TODO scroll search if input longer than panel width
 
-
 @rich.repr.auto
 class Filter:
+
+
     def __init__(self, term: Terminal):
         self.term = term
         self.layout = Layout(visible=False)
@@ -62,6 +63,9 @@ class Filter:
             for name, (enabled, method) in self.filters.items()
             if enabled is True
         ]
+
+    def get_filter_layout(self) -> Layout:
+        ...
 
     def toggle(self, cached_obj: CachedObject):
         """ Toggle the selected filter on or off and update the cached_obj filters with the new filters """
@@ -149,16 +153,16 @@ class Filter:
             self.get_enabled_filters(), search_filter=self.search_filter
         )
 
-    def __call__(self) -> Layout:
+    def get_layout(self, width: int) -> Layout:
         if self.receiving_input:
             return self.input_box()
 
         subtitle = "[dim][u]c[/u]:clear [u]space[/u]:select"
-        if self.term.explorer_panel_width <= 25:
+        if width <= 25:
             subtitle = "[dim][u]space[/u]:select"
 
         lines = self.get_lines()
-        self.update(
+        self.layout.update(
             Panel(
                 Text("\n").join(lines),
                 title="\[filter]",
@@ -168,8 +172,8 @@ class Filter:
                 style="bright_magenta",
             )
         )
-        self.size = len(lines) + 2
-        return self
+        self.layout.size = len(lines) + 2
+        return self.layout
 
     def input_box(self) -> Layout:
         if len(self.search_filter) == 0:

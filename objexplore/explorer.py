@@ -69,13 +69,23 @@ class Explorer:
         """ Return the layout of the object explorer. This will be a list of lines representing the object attributes/keys/vals we are exploring """
 
         if self.state == ExplorerState.dict:
-            return self.dict_layout(self.term.width, self.term.height)
+            explorer_layout = self.dict_layout(self.term.width, self.term.height)
 
         elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
-            return self.list_layout(self.term.width, self.term.height)
+            explorer_layout = self.list_layout(self.term.width, self.term.height)
 
         else:
-            return self.dir_layout()
+            explorer_layout = self.dir_layout()
+
+        if self.filter.layout.visible:
+            layout = Layout()
+            layout.split_column(
+                explorer_layout,
+                self.filter.get_layout(width=self.width)
+            )
+            return layout
+        else:
+            return explorer_layout
 
     def dir_layout(self) -> Layout:
         lines = []
