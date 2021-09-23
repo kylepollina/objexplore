@@ -6,6 +6,8 @@ from rich.panel import Panel
 from rich.style import Style
 from rich.text import Text
 
+from .terminal import Terminal
+
 from .cached_object import CachedObject
 
 console = Console()
@@ -23,10 +25,13 @@ class ExplorerState:
 highlighter = ReprHighlighter()
 
 
-class ExplorerLayout(Layout):
-    def __init__(self, cached_obj: CachedObject, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class Explorer:
+    def __init__(self, term: Terminal, cached_obj: CachedObject):
+        # super().__init__(*args, **kwargs)
         self.cached_obj = cached_obj
+        self.term = term
+        self._layout = Layout()
+
         _type = type(cached_obj.obj)
         if _type == dict:
             self.state = ExplorerState.dict
@@ -38,10 +43,15 @@ class ExplorerLayout(Layout):
             self.state = ExplorerState.set
         else:
             self.state = ExplorerState.public
+
         self.public_index = self.private_index = 0
         self.public_window = self.private_window = 0
         self.dict_index = self.dict_window = 0
         self.list_index = self.list_window = 0
+
+    @property
+    def layout(self):
+        return self._layout
 
     @staticmethod
     def get_panel_width(term_width: int) -> int:

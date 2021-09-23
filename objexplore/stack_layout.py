@@ -7,8 +7,8 @@ from rich.text import Text
 from rich.tree import Tree
 
 from .cached_object import CachedObject
-from .explorer_layout import ExplorerLayout
-from .overview_layout import OverviewLayout
+from .explorer import Explorer
+from .overview import Overview
 
 
 @dataclass
@@ -16,8 +16,8 @@ class StackFrame:
     """ Datastructure to store a frame in the object stack """
 
     cached_obj: CachedObject
-    explorer_layout: ExplorerLayout
-    overview_layout: OverviewLayout
+    explorer_layout: Explorer
+    overview_layout: Overview
 
 
 class StackLayout(Layout):

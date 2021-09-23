@@ -12,10 +12,10 @@ from rich.syntax import Syntax
 from rich.text import Text
 
 from .cached_object import CachedObject
-from .explorer_layout import ExplorerLayout, ExplorerState
+from .explorer import Explorer, ExplorerState
 from .filter_layout import FilterLayout
 from .help_layout import HelpLayout, HelpState, random_error_quote
-from .overview_layout import OverviewLayout, OverviewState, PreviewState
+from .overview import Overview, OverviewState, PreviewState
 from .stack_layout import StackFrame, StackLayout
 from .terminal import Terminal
 from .utils import is_selectable
@@ -52,16 +52,16 @@ class ObjExploreApp:
         self.cached_obj: CachedObject = cached_obj
         self.stack = StackLayout(head_obj=self.cached_obj, visible=False)
         self.help_layout = HelpLayout(version, visible=False, ratio=3)
-        self.explorer_layout = ExplorerLayout(cached_obj=cached_obj)
-        self.overview_layout = OverviewLayout(ratio=3)
         self.term = Terminal(stack=self.stack)
+        self.explorer = Explorer(term=self.term, cached_obj=cached_obj)
+        self.overview = Overview(term=self.term)
         self.filter_layout = FilterLayout(term=self.term, visible=False)
 
         self.stack.append(
             StackFrame(
                 cached_obj=self.cached_obj,
-                explorer_layout=self.explorer_layout,
-                overview_layout=self.overview_layout,
+                explorer_layout=self.explorer.layout,
+                overview_layout=self.overview.layout,
             )
         )
 
@@ -113,7 +113,7 @@ class ObjExploreApp:
 
         if self.filter_layout.receiving_input:
             if key.code == self.term.KEY_BACKSPACE:
-                self.filter_layout.backspace(self.cached_obj, self.explorer_layout)
+                self.filter_layout.backspace(self.cached_obj, self.explorer.layout)
             elif key.code == self.term.KEY_ESCAPE:
                 self.filter_layout.cancel_search(self.cached_obj)
             elif key.code == self.term.KEY_ENTER:
@@ -126,7 +126,7 @@ class ObjExploreApp:
                 return
             else:
                 self.filter_layout.add_search_char(
-                    key, self.cached_obj, self.explorer_layout
+                    key, self.cached_obj, self.explorer.layout
                 )
             return
 
@@ -196,15 +196,15 @@ class ObjExploreApp:
             # TODO abstract the following
             if not is_selectable(new_cached_obj.obj):
                 return
-            self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
+            self.explorer.layout = Explorer(cached_obj=new_cached_obj)
             self.cached_obj = new_cached_obj
             self.cached_obj.cache()
             self.filter_layout.cancel_search(self.cached_obj)
             self.stack.append(
                 StackFrame(
                     cached_obj=self.cached_obj,
-                    explorer_layout=self.explorer_layout,
-                    overview_layout=self.overview_layout,
+                    explorer_layout=self.explorer.layout,
+                    overview_layout=self.overview.layout,
                 )
             )
 
@@ -268,10 +268,10 @@ class ObjExploreApp:
         # Explorer ############################################################
 
         elif key == "k" or key.code == self.term.KEY_UP:
-            self.explorer_layout.move_up()
+            self.explorer.layout.move_up()
 
         elif key == "j" or key.code == self.term.KEY_DOWN:
-            self.explorer_layout.move_down(
+            self.explorer.layout.move_down(
                 self.term.explorer_panel_height, self.cached_obj
             )
 
@@ -280,20 +280,20 @@ class ObjExploreApp:
             self.term.KEY_RIGHT,
             self.term.KEY,
         ):
-            new_cached_obj = self.explorer_layout.selected_object
+            new_cached_obj = self.explorer.layout.selected_object
             # TODO abstract the following
             if not is_selectable(new_cached_obj.obj):
                 return
 
-            self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
+            self.explorer.layout = ExplorerLayout(cached_obj=new_cached_obj)
             self.cached_obj = new_cached_obj
             self.cached_obj.cache()
             self.filter_layout.cancel_search(self.cached_obj)
             self.stack.append(
                 StackFrame(
                     cached_obj=self.cached_obj,
-                    explorer_layout=self.explorer_layout,
-                    overview_layout=self.overview_layout,
+                    explorer_layout=self.explorer.layout,
+                    overview_layout=self.overview.layout,
                 )
             )
 
@@ -302,14 +302,14 @@ class ObjExploreApp:
             self.stack.pop()
             self.cached_obj = self.stack[-1].cached_obj
             self.filter_layout.clear_filters(self.cached_obj)
-            self.explorer_layout = self.stack[-1].explorer_layout
-            self.overview_layout = self.stack[-1].overview_layout
+            self.explorer.layout = self.stack[-1].explorer_layout
+            self.overview.layout = self.stack[-1].overview_layout
 
         elif key == "g":
-            self.explorer_layout.move_top()
+            self.explorer.layout.move_top()
 
         elif key == "G":
-            self.explorer_layout.move_bottom(
+            self.explorer.layout.move_bottom(
                 self.term.explorer_panel_height, self.cached_obj
             )
 
@@ -317,34 +317,34 @@ class ObjExploreApp:
 
         # Switch between public and private attributes
         elif key in ("[", "]"):
-            if self.explorer_layout.state == ExplorerState.public:
-                self.explorer_layout.state = ExplorerState.private
+            if self.explorer.layout.state == ExplorerState.public:
+                self.explorer.layout.state = ExplorerState.private
 
-            elif self.explorer_layout.state == ExplorerState.private:
-                self.explorer_layout.state = ExplorerState.public
+            elif self.explorer.layout.state == ExplorerState.private:
+                self.explorer.layout.state = ExplorerState.public
 
         elif key in ("{", "}"):
-            if not callable(self.explorer_layout.selected_object.obj):
+            if not callable(self.explorer.layout.selected_object.obj):
                 return
 
-            if self.overview_layout.preview_state == PreviewState.repr:
-                self.overview_layout.preview_state = PreviewState.source
-            elif self.overview_layout.preview_state == PreviewState.source:
-                self.overview_layout.preview_state = PreviewState.repr
+            if self.overview.layout.preview_state == PreviewState.repr:
+                self.overview.layout.preview_state = PreviewState.source
+            elif self.overview.layout.preview_state == PreviewState.source:
+                self.overview.layout.preview_state = PreviewState.repr
 
         # Toggle docstring view
         elif key == "d":
-            self.overview_layout.state = (
+            self.overview.layout.state = (
                 OverviewState.docstring
-                if self.overview_layout.state != OverviewState.docstring
+                if self.overview.layout.state != OverviewState.docstring
                 else OverviewState.all
             )
 
         # Toggle value view
         elif key == "p":
-            self.overview_layout.state = (
+            self.overview.layout.state = (
                 OverviewState.value
-                if self.overview_layout.state != OverviewState.value
+                if self.overview.layout.state != OverviewState.value
                 else OverviewState.all
             )
 
@@ -352,14 +352,14 @@ class ObjExploreApp:
         elif key == "f":
             printable: Union[str, Syntax, Text]
 
-            if self.overview_layout.state == OverviewState.docstring:
-                printable = self.explorer_layout.selected_object.docstring
+            if self.overview.layout.state == OverviewState.docstring:
+                printable = self.explorer.layout.selected_object.docstring
 
-            elif self.overview_layout.preview_state == PreviewState.repr:
-                printable = self.explorer_layout.selected_object.obj
+            elif self.overview.layout.preview_state == PreviewState.repr:
+                printable = self.explorer.layout.selected_object.obj
 
-            elif self.overview_layout.preview_state == PreviewState.source:
-                printable = self.explorer_layout.selected_object.get_source(
+            elif self.overview.layout.preview_state == PreviewState.source:
+                printable = self.explorer.layout.selected_object.get_source(
                     fullscreen=True
                 )
 
@@ -370,12 +370,12 @@ class ObjExploreApp:
             pydoc.pager(str_out)
 
         elif key == "H":
-            help(self.explorer_layout.selected_object.obj)
+            help(self.explorer.layout.selected_object.obj)
 
         elif key == "i":
             with console.capture() as capture:
                 rich.inspect(
-                    self.explorer_layout.selected_object.obj,
+                    self.explorer.layout.selected_object.obj,
                     console=console,
                     methods=True,
                 )
@@ -385,7 +385,7 @@ class ObjExploreApp:
         elif key == "I":
             with console.capture() as capture:
                 rich.inspect(
-                    self.explorer_layout.selected_object.obj, console=console, all=True
+                    self.explorer.layout.selected_object.obj, console=console, all=True
                 )
             str_out = capture.get()
             pydoc.pager(str_out)
@@ -394,13 +394,13 @@ class ObjExploreApp:
 
         # Return selected object
         elif key == "r":
-            return self.explorer_layout.selected_object.obj
+            return self.explorer.layout.selected_object.obj
 
     def get_explorer_layout(self) -> Layout:
         if self.stack.visible:
             layout = Layout()
             layout.split_column(
-                self.explorer_layout(
+                self.explorer.layout(
                     term_width=self.term.width,
                     term_height=self.term.height,
                 ),
@@ -410,7 +410,7 @@ class ObjExploreApp:
         elif self.filter_layout.visible:
             layout = Layout()
             layout.split_column(
-                self.explorer_layout(
+                self.explorer.layout(
                     term_width=self.term.width,
                     term_height=self.term.height,
                 ),
@@ -418,7 +418,7 @@ class ObjExploreApp:
             )
             return layout
         else:
-            return self.explorer_layout(
+            return self.explorer.layout(
                 term_width=self.term.width,
                 term_height=self.term.height,
             )
@@ -427,8 +427,8 @@ class ObjExploreApp:
         if self.help_layout.visible:
             return self.help_layout()
         else:
-            return self.overview_layout(
-                cached_obj=self.explorer_layout.selected_object,
+            return self.overview.layout(
+                cached_obj=self.explorer.layout.selected_object,
                 term_height=self.term.height,
                 console=console,
             )
@@ -438,7 +438,8 @@ class ObjExploreApp:
         print(self.term.home, end="")
         layout = Layout()
 
-        layout.split_row(self.get_explorer_layout(), self.get_overview_layout())
+        # layout.split_row(self.get_explorer_layout(), self.get_overview_layout())
+        layout.split(self.explorer.layout, self.overview.layout)
 
         title = (
             self.cached_obj.dotpath

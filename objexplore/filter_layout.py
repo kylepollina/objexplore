@@ -8,7 +8,7 @@ from rich.style import Style
 from rich.text import Text
 import rich
 
-from .explorer_layout import ExplorerLayout
+from .explorer import Explorer
 from .cached_object import CachedObject
 from .terminal import Terminal
 
@@ -101,7 +101,7 @@ class FilterLayout(Layout):
         return lines
 
     def add_search_char(
-        self, key: str, cached_obj: CachedObject, explorer_layout: ExplorerLayout
+        self, key: str, cached_obj: CachedObject, explorer_layout: Explorer
     ):
         self.key_history.append(key)
         self.search_filter = (
@@ -114,7 +114,7 @@ class FilterLayout(Layout):
         if len(explorer_layout.get_all_attributes()) < 130:
             cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
-    def backspace(self, cached_obj: CachedObject, explorer_layout: ExplorerLayout):
+    def backspace(self, cached_obj: CachedObject, explorer_layout: Explorer):
         if self.cursor_pos == 0 and not self.search_filter:
             self.cancel_search(cached_obj)
         elif self.cursor_pos == 0 and self.search_filter:

@@ -8,6 +8,7 @@ from rich.pretty import Pretty
 from rich.syntax import Syntax
 
 from .cached_object import CachedObject
+from .terminal import Terminal
 
 
 class OverviewState:
@@ -18,11 +19,16 @@ class PreviewState:
     repr, source = range(2)
 
 
-class OverviewLayout(Layout):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class Overview:
+    def __init__(self, term: Terminal):
+        self.term = term
+        self._layout = Layout()
         self.state = OverviewState.all
         self.preview_state = PreviewState.repr
+
+    @property
+    def layout(self):
+        return self._layout
 
     def __call__(self, cached_obj: CachedObject, term_height: int, console) -> Layout:
         """
