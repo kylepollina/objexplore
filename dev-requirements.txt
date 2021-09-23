@@ -1,4 +1,4 @@
-pandas==1.2.0
+pandas
 pytest==6.2.5
 mypy==0.910
 black==20.8b1

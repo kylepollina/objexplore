@@ -1,6 +1,5 @@
 import inspect
-import types
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, Callable
 
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
@@ -114,7 +113,7 @@ class CachedObject:
         self.ismethod = inspect.ismethod(self.obj)
         self.ismethoddescriptor = inspect.ismethoddescriptor(self.obj)
         self.ismodule = inspect.ismodule(self.obj)
-        self.filters: List[types.FunctionType] = []
+        self.filters: List[Union[bool, Callable[[Any], Any]]]
         self.search_filter: str = ""
 
         # Highlighted attributes
@@ -163,7 +162,7 @@ class CachedObject:
             )
 
         if not is_selectable(self.obj):
-            self.text.style += Style(dim=True)
+            self.text.style += Style(dim=True)  # type: ignore
 
     @property
     def title(self):
@@ -194,7 +193,9 @@ class CachedObject:
 
         self.filter()
 
-    def set_filters(self, filters: List[types.FunctionType], search_filter: str = ""):
+    def set_filters(
+        self, filters: List[Union[bool, Callable[[Any], Any]]], search_filter: str = ""
+    ):
         self.filters = filters
         self.search_filter = search_filter.lower()
         self.filter()

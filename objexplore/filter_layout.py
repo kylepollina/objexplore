@@ -1,5 +1,4 @@
-import types
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Callable, Any
 
 from rich.highlighter import ReprHighlighter
 from rich.layout import Layout
@@ -20,7 +19,7 @@ highlighter = ReprHighlighter()
 @rich.repr.auto
 class FilterLayout(Layout):
     def __init__(self, term: Terminal, *args, **kwargs):
-        self.filters: Dict[str, List[Union[bool, types.FunctionType]]] = {
+        self.filters: Dict[str, List[Union[bool, Callable[[Any], Any]]]] = {
             "class": [False, lambda cached_obj: cached_obj.isclass],
             "function": [False, lambda cached_obj: cached_obj.isfunction],
             "method": [False, lambda cached_obj: cached_obj.ismethod],
@@ -40,7 +39,7 @@ class FilterLayout(Layout):
         self.receiving_input = False
         self.search_filter = ""
         self.cursor_pos = 0
-        self.key_history = []
+        self.key_history: List[str] = []
         super().__init__(*args, **kwargs)
 
     def move_down(self):
@@ -57,7 +56,7 @@ class FilterLayout(Layout):
     def move_bottom(self):
         self.index = len(self.filters) - 1
 
-    def get_enabled_filters(self) -> List[types.FunctionType]:
+    def get_enabled_filters(self) -> List[Union[bool, Callable[[Any], Any]]]:
         return [
             method
             for name, (enabled, method) in self.filters.items()
