@@ -15,19 +15,25 @@ class StackFrame:
     """ Datastructure to store a frame in the object stack """
 
     cached_obj: CachedObject
-    explorer_layout: "Explorer"
-    overview_layout: Overview
+    # explorer_layout: "Explorer"
+    # overview_layout: Overview
 
 
 class Stack:
     def __init__(self, head_obj: CachedObject):
         self.head_obj = head_obj
-        self.stack: List[StackFrame] = []
         self.index = 0
         self.layout = Layout(visible=False)
+        self.stack: List[StackFrame] = [
+            StackFrame(
+                cached_obj=head_obj
+            )
+        ]
 
-    def append(self, stack_frame: StackFrame):
-        self.stack.append(stack_frame)
+    def push(self, cached_obj: CachedObject):
+        self.stack.append(
+            StackFrame(cached_obj=cached_obj)
+        )
 
     def pop(self) -> Optional[StackFrame]:
         if len(self.stack) > 1:
@@ -38,11 +44,10 @@ class Stack:
         return self.stack[item]
 
     def set_visible(self):
-        self.visible = True
+        self.layout.visible = True
         self.index = len(self.stack) - 1
 
-    def __call__(self, term_width: int) -> Layout:
-        panel_width = (term_width - 4) // 4 - 4
+    def get_layout(self, width: int) -> Layout:
         stack_tree: Tree
 
         for index, stack_frame in enumerate(self.stack):
@@ -52,10 +57,10 @@ class Stack:
                 style = "none"
 
             if index == 0:
-                label = stack_frame.cached_obj.repr
+                label = stack_frame.cached_obj.repr.copy()
                 label.style = style
                 label.overflow = "ellipsis"
-                label.truncate(max_width=panel_width)
+                label.truncate(max_width=width-1)
                 stack_tree = Tree(label, guide_style="white")
                 continue
 
@@ -65,14 +70,13 @@ class Stack:
                 + stack_frame.cached_obj.typeof
             )
             label.overflow = "ellipsis"
-            label.truncate(max_width=panel_width - 4)
+            label.truncate(max_width=width - 4)
             stack_tree.add(
                 label,
                 style=style,
             )
 
-        self.size = len(self.stack) + 5
-        self.update(
+        self.layout.update(
             Panel(
                 stack_tree,
                 title="\[stack]",
@@ -82,7 +86,8 @@ class Stack:
                 style="bright_blue",
             )
         )
-        return self
+        self.layout.size = len(self.stack) + 5
+        return self.layout
 
     def move_up(self):
         if self.index > 0:

@@ -265,30 +265,31 @@ class ObjExploreApp:
             self.term.KEY_RIGHT,
             self.term.KEY,
         ):
-            new_cached_obj = self.explorer.layout.selected_object
-            # TODO abstract the following
-            if not is_selectable(new_cached_obj.obj):
-                return
+            self.explorer.explore_selected_object()
+            # new_cached_obj = self.explorer.layout.selected_object
+            # # TODO abstract the following
+            # if not is_selectable(new_cached_obj.obj):
+            #     return
 
-            self.explorer.layout = ExplorerLayout(cached_obj=new_cached_obj)
-            self.cached_obj = new_cached_obj
-            self.cached_obj.cache()
-            self.explorer.filter.cancel_search(self.cached_obj)
-            self.explorer.stack.append(
-                StackFrame(
-                    cached_obj=self.cached_obj,
-                    explorer_layout=self.explorer.layout,
-                    overview_layout=self.overview.layout,
-                )
-            )
+            # self.explorer.layout = Explorer(cached_obj=new_cached_obj)
+            # self.cached_obj = new_cached_obj
+            # self.cached_obj.cache()
+            # self.explorer.filter.cancel_search(self.cached_obj)
+            # self.explorer.stack.append(
+            #     StackFrame(
+            #         cached_obj=self.cached_obj,
+            #         explorer_layout=self.explorer.layout,
+            #         overview_layout=self.overview.layout,
+            #     )
+            # )
 
         # Go back to parent
         elif (key == "h" or key.code == self.term.KEY_LEFT) and self.explorer.stack.stack:
-            self.explorer.stack.pop()
-            self.cached_obj = self.explorer.stack[-1].cached_obj
-            self.explorer.filter.clear_filters(self.cached_obj)
-            self.explorer.layout = self.explorer.stack[-1].explorer_layout
-            self.overview.layout = self.explorer.stack[-1].overview_layout
+            self.explorer.explore_parent_obj()
+            # self.cached_obj = self.explorer.stack[-1].cached_obj
+            # self.explorer.filter.clear_filters(self.cached_obj)
+            # self.explorer.layout = self.explorer.stack[-1].explorer_layout
+            # self.overview.layout = self.explorer.stack[-1].overview_layout
 
         elif key == "g":
             self.explorer.move_top()
@@ -300,20 +301,20 @@ class ObjExploreApp:
 
         # Switch between public and private attributes
         elif key in ("[", "]"):
-            if self.explorer.layout.state == ExplorerState.public:
-                self.explorer.layout.state = ExplorerState.private
+            if self.explorer.state == ExplorerState.public:
+                self.explorer.state = ExplorerState.private
 
-            elif self.explorer.layout.state == ExplorerState.private:
-                self.explorer.layout.state = ExplorerState.public
+            elif self.explorer.state == ExplorerState.private:
+                self.explorer.state = ExplorerState.public
 
         elif key in ("{", "}"):
-            if not callable(self.explorer.layout.selected_object.obj):
+            if not callable(self.explorer.selected_object.obj):
                 return
 
-            if self.overview.layout.preview_state == PreviewState.repr:
-                self.overview.layout.preview_state = PreviewState.source
-            elif self.overview.layout.preview_state == PreviewState.source:
-                self.overview.layout.preview_state = PreviewState.repr
+            if self.overview.preview_state == PreviewState.repr:
+                self.overview.preview_state = PreviewState.source
+            elif self.overview.preview_state == PreviewState.source:
+                self.overview.preview_state = PreviewState.repr
 
         # Toggle docstring view
         elif key == "d":
@@ -338,10 +339,10 @@ class ObjExploreApp:
             if self.overview.layout.state == OverviewState.docstring:
                 printable = self.explorer.layout.selected_object.docstring
 
-            elif self.overview.layout.preview_state == PreviewState.repr:
+            elif self.overview.preview_state == PreviewState.repr:
                 printable = self.explorer.layout.selected_object.obj
 
-            elif self.overview.layout.preview_state == PreviewState.source:
+            elif self.overview.preview_state == PreviewState.source:
                 printable = self.explorer.layout.selected_object.get_source(
                     fullscreen=True
                 )

@@ -87,6 +87,13 @@ class Explorer:
                 self.filter.get_layout(width=self.width)
             )
             return layout
+        elif self.stack.layout.visible:
+            layout = Layout()
+            layout.split_column(
+                explorer_layout,
+                self.stack.get_layout(width=self.width)
+            )
+            return layout
         else:
             return explorer_layout
 
@@ -149,7 +156,7 @@ class Explorer:
                     0, len(self.cached_obj.filtered_private_attributes) - 1
                 )
                 self.private_window = max(
-                    0, self.private_index - self.get_panel_height(self.height)
+                    0, self.private_index - self.height
                 )
 
             for index, (attr, cached_obj) in enumerate(
@@ -210,11 +217,11 @@ class Explorer:
         if self.dict_index >= len(self.cached_obj.filtered_dict):
             self.dict_index = max(0, len(self.cached_obj.filtered_dict) - 1)
             self.dict_window = max(
-                0, self.dict_index - self.get_panel_height(term_height)
+                0, self.dict_index - self.height
             )
 
         panel_width = self.get_panel_width(term_width)
-        panel_height = self.get_panel_height(term_height)
+        panel_height = self.height
         lines = []
 
         if self.dict_window == 0:
@@ -317,6 +324,16 @@ class Explorer:
         )
         return self.layout
 
+    def explore_selected_object(self):
+        """ TODO """
+        self.cached_obj = self.selected_object
+        self.stack.push(self.cached_obj)
+
+    def explore_parent_obj(self):
+        """ Go back to exploring the parent obj of the current obj """
+        stack_frame = self.stack.pop()
+        self.cached_obj = self.stack[-1].cached_obj
+
     @property
     def selected_object(self) -> CachedObject:  # type: ignore
         """ Return the currently selected cached object """
@@ -354,10 +371,7 @@ class Explorer:
 
     @property
     def height(self):
-        if self.stack.layout.visible:
-            return (self.term.height - 10) // 2
-        else:
-            return self.term.height - 6
+        return self.term.height - 6
 
     def move_up(self):
         """ Move the current selection up one """
