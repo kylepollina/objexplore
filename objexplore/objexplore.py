@@ -260,7 +260,7 @@ class ObjExploreApp:
         elif key == "j" or key.code == self.term.KEY_DOWN:
             self.explorer.move_down(self.cached_obj)
 
-        elif key in ("l", " ") or key.code in (
+        elif key in ("l") or key.code in (
             self.term.KEY_ENTER,
             self.term.KEY_RIGHT,
             self.term.KEY,

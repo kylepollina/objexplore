@@ -327,6 +327,7 @@ class Explorer:
     def explore_selected_object(self):
         """ TODO """
         self.cached_obj = self.selected_object
+        self.cached_obj.cache()
         self.stack.push(self.cached_obj)
 
     def explore_parent_obj(self):
