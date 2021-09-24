@@ -292,7 +292,6 @@ class Explorer:
                 0, self.list_index - self.get_panel_height(term_height)
             )
 
-        panel_width = self.get_panel_width(term_width)
         panel_height = self.get_panel_height(term_height)
         lines = []
 
@@ -322,7 +321,7 @@ class Explorer:
             if index == self.list_index:
                 new_line.style = Style(reverse=True)
 
-            new_line.truncate(panel_width)
+            new_line.truncate(self.width)
             lines.append(new_line)
             index += 1
 
