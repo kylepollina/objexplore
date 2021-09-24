@@ -63,9 +63,6 @@ class Filter:
             if enabled is True
         ]
 
-    def get_filter_layout(self) -> Layout:
-        ...
-
     def toggle(self, cached_obj: CachedObject):
         """ Toggle the selected filter on or off and update the cached_obj filters with the new filters """
         filter_name = list(self.filters.keys())[self.index]

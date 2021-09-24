@@ -302,10 +302,6 @@ class ObjExploreApp:
             key == "h" or key.code == self.term.KEY_LEFT
         ) and self.explorer.stack.stack:
             self.explorer.explore_parent_obj()
-            # self.cached_obj = self.explorer.stack[-1].cached_obj
-            # self.explorer.filter.clear_filters(self.cached_obj)
-            # self.explorer.layout = self.explorer.stack[-1].explorer_layout
-            # self.overview.layout = self.explorer.stack[-1].overview_layout
 
         elif key == "g":
             self.explorer.move_top()

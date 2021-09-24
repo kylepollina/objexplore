@@ -361,6 +361,7 @@ class Explorer:
         stack_frame = self.stack.pop()
         if stack_frame:
             explorer = stack_frame.explorer
+            self.filter = stack_frame.filter
             self.state = explorer.state
             self.public_index = explorer.public_index
             self.private_index = explorer.private_index
