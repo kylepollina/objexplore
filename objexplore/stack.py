@@ -11,6 +11,7 @@ from .cached_object import CachedObject
 from .overview import Overview
 
 
+@rich.repr.auto
 @dataclass
 class StackFrame:
     """ Datastructure to store a frame in the object stack """
@@ -103,7 +104,7 @@ class Stack:
     def move_bottom(self):
         self.index = len(self.stack) - 1
 
-    def select(self) -> CachedObject:
+    def select(self) -> Optional[StackFrame]:
         """The stack always contains every stack frame including the current frame
         so selecting based on the index, we want to rebuild the stack to be everything
         up to the selected index and then pop the very top off and return
@@ -111,5 +112,6 @@ class Stack:
         TODO more documentation
         """
         self.stack = self.stack[: self.index + 1]
-        stack_frame = self.stack.pop()
-        return stack_frame.cached_obj
+        if len(self.stack) > 1:
+            stack_frame = self.stack.pop()
+            return stack_frame

@@ -181,29 +181,7 @@ class ObjExploreApp:
         elif (
             key == " " or key.code == self.term.KEY_ENTER
         ) and self.explorer.stack.layout.visible:
-            # If you are choosing the same frame as the current obj, then don't do anything
-            if (
-                self.explorer.stack[self.explorer.stack.index].cached_obj
-                == self.cached_obj
-            ):
-                return
-            new_cached_obj = self.explorer.stack.select()
-            # TODO abstract the following
-            if not is_selectable(new_cached_obj.obj):
-                return
-            self.explorer.layout = Explorer(
-                cached_obj=new_cached_obj, stack=self.explorer.stack
-            )
-            self.cached_obj = new_cached_obj
-            self.cached_obj.cache()
-            self.explorer.filter.cancel_search(self.cached_obj)
-            self.explorer.stack.append(
-                StackFrame(
-                    cached_obj=self.cached_obj,
-                    explorer_layout=self.explorer.layout,
-                    overview_layout=self.overview.layout,
-                )
-            )
+            self.cached_obj = self.explorer.explore_selected_stack_object()
 
         elif (
             key == "j" or key.code == self.term.KEY_DOWN
@@ -279,23 +257,7 @@ class ObjExploreApp:
             self.term.KEY_RIGHT,
             self.term.KEY,
         ):
-            self.explorer.explore_selected_object()
-            # new_cached_obj = self.explorer.layout.selected_object
-            # # TODO abstract the following
-            # if not is_selectable(new_cached_obj.obj):
-            #     return
-
-            # self.explorer.layout = Explorer(cached_obj=new_cached_obj)
-            # self.cached_obj = new_cached_obj
-            # self.cached_obj.cache()
-            # self.explorer.filter.cancel_search(self.cached_obj)
-            # self.explorer.stack.append(
-            #     StackFrame(
-            #         cached_obj=self.cached_obj,
-            #         explorer_layout=self.explorer.layout,
-            #         overview_layout=self.overview.layout,
-            #     )
-            # )
+            self.cached_obj = self.explorer.explore_selected_object()
 
         # Go back to parent
         elif (

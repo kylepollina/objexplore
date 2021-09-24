@@ -48,7 +48,7 @@ class Explorer:
     def __init__(
         self,
         term: Terminal,
-        cached_obj: CachedObject,
+        current_obj: CachedObject,
         filter: Optional[Filter] = None,
         stack: Optional[Stack] = None,
         state: Optional[ExplorerState] = None,
@@ -62,15 +62,13 @@ class Explorer:
         list_window: int = 0,
     ):
         self.term = term
-        self.cached_obj = cached_obj
         self.filter = Filter(term=self.term) if not filter else filter
         self.stack = (
-            Stack(head_obj=self.cached_obj, explorer=self, filter=self.filter)
+            Stack(head_obj=current_obj, explorer=self, filter=self.filter)
             if not stack
             else stack
         )
         self.layout = Layout()
-
         self.public_index = public_index
         self.public_window = public_window
         self.private_index = private_index
@@ -344,17 +342,17 @@ class Explorer:
         )
         return self.layout
 
-    def explore_selected_object(self):
+    def explore_selected_object(self) -> CachedObject:
         """ TODO """
         self.cached_obj = self.selected_object
         self.cached_obj.cache()
-        self.stack.push(
-            cached_obj=self.cached_obj, explorer=self.copy(), filter=self.filter
-        )
-        # Reset attributes
         self.public_index = self.private_index = 0
         self.public_window = self.private_window = 0
         self.filter = Filter(term=self.term)
+        self.stack.push(
+            cached_obj=self.cached_obj, explorer=self.copy(), filter=self.filter
+        )
+        return self.cached_obj
 
     def explore_parent_obj(self):
         """ Go back to exploring the parent obj of the current obj """
@@ -371,6 +369,28 @@ class Explorer:
             self.list_index = explorer.list_index
 
             self.cached_obj = self.stack[-1].cached_obj
+        return self.cached_obj
+
+    def explore_selected_stack_object(self):
+        stack_frame = self.stack.select()
+        if stack_frame:
+            explorer = stack_frame.explorer
+            self.term = explorer.term
+            self.cached_obj = explorer.cached_obj
+            self.filter = stack_frame.filter
+            self.state = explorer.state
+            self.public_index = explorer.public_index
+            self.private_index = explorer.private_index
+            self.public_window = explorer.public_window
+            self.private_window = explorer.private_window
+            self.dict_index = explorer.dict_index
+            self.list_index = explorer.list_index
+
+            self.stack.push(
+                cached_obj=self.cached_obj, explorer=self.copy(), filter=self.filter
+            )
+
+        return self.cached_obj
 
     @property
     def selected_object(self) -> CachedObject:  # type: ignore
