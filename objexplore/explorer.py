@@ -1,4 +1,6 @@
-from typing import Union, Any, Dict
+from typing import Any, Dict, Optional, Union
+
+from blessed import Terminal
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
 from rich.layout import Layout
@@ -6,17 +8,16 @@ from rich.panel import Panel
 from rich.style import Style
 from rich.text import Text
 
-from blessed import Terminal
-
 from .cached_object import CachedObject
-from .stack import Stack, StackFrame
 from .filter import Filter
+from .stack import Stack, StackFrame
 
 console = Console()
 
 
 # TODO fix truncating bug when width = 111
 # TODO hide filter/stack/explorere subtitle if screen too small
+
 
 class ExplorerState:
     public = "ExplorerState.public"
@@ -44,29 +45,55 @@ class Explorer:
     └──────────┘ └──────────────────┘
     """
 
-    def __init__(self, term: Terminal, cached_obj: CachedObject):
-        self.cached_obj = cached_obj
+    def __init__(
+        self,
+        term: Terminal,
+        cached_obj: CachedObject,
+        filter: Optional[Filter] = None,
+        stack: Optional[Stack] = None,
+        state: Optional[ExplorerState] = None,
+        public_index: int = 0,
+        public_window: int = 0,
+        private_index: int = 0,
+        private_window: int = 0,
+        dict_index: int = 0,
+        dict_window: int = 0,
+        list_index: int = 0,
+        list_window: int = 0,
+    ):
         self.term = term
-        self.stack = Stack(head_obj=self.cached_obj)
-        self.filter = Filter(term=self.term)
+        self.cached_obj = cached_obj
+        self.filter = Filter(term=self.term) if not filter else filter
+        self.stack = (
+            Stack(head_obj=self.cached_obj, explorer=self, filter=self.filter)
+            if not stack
+            else stack
+        )
         self.layout = Layout()
 
-        _type = type(cached_obj.obj)
-        if _type == dict:
-            self.state = ExplorerState.dict
-        elif _type == list:
-            self.state = ExplorerState.list
-        elif _type == tuple:
-            self.state = ExplorerState.tuple
-        elif _type == set:
-            self.state = ExplorerState.set
-        else:
-            self.state = ExplorerState.public
+        self.public_index = public_index
+        self.public_window = public_window
+        self.private_index = private_index
+        self.private_window = private_window
+        self.dict_index = dict_index
+        self.dict_window = dict_window
+        self.list_index = list_index
+        self.list_window = list_window
 
-        self.public_index = self.private_index = 0
-        self.public_window = self.private_window = 0
-        self.dict_index = self.dict_window = 0
-        self.list_index = self.list_window = 0
+        if state:
+            self.state = state
+        else:
+            _type = type(cached_obj.obj)
+            if _type == dict:
+                self.state = ExplorerState.dict
+            elif _type == list:
+                self.state = ExplorerState.list
+            elif _type == tuple:
+                self.state = ExplorerState.tuple
+            elif _type == set:
+                self.state = ExplorerState.set
+            else:
+                self.state = ExplorerState.public
 
     def get_layout(self) -> Layout:
         """ Return the layout of the object explorer. This will be a list of lines representing the object attributes/keys/vals we are exploring """
@@ -83,15 +110,13 @@ class Explorer:
         if self.filter.layout.visible:
             layout = Layout()
             layout.split_column(
-                explorer_layout,
-                self.filter.get_layout(width=self.width)
+                explorer_layout, self.filter.get_layout(width=self.width)
             )
             return layout
         elif self.stack.layout.visible:
             layout = Layout()
             layout.split_column(
-                explorer_layout,
-                self.stack.get_layout(width=self.width)
+                explorer_layout, self.stack.get_layout(width=self.width)
             )
             return layout
         else:
@@ -107,9 +132,7 @@ class Explorer:
                 self.public_index = max(
                     0, len(self.cached_obj.filtered_public_attributes) - 1
                 )
-                self.public_window = max(
-                    0, self.public_index - self.height
-                )
+                self.public_window = max(0, self.public_index - self.height)
 
             for index, (attr, cached_obj) in enumerate(
                 self.cached_obj.filtered_public_attributes.items()
@@ -135,7 +158,10 @@ class Explorer:
                 f"[white]([/white][magenta]{self.public_index + 1 if self.cached_obj.filtered_public_attributes else 0}"
                 f"[/magenta][white]/[/white][magenta]{len(self.cached_obj.filtered_public_attributes)}[/magenta][white])"
             )
-            if len(console.render_str(subtitle_help + subtitle_index)) >= self.width - 2:
+            if (
+                len(console.render_str(subtitle_help + subtitle_index))
+                >= self.width - 2
+            ):
                 subtitle = subtitle_index
             else:
                 subtitle = subtitle_help + subtitle_index
@@ -155,9 +181,7 @@ class Explorer:
                 self.private_index = max(
                     0, len(self.cached_obj.filtered_private_attributes) - 1
                 )
-                self.private_window = max(
-                    0, self.private_index - self.height
-                )
+                self.private_window = max(0, self.private_index - self.height)
 
             for index, (attr, cached_obj) in enumerate(
                 self.cached_obj.filtered_private_attributes.items()
@@ -209,31 +233,27 @@ class Explorer:
         )
         return self.layout
 
-    def dict_layout(self, term_width: int, term_height: int) -> Layout:
+    def dict_layout(self) -> Layout:
         """ Return the dictionary explorer layout """
 
         # Reset the dict index / window in case applying a filter has now moved the index
         # farther down than it can access on the filtered attributes
         if self.dict_index >= len(self.cached_obj.filtered_dict):
             self.dict_index = max(0, len(self.cached_obj.filtered_dict) - 1)
-            self.dict_window = max(
-                0, self.dict_index - self.height
-            )
+            self.dict_window = max(0, self.dict_index - self.height)
 
-        panel_width = self.get_panel_width(term_width)
-        panel_height = self.height
         lines = []
 
         if self.dict_window == 0:
             lines.append(Text("{"))
             start = 0
-            num_lines = panel_height - 1
+            num_lines = self.height - 1
         elif self.dict_window == 1:
             start = 0
-            num_lines = panel_height
+            num_lines = self.height
         else:
             start = self.dict_window - 1
-            num_lines = panel_height
+            num_lines = self.height
 
         end = start + num_lines
         index = start
@@ -245,7 +265,7 @@ class Explorer:
             if index == self.dict_index:
                 new_line.style = Style(reverse=True)
 
-            new_line.truncate(panel_width)
+            new_line.truncate(self.width)
             lines.append(new_line)
             index += 1
 
@@ -328,12 +348,28 @@ class Explorer:
         """ TODO """
         self.cached_obj = self.selected_object
         self.cached_obj.cache()
-        self.stack.push(self.cached_obj)
+        self.stack.push(
+            cached_obj=self.cached_obj, explorer=self.copy(), filter=self.filter
+        )
+        # Reset attributes
+        self.public_index = self.private_index = 0
+        self.public_window = self.private_window = 0
+        self.filter = Filter(term=self.term)
 
     def explore_parent_obj(self):
         """ Go back to exploring the parent obj of the current obj """
         stack_frame = self.stack.pop()
-        self.cached_obj = self.stack[-1].cached_obj
+        if stack_frame:
+            explorer = stack_frame.explorer
+            self.state = explorer.state
+            self.public_index = explorer.public_index
+            self.private_index = explorer.private_index
+            self.public_window = explorer.public_window
+            self.private_window = explorer.private_window
+            self.dict_index = explorer.dict_index
+            self.list_index = explorer.list_index
+
+            self.cached_obj = self.stack[-1].cached_obj
 
     @property
     def selected_object(self) -> CachedObject:  # type: ignore
@@ -423,9 +459,7 @@ class Explorer:
                 self.dict_index += 1
                 if self.dict_index > self.dict_window + self.height - 1:
                     self.dict_window += 1
-            elif (
-                self.dict_window == len(cached_obj.filtered_dict.keys()) - self.height
-            ):
+            elif self.dict_window == len(cached_obj.filtered_dict.keys()) - self.height:
                 self.dict_window += 1
 
         elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
@@ -467,6 +501,23 @@ class Explorer:
         elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
             self.list_index = len(cached_obj.obj) - 1
             self.list_window = max(0, self.list_index - self.height + 2)
+
+    def copy(self):
+        return Explorer(
+            term=self.term,
+            cached_obj=self.cached_obj,
+            filter=self.filter,
+            stack=self.stack,
+            state=self.state,
+            public_index=self.public_index,
+            public_window=self.public_window,
+            private_index=self.private_index,
+            private_window=self.private_window,
+            dict_index=self.dict_index,
+            dict_window=self.dict_window,
+            list_index=self.list_index,
+            list_window=self.list_window,
+        )
 
     # TODO refactor this
     def get_all_attributes(self) -> Union[Dict[str, CachedObject], Any]:

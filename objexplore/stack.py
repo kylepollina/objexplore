@@ -4,6 +4,7 @@ from typing import List, Optional
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.text import Text
+import rich
 from rich.tree import Tree
 
 from .cached_object import CachedObject
@@ -15,24 +16,23 @@ class StackFrame:
     """ Datastructure to store a frame in the object stack """
 
     cached_obj: CachedObject
-    # explorer_layout: "Explorer"
+    explorer: "Explorer"
+    filter: "Filter"
     # overview_layout: Overview
 
 
 class Stack:
-    def __init__(self, head_obj: CachedObject):
+    def __init__(self, head_obj: CachedObject, explorer, filter):
         self.head_obj = head_obj
         self.index = 0
         self.layout = Layout(visible=False)
         self.stack: List[StackFrame] = [
-            StackFrame(
-                cached_obj=head_obj
-            )
+            StackFrame(cached_obj=head_obj, explorer=explorer, filter=filter)
         ]
 
-    def push(self, cached_obj: CachedObject):
+    def push(self, cached_obj: CachedObject, explorer, filter):
         self.stack.append(
-            StackFrame(cached_obj=cached_obj)
+            StackFrame(cached_obj=cached_obj, explorer=explorer, filter=filter)
         )
 
     def pop(self) -> Optional[StackFrame]:
@@ -60,7 +60,7 @@ class Stack:
                 label = stack_frame.cached_obj.repr.copy()
                 label.style = style
                 label.overflow = "ellipsis"
-                label.truncate(max_width=width-1)
+                label.truncate(max_width=width - 1)
                 stack_tree = Tree(label, guide_style="white")
                 continue
 

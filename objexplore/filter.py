@@ -15,10 +15,9 @@ highlighter = ReprHighlighter()
 
 # TODO scroll search if input longer than panel width
 
+
 @rich.repr.auto
 class Filter:
-
-
     def __init__(self, term: Terminal):
         self.term = term
         self.layout = Layout(visible=False)
@@ -103,9 +102,7 @@ class Filter:
 
         return lines
 
-    def add_search_char(
-        self, key: str, cached_obj: CachedObject, explorer: "Explorer"
-    ):
+    def add_search_char(self, key: str, cached_obj: CachedObject, explorer: "Explorer"):
         self.key_history.append(key)
         self.search_filter = (
             self.search_filter[: self.cursor_pos]

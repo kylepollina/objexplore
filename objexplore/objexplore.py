@@ -124,7 +124,10 @@ class ObjExploreApp:
 
         if self.overview.help_layout.visible:
             # Close help page
-            if key == "?" or key.code in (self.term.KEY_ESCAPE, self.term.KEY_BACKSPACE):
+            if key == "?" or key.code in (
+                self.term.KEY_ESCAPE,
+                self.term.KEY_BACKSPACE,
+            ):
                 self.overview.help_layout.visible = False
                 return
 
@@ -175,15 +178,22 @@ class ObjExploreApp:
         ):
             self.explorer.stack.layout.visible = False
 
-        elif (key == " " or key.code == self.term.KEY_ENTER) and self.explorer.stack.layout.visible:
+        elif (
+            key == " " or key.code == self.term.KEY_ENTER
+        ) and self.explorer.stack.layout.visible:
             # If you are choosing the same frame as the current obj, then don't do anything
-            if self.explorer.stack[self.explorer.stack.index].cached_obj == self.cached_obj:
+            if (
+                self.explorer.stack[self.explorer.stack.index].cached_obj
+                == self.cached_obj
+            ):
                 return
             new_cached_obj = self.explorer.stack.select()
             # TODO abstract the following
             if not is_selectable(new_cached_obj.obj):
                 return
-            self.explorer.layout = Explorer(cached_obj=new_cached_obj, stack=self.explorer.stack)
+            self.explorer.layout = Explorer(
+                cached_obj=new_cached_obj, stack=self.explorer.stack
+            )
             self.cached_obj = new_cached_obj
             self.cached_obj.cache()
             self.explorer.filter.cancel_search(self.cached_obj)
@@ -195,10 +205,14 @@ class ObjExploreApp:
                 )
             )
 
-        elif (key == "j" or key.code == self.term.KEY_DOWN) and self.explorer.stack.layout.visible:
+        elif (
+            key == "j" or key.code == self.term.KEY_DOWN
+        ) and self.explorer.stack.layout.visible:
             self.explorer.stack.move_down(self.term.explorer_panel_height)
 
-        elif (key == "k" or key.code == self.term.KEY_UP) and self.explorer.stack.layout.visible:
+        elif (
+            key == "k" or key.code == self.term.KEY_UP
+        ) and self.explorer.stack.layout.visible:
             self.explorer.stack.move_up()
 
         elif key == "g" and self.explorer.stack.layout.visible:
@@ -284,7 +298,9 @@ class ObjExploreApp:
             # )
 
         # Go back to parent
-        elif (key == "h" or key.code == self.term.KEY_LEFT) and self.explorer.stack.stack:
+        elif (
+            key == "h" or key.code == self.term.KEY_LEFT
+        ) and self.explorer.stack.stack:
             self.explorer.explore_parent_obj()
             # self.cached_obj = self.explorer.stack[-1].cached_obj
             # self.explorer.filter.clear_filters(self.cached_obj)
@@ -421,7 +437,10 @@ class ObjExploreApp:
         """ Draw the application. the *args argument is due to resize events and are unused """
         print(self.term.home, end="")
         layout = Layout()
-        layout.split_row(self.explorer.get_layout(), self.overview.get_layout(self.explorer.selected_object))
+        layout.split_row(
+            self.explorer.get_layout(),
+            self.overview.get_layout(self.explorer.selected_object),
+        )
 
         title = (
             self.cached_obj.dotpath

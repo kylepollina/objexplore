@@ -12,6 +12,7 @@ from blessed import Terminal
 
 from .help_layout import HelpLayout, HelpState, random_error_quote
 
+
 class OverviewState:
     all, docstring, value = range(3)
 
