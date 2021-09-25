@@ -15,7 +15,6 @@ from .stack import Stack, StackFrame
 console = Console()
 
 
-# TODO fix truncating bug when width = 111
 # TODO hide filter/stack/explorere subtitle if screen too small
 
 
@@ -124,15 +123,7 @@ class Explorer:
         return explorer_layout
 
     @property
-    def live_update(self) -> bool:
-        """True/False value wheter to live update the filters of the cached object
-        If the number of visible attributes is over a threshold we do not live update
-        the search filter
-        """
-        return self.num_attributes < 130
-
-    @property
-    def dir_panel(self):
+    def dir_panel(self) -> Panel:
         lines = []
 
         if self.state == ExplorerState.public:
@@ -180,9 +171,7 @@ class Explorer:
                     Text("No public attributes", style=Style(color="red", italic=True))
                 )
 
-            renderable = Text("\n").join(
-                lines[self.public_window : self.public_window + self.height + 1]
-            )
+            lines = lines[self.public_window : self.public_window + self.height + 1]
 
         elif self.state == ExplorerState.private:
             # Reset the private index / window in case applying a filter has now moved the index
@@ -223,9 +212,16 @@ class Explorer:
                     Text("No private attributes", style=Style(color="red", italic=True))
                 )
 
-            renderable = Text("\n").join(
-                lines[self.private_window : self.private_window + self.height]
+            lines = lines[self.private_window : self.private_window + self.height]
+
+        if self.num_hidden_attributes:
+            lines.append(
+                Text(f"+", style=Style(color="white", dim=True, italic=True))
+                + Text(str(self.num_hidden_attributes), style=Style(color="yellow", dim=True, italic=True))
+                + Text(" filtered", style=Style(color="white", dim=True, italic=True))
             )
+
+        renderable = Text("\n").join(lines)
 
         # If terminal is too small don't show the 'dir()' part of the title
         if self.text_width < len(console.render_str(title)) + 3:
@@ -240,6 +236,7 @@ class Explorer:
             style="white",
         )
 
+    @property
     def dict_panel(self) -> Panel:
         """ Return the dictionary explorer layout """
 
@@ -557,10 +554,35 @@ class Explorer:
 
     @property
     def num_attributes(self) -> int:
-        """ Return the number of visible attributes """
+        """ Return the number of attributes of the current cached object """
         if self.state == ExplorerState.public:
             return self.cached_obj.num_public_attributes
         elif self.state == ExplorerState.private:
             return self.cached_obj.num_private_attributes
         else:
             return self.cached_obj.length
+
+    @property
+    def num_filtered_attributes(self) -> int:
+        """ Return the number of filtered attributes """
+        if self.state == ExplorerState.public:
+            return self.cached_obj.num_filtered_public_attributes
+        elif self.state == ExplorerState.private:
+            return self.cached_obj.num_filtered_private_attributes
+        elif self.state == ExplorerState.dict:
+            return self.cached_obj.num_filtered_dict_keys
+        else:
+            return self.cached_obj.num_filtered_list_items
+
+    @property
+    def num_hidden_attributes(self) -> int:
+        return self.num_attributes - self.num_filtered_attributes
+
+    @property
+    def live_update(self) -> bool:
+        """True/False value wheter to live update the filters of the cached object
+        If the number of visible attributes is over a threshold we do not live update
+        the search filter
+        """
+        return self.num_attributes < 130
+

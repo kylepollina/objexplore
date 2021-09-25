@@ -214,6 +214,7 @@ class CachedObject:
                     if _filter(cached_obj):
                         self.filtered_public_attributes[attr] = cached_obj
                         break
+        self.num_filtered_public_attributes = len(self.filtered_public_attributes)
 
         self.filtered_private_attributes = {}
         for attr, cached_obj in self.private_attributes.items():
@@ -227,6 +228,7 @@ class CachedObject:
                     if _filter(cached_obj):
                         self.filtered_private_attributes[attr] = cached_obj
                         break
+        self.num_filtered_private_attributes = len(self.filtered_private_attributes)
 
         self.filtered_dict: Dict[str, Tuple[Text, CachedObject]] = {}
         if type(self.obj) == dict:
@@ -261,10 +263,10 @@ class CachedObject:
                             break
                 else:
                     self.filtered_dict[key] = (line, cached_obj)
+        self.num_filtered_dict_keys = len(self.filtered_dict)
 
         self.filtered_list: List[Tuple[Text, CachedObject]] = []
         if type(self.obj) in (list, tuple, set):
-
             for index, item in enumerate(self.obj):
                 line = (
                     Text(" [", style=Style(color="white"))
@@ -286,6 +288,7 @@ class CachedObject:
                             new_filtered_list.append((line, cached_obj))
                             break
                 self.filtered_list = new_filtered_list
+        self.num_filtered_list_items = len(self.filtered_list)
 
     def current_visible_attributes(self):
         if self.filtered_dict:
