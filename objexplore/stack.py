@@ -140,6 +140,3 @@ class Stack:
             self.stack = self.stack[: self.index + 1]
             if self.stack:
                 return self.stack.pop()
-        # if len(self.stack) > 1:
-        #     stack_frame = self.stack.pop()
-        #     return stack_frame

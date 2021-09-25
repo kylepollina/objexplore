@@ -93,9 +93,6 @@ class CachedObject:
         self.private_attributes: Dict[str, CachedObject] = {}
         self.filtered_public_attributes: Dict[str, CachedObject] = {}
         self.filtered_private_attributes: Dict[str, CachedObject] = {}
-        # TODO display # of hidden items?
-        # self._hidden_public_attributes = {}
-        # self._hidden_private_attributes = {}
 
         try:
             self._source = inspect.getsource(self.obj)  # type: ignore

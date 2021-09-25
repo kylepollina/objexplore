@@ -219,11 +219,13 @@ class Explorer:
             lines = lines[self.private_window : self.private_window + self.num_lines]
 
         if self.num_hidden_attributes:
-            lines.append(
+            num_filtered_line = (
                 Text(f"+", style=Style(color="white", dim=True, italic=True))
-                + Text(str(self.num_hidden_attributes), style=Style(color="yellow", dim=True, italic=True))
+                + Text(str(self.num_hidden_attributes), style=Style(underline=True, dim=True, italic=True))
                 + Text(" filtered", style=Style(color="white", dim=True, italic=True))
             )
+            num_filtered_line.truncate(self.text_width)
+            lines.append(num_filtered_line)
 
         renderable = Text("\n").join(lines)
 
@@ -499,12 +501,17 @@ class Explorer:
             self.list_index = self.list_window = 0
 
     def move_bottom(self):
-        if self.state in (ExplorerState.public, ExplorerState.private):
+        """ Move all the way to the bottom. If there are hidden attributes, make sure to show that line by
+        increasing the window index by 1 """
+        if self.state == ExplorerState.public:
             self.public_index = self.num_filtered_attributes - 1
-            self.public_window = max(0, self.public_index - self.num_lines + 1)
+            self.public_window = max(0, self.public_index - self.num_lines + (1 if not self.num_hidden_attributes else 2))
+        elif self.state == ExplorerState.private:
+            self.private_index = self.num_filtered_attributes - 1
+            self.private_window = max(0, self.private_index - self.num_lines + (1 if not self.num_hidden_attributes else 2))
         else:
             self.dict_index = self.num_filtered_attributes - 1
-            self.dict_window = max(0, self.dict_index - self.num_lines + 3)
+            self.dict_window = max(0, self.dict_index - self.num_lines + (3 if not self.num_hidden_attributes else 2))
 
     def copy(self):
         return Explorer(
