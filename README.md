@@ -66,6 +66,10 @@ https://user-images.githubusercontent.com/13981456/133947144-dbed8d99-1ae8-4e50-
 
 https://user-images.githubusercontent.com/13981456/133946981-3bf5cfda-6eac-4514-abb3-e073dd3fb6b2.mov
 
+### Open source file in `$EDITOR`
+
+
+https://user-images.githubusercontent.com/13981456/134768632-1d3d22a8-7554-4085-b25b-94fee2528df4.mov
 
 
 -----
