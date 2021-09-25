@@ -1,15 +1,15 @@
-from typing import Dict, List, Union, Callable, Any
+from typing import List
 
+import blessed
+import rich
+from blessed import Terminal
 from rich.highlighter import ReprHighlighter
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.style import Style
 from rich.text import Text
-import rich
 
-from .explorer_layout import ExplorerLayout
 from .cached_object import CachedObject
-from .terminal import Terminal
 
 highlighter = ReprHighlighter()
 
@@ -17,9 +17,11 @@ highlighter = ReprHighlighter()
 
 
 @rich.repr.auto
-class FilterLayout(Layout):
-    def __init__(self, term: Terminal, *args, **kwargs):
-        self.filters: Dict[str, List[Union[bool, Callable[[Any], Any]]]] = {
+class Filter:
+    def __init__(self, term: Terminal):
+        self.term = term
+        self.layout = Layout(visible=False)
+        self.filters = {
             "class": [False, lambda cached_obj: cached_obj.isclass],
             "function": [False, lambda cached_obj: cached_obj.isfunction],
             "method": [False, lambda cached_obj: cached_obj.ismethod],
@@ -34,13 +36,11 @@ class FilterLayout(Layout):
             "set": [False, lambda cached_obj: type(cached_obj.obj) == set],
             "builtin": [False, lambda cached_obj: cached_obj.isbuiltin],
         }
-        self.term = term
         self.index = 0
         self.receiving_input = False
         self.search_filter = ""
         self.cursor_pos = 0
-        self.key_history: List[str] = []
-        super().__init__(*args, **kwargs)
+        self.key_history: List[blessed.keyboard.Keystroke] = []
 
     def move_down(self):
         if self.index < len(self.filters) - 1:
@@ -56,17 +56,22 @@ class FilterLayout(Layout):
     def move_bottom(self):
         self.index = len(self.filters) - 1
 
-    def get_enabled_filters(self) -> List[Union[bool, Callable[[Any], Any]]]:
+    def get_enabled_filters(self):
         return [
             method
             for name, (enabled, method) in self.filters.items()
             if enabled is True
         ]
 
+    @property
+    def selected_filter(self):
+        return list(self.filters.keys())[self.index]
+
     def toggle(self, cached_obj: CachedObject):
         """ Toggle the selected filter on or off and update the cached_obj filters with the new filters """
-        filter_name = list(self.filters.keys())[self.index]
-        self.filters[filter_name][0] = not self.filters[filter_name][0]
+        self.filters[self.selected_filter][0] = not self.filters[self.selected_filter][
+            0
+        ]
         cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
     def clear_filters(self, cached_obj: CachedObject):
@@ -100,7 +105,10 @@ class FilterLayout(Layout):
         return lines
 
     def add_search_char(
-        self, key: str, cached_obj: CachedObject, explorer_layout: ExplorerLayout
+        self,
+        key: blessed.keyboard.Keystroke,
+        cached_obj: CachedObject,
+        live_update: bool,
     ):
         self.key_history.append(key)
         self.search_filter = (
@@ -110,27 +118,36 @@ class FilterLayout(Layout):
         )
         self.cursor_pos += 1
 
-        if len(explorer_layout.get_all_attributes()) < 130:
+        if live_update:
             cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
-    def backspace(self, cached_obj: CachedObject, explorer_layout: ExplorerLayout):
-        if self.cursor_pos == 0 and not self.search_filter:
+    def backspace(self, cached_obj: CachedObject, live_update: bool):
+        """Delete the character before the cursor.
+        Args:
+            cached_obj: The current object being explored.
+            live_update: True/False value whether to update the cached_obj
+                filters. If there are too many attributes then updating the
+                filters will slow down.
+        """
+        if self.cursor_pos == 0 and self.search_filter == "":
             self.cancel_search(cached_obj)
+        # if the cursor is at the beginning but there is still text in the search, do nothing
         elif self.cursor_pos == 0 and self.search_filter:
             return
+
         self.search_filter = (
             self.search_filter[: self.cursor_pos - 1]
             + self.search_filter[self.cursor_pos :]
         )
         self.cursor_left()
 
-        if len(explorer_layout.get_all_attributes()) < 130:
+        if live_update:
             cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
     def cancel_search(self, cached_obj: CachedObject):
         self.search_filter = ""
         self.cursor_pos = 0
-        self.visible = False
+        self.layout.visible = False
         self.receiving_input = False
         cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
@@ -144,21 +161,21 @@ class FilterLayout(Layout):
 
     def end_search(self, cached_obj: CachedObject):
         self.receiving_input = False
-        self.visible = False
+        self.layout.visible = False
         cached_obj.set_filters(
             self.get_enabled_filters(), search_filter=self.search_filter
         )
 
-    def __call__(self) -> Layout:
+    def get_layout(self, width: int) -> Layout:
         if self.receiving_input:
-            return self.input_box()
+            return self.get_input_layout()
 
         subtitle = "[dim][u]c[/u]:clear [u]space[/u]:select"
-        if self.term.explorer_panel_width <= 25:
+        if width <= 25:
             subtitle = "[dim][u]space[/u]:select"
 
         lines = self.get_lines()
-        self.update(
+        self.layout.update(
             Panel(
                 Text("\n").join(lines),
                 title="\[filter]",
@@ -168,10 +185,10 @@ class FilterLayout(Layout):
                 style="bright_magenta",
             )
         )
-        self.size = len(lines) + 2
-        return self
+        self.layout.size = len(lines) + 2
+        return self.layout
 
-    def input_box(self) -> Layout:
+    def get_input_layout(self) -> Layout:
         if len(self.search_filter) == 0:
             search_text = Text(
                 "█", style=Style(underline=True, blink=True, reverse=True)
@@ -195,7 +212,7 @@ class FilterLayout(Layout):
                 + Text(self.search_filter[self.cursor_pos + 1 :])
             )
 
-        self.update(
+        self.layout.update(
             Panel(
                 search_text,
                 title="\[search]",
@@ -205,5 +222,5 @@ class FilterLayout(Layout):
                 style=Style(color="aquamarine1"),
             )
         )
-        self.size = 3
-        return self
+        self.layout.size = 3
+        return self.layout

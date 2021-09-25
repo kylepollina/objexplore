@@ -1,13 +1,15 @@
 from typing import Union
 
+from blessed import Terminal
 from rich.layout import Layout
-from rich.style import Style
 from rich.panel import Panel
-from rich.text import Text
 from rich.pretty import Pretty
+from rich.style import Style
 from rich.syntax import Syntax
+from rich.text import Text
 
 from .cached_object import CachedObject
+from .help_layout import HelpLayout
 
 
 class OverviewState:
@@ -18,44 +20,52 @@ class PreviewState:
     repr, source = range(2)
 
 
-class OverviewLayout(Layout):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class Overview:
+    def __init__(self, term: Terminal, version: str):
+        self.term = term
+        self.layout = Layout()
+        self.help_layout = HelpLayout(version, visible=False, ratio=3)
         self.state = OverviewState.all
         self.preview_state = PreviewState.repr
 
-    def __call__(self, cached_obj: CachedObject, term_height: int, console) -> Layout:
+    @property
+    def layout_width(self):
+        return (self.term.width - 2) // 4 * 3
+
+    def get_layout(self, cached_obj: CachedObject):
         """
         :param cached_obj: The selected cached object given by the explorer layout
         """
-        if self.state == OverviewState.docstring:
-            self.update(
+        if self.help_layout.visible:
+            return self.help_layout()
+
+        elif self.state == OverviewState.docstring:
+            self.layout.update(
                 self.get_docstring_panel(
                     cached_obj=cached_obj,
-                    term_height=term_height,
+                    term_height=self.term.height,
                 )
             )
-            return self
+            return self.layout
 
         elif self.state == OverviewState.value:
-            self.update(self.get_value_panel(cached_obj, term_height))
-            return self
+            self.layout.update(self.get_value_panel(cached_obj))
+            return self.layout
 
-        else:
-            layout = Layout(ratio=3)
+        elif self.state == OverviewState.all:
+            layout = Layout()
             layout.split_column(
-                Layout(self.get_value_panel(cached_obj, term_height), name="obj_value"),
+                Layout(self.get_value_panel(cached_obj)),
                 self.get_info_layout(cached_obj),
                 Layout(
                     self.get_docstring_panel(
-                        cached_obj=cached_obj, term_height=term_height
+                        cached_obj=cached_obj, term_height=self.term.height
                     ),
-                    name="obj_doc",
                 ),
             )
             return layout
 
-    def get_value_panel(self, cached_obj: CachedObject, term_height: int):
+    def get_value_panel(self, cached_obj: CachedObject):
         renderable: Union[str, Pretty, Syntax]
         if not callable(cached_obj.obj):
             title = "[i]preview[/i] | [i][cyan]repr[/cyan]()[/i]"
@@ -63,9 +73,9 @@ class OverviewLayout(Layout):
             renderable = cached_obj.pretty
 
             if self.state == OverviewState.all:
-                renderable.max_length = max((term_height - 6) // 2 - 7, 1)
+                renderable.max_length = max((self.term.height - 6) // 2 - 7, 1)
             else:
-                renderable.max_length = max(term_height - 9, 1)
+                renderable.max_length = max(self.term.height - 9, 1)
 
         else:
             if self.preview_state == PreviewState.repr:
@@ -73,7 +83,7 @@ class OverviewLayout(Layout):
                 title = "[i]preview[/i] | [i][cyan]repr[/cyan]()[/i] [dim]source"
 
             if self.preview_state == PreviewState.source:
-                renderable = cached_obj.get_source(term_height)
+                renderable = cached_obj.get_source(self.term.height)
                 title = (
                     "[i]preview[/i] | [dim][cyan]repr[/cyan]()[/dim] [underline]source"
                 )
@@ -90,13 +100,13 @@ class OverviewLayout(Layout):
         )
 
     def get_info_layout(self, cached_obj: CachedObject):
-        if cached_obj.length:
+        if cached_obj.length is not None:
             layout = Layout(size=3)
             layout.split_row(
                 Layout(self.get_type_panel(cached_obj)),
                 Layout(
                     Panel(
-                        cached_obj.length,
+                        str(cached_obj.length),
                         title="[i][cyan]len[/cyan]()[/i]",
                         title_align="left",
                         style="white",

@@ -5,6 +5,7 @@ from typing import Any, Optional, Union
 
 import blessed
 import rich
+from blessed import Terminal
 from rich.console import Console
 from rich.layout import Layout
 from rich.panel import Panel
@@ -12,31 +13,19 @@ from rich.syntax import Syntax
 from rich.text import Text
 
 from .cached_object import CachedObject
-from .explorer_layout import ExplorerLayout, ExplorerState
-from .filter_layout import FilterLayout
-from .help_layout import HelpLayout, HelpState, random_error_quote
-from .overview_layout import OverviewLayout, OverviewState, PreviewState
-from .stack_layout import StackFrame, StackLayout
-from .terminal import Terminal
-from .utils import is_selectable
+from .explorer import Explorer, ExplorerState
+from .help_layout import HelpState, random_error_quote
+from .overview import Overview, OverviewState, PreviewState
 
-version = "1.4.10"
+version = "1.5.0"
 
 # TODO object highlighted on stack view should be shown on the overview
-# TODO Backspace exit help
 # TODO support ctrl-a + (whatever emacs keybinding to go to end of line)
 #  https://www.gnu.org/software/bash/manual/html_node/Commands-For-Moving.html
-# TODO add () to text for builtin-methods
-# TODO add a "searching..." title to search filter
-# TODO move stack/filter into the explorer object
-# TODO move help into the overview layout
 # TODO truncate public/private -> pub priv -> just public/private
 # TODO truncate explorer subtitle as well
 # TODO +-_= to change the size of the explorer window
-# TODO auto return on q or r
 # TODO builtin frame/stack explorer? from objexplore import stackexplore
-# TODO filter color the filters the same as the explorer
-# TODO Fix window when searching, then G, window does not move all the way to the bottom
 
 console = Console()
 
@@ -49,21 +38,9 @@ class ObjExploreApp:
         # Figure out all the attributes of the current obj's attributes
         cached_obj.cache()
 
-        self.cached_obj: CachedObject = cached_obj
-        self.stack = StackLayout(head_obj=self.cached_obj, visible=False)
-        self.help_layout = HelpLayout(version, visible=False, ratio=3)
-        self.explorer_layout = ExplorerLayout(cached_obj=cached_obj)
-        self.overview_layout = OverviewLayout(ratio=3)
-        self.term = Terminal(stack=self.stack)
-        self.filter_layout = FilterLayout(term=self.term, visible=False)
-
-        self.stack.append(
-            StackFrame(
-                cached_obj=self.cached_obj,
-                explorer_layout=self.explorer_layout,
-                overview_layout=self.overview_layout,
-            )
-        )
+        self.term = Terminal()
+        self.explorer = Explorer(term=self.term, cached_obj=cached_obj)
+        self.overview = Overview(term=self.term, version=version)
 
         # Run self.draw() whenever the win change signal is caught
         try:
@@ -103,58 +80,63 @@ class ObjExploreApp:
                     else:
                         raise err
 
-                except StopIteration:
-                    return None
-
         return res
 
     def process_key_event(self, key: blessed.keyboard.Keystroke) -> Any:
         """ Process the incoming key """
 
-        if self.filter_layout.receiving_input:
+        if self.explorer.filter.receiving_input:
             if key.code == self.term.KEY_BACKSPACE:
-                self.filter_layout.backspace(self.cached_obj, self.explorer_layout)
+                self.explorer.filter.backspace(
+                    cached_obj=self.explorer.cached_obj,
+                    live_update=self.explorer.live_update,
+                )
             elif key.code == self.term.KEY_ESCAPE:
-                self.filter_layout.cancel_search(self.cached_obj)
+                self.explorer.filter.cancel_search(self.explorer.cached_obj)
             elif key.code == self.term.KEY_ENTER:
-                self.filter_layout.end_search(self.cached_obj)
+                self.explorer.filter.end_search(cached_obj=self.explorer.cached_obj)
             elif key.code == self.term.KEY_LEFT:
-                self.filter_layout.cursor_left()
+                self.explorer.filter.cursor_left()
             elif key.code == self.term.KEY_RIGHT:
-                self.filter_layout.cursor_right()
+                self.explorer.filter.cursor_right()
             elif key.code in (self.term.KEY_UP, self.term.KEY_DOWN):
                 return
             else:
-                self.filter_layout.add_search_char(
-                    key, self.cached_obj, self.explorer_layout
+                self.explorer.filter.add_search_char(
+                    key=key,
+                    cached_obj=self.explorer.cached_obj,
+                    live_update=self.explorer.live_update,
                 )
             return
 
-        if key in ("q", "Q"):
-            raise StopIteration
+        if key in ("q", "Q", "r"):
+            return self.explorer.selected_object.obj
 
         # Help page ###########################################################
 
-        if self.help_layout.visible:
+        if self.overview.help_layout.visible:
             # Close help page
-            if key == "?" or key.code == self.term.KEY_ESCAPE:
-                self.help_layout.visible = False
+            if key == "?" or key.code in (
+                self.term.KEY_ESCAPE,
+                self.term.KEY_BACKSPACE,
+            ):
+                self.overview.help_layout.visible = False
                 return
 
             # Fullscreen
             elif key == "f":
                 with console.capture() as capture:
-                    console.print(self.help_layout.text)
+                    console.print(self.overview.help_layout.text)
                 str_out = capture.get()
                 pydoc.pager(str_out)
                 return
 
             # Switch panes
             elif key in ("{", "}", "[", "]"):
-                if self.help_layout.state == HelpState.keybindings:
-                    self.help_layout.state = HelpState.about
-                elif self.help_layout.state == HelpState.about:
-                    self.help_layout.state = HelpState.keybindings
+                if self.overview.help_layout.state == HelpState.keybindings:
+                    self.overview.help_layout.state = HelpState.about
+                elif self.overview.help_layout.state == HelpState.about:
+                    self.overview.help_layout.state = HelpState.keybindings
                 return
 
             elif key in ("j", "k", "o", "n") or key.code in (
@@ -162,189 +144,163 @@ class ObjExploreApp:
                 self.term.KEY_DOWN,
             ):
                 # Continue on and process these keys as normal
-                self.help_layout.visible = False
+                self.overview.help_layout.visible = False
 
             else:
                 return
 
-        if key == "?" and self.help_layout.visible is False:
-            self.help_layout.visible = True
+        if key == "?" and self.overview.help_layout.visible is False:
+            self.overview.help_layout.visible = True
             return
 
         # Stack ###############################################################
 
         if key == "o":
-            if self.stack.visible:
-                self.stack.visible = False
-            elif self.filter_layout.visible:
-                self.filter_layout.visible = False
-                self.stack.set_visible()
+            if self.explorer.stack.layout.visible:
+                self.explorer.stack.layout.visible = False
+            elif self.explorer.filter.layout.visible:
+                self.explorer.filter.layout.visible = False
+                self.explorer.stack.set_visible()
             else:
-                self.stack.set_visible()
+                self.explorer.stack.set_visible()
 
         elif (
             key.code in (self.term.KEY_BACKSPACE, self.term.KEY_ESCAPE)
-            and self.stack.visible
+            and self.explorer.stack.layout.visible
         ):
-            self.stack.visible = False
+            self.explorer.stack.layout.visible = False
 
-        elif (key == " " or key.code == self.term.KEY_ENTER) and self.stack.visible:
-            # If you are choosing the same frame as the current obj, then don't do anything
-            if self.stack[self.stack.index].cached_obj == self.cached_obj:
-                return
-            new_cached_obj = self.stack.select()
-            # TODO abstract the following
-            if not is_selectable(new_cached_obj.obj):
-                return
-            self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
-            self.cached_obj = new_cached_obj
-            self.cached_obj.cache()
-            self.filter_layout.cancel_search(self.cached_obj)
-            self.stack.append(
-                StackFrame(
-                    cached_obj=self.cached_obj,
-                    explorer_layout=self.explorer_layout,
-                    overview_layout=self.overview_layout,
-                )
-            )
+        elif (
+            key == " " or key.code == self.term.KEY_ENTER
+        ) and self.explorer.stack.layout.visible:
+            self.explorer.explore_selected_stack_object()
 
-        elif (key == "j" or key.code == self.term.KEY_DOWN) and self.stack.visible:
-            self.stack.move_down(self.term.explorer_panel_height)
+        elif (
+            key == "j" or key.code == self.term.KEY_DOWN
+        ) and self.explorer.stack.layout.visible:
+            self.explorer.stack.move_down()
 
-        elif (key == "k" or key.code == self.term.KEY_UP) and self.stack.visible:
-            self.stack.move_up()
+        elif (
+            key == "k" or key.code == self.term.KEY_UP
+        ) and self.explorer.stack.layout.visible:
+            self.explorer.stack.move_up()
 
-        elif key == "g" and self.stack.visible:
-            self.stack.move_top()
+        elif key == "g" and self.explorer.stack.layout.visible:
+            self.explorer.stack.move_top()
 
-        elif key == "G" and self.stack.visible:
-            self.stack.move_bottom()
+        elif key == "G" and self.explorer.stack.layout.visible:
+            self.explorer.stack.move_bottom()
+
+        # disable these keys when the stack explorer is visible
+        elif (
+            key in ("l", "[", "]", "{", "}", "h") and self.explorer.stack.layout.visible
+        ):
+            return
 
         # Filter ##############################################################
 
         elif key == "n":
-            if self.filter_layout.visible:
-                self.filter_layout.visible = False
-            elif self.stack.visible:
-                self.stack.visible = False
-                self.filter_layout.visible = True
+            if self.explorer.filter.layout.visible:
+                self.explorer.filter.layout.visible = False
+            elif self.explorer.stack.layout.visible:
+                self.explorer.stack.layout.visible = False
+                self.explorer.filter.layout.visible = True
             else:
-                self.filter_layout.visible = True
+                self.explorer.filter.layout.visible = True
 
-        elif key == "/" and not self.filter_layout.receiving_input:
-            self.stack.visible = False
-            self.filter_layout.receiving_input = True
-            self.filter_layout.visible = True
+        elif key == "/" and not self.explorer.filter.receiving_input:
+            self.explorer.stack.layout.visible = False
+            self.explorer.filter.receiving_input = True
+            self.explorer.filter.layout.visible = True
 
         elif (
             key == " " or key.code == self.term.KEY_ENTER
-        ) and self.filter_layout.visible:
-            self.filter_layout.toggle(cached_obj=self.cached_obj)
+        ) and self.explorer.filter.layout.visible:
+            self.explorer.filter.toggle(self.explorer.cached_obj)
 
         elif (
             key.code in (self.term.KEY_ESCAPE, self.term.KEY_BACKSPACE)
-        ) and self.filter_layout.visible:
-            self.filter_layout.visible = False
+        ) and self.explorer.filter.layout.visible:
+            self.explorer.filter.layout.visible = False
 
         elif (
             key == "j" or key.code == self.term.KEY_DOWN
-        ) and self.filter_layout.visible:
-            self.filter_layout.move_down()
+        ) and self.explorer.filter.layout.visible:
+            self.explorer.filter.move_down()
 
         elif (
             key == "k" or key.code == self.term.KEY_CODE
-        ) and self.filter_layout.visible:
-            self.filter_layout.move_up()
+        ) and self.explorer.filter.layout.visible:
+            self.explorer.filter.move_up()
 
-        elif key == "g" and self.filter_layout.visible:
-            self.filter_layout.move_top()
+        elif key == "g" and self.explorer.filter.layout.visible:
+            self.explorer.filter.move_top()
 
-        elif key == "G" and self.filter_layout.visible:
-            self.filter_layout.move_bottom()
+        elif key == "G" and self.explorer.filter.layout.visible:
+            self.explorer.filter.move_bottom()
 
         elif key == "c":
-            self.filter_layout.clear_filters(self.cached_obj)
+            self.explorer.filter.clear_filters(self.explorer.cached_obj)
 
         # Explorer ############################################################
 
         elif key == "k" or key.code == self.term.KEY_UP:
-            self.explorer_layout.move_up()
+            self.explorer.move_up()
 
         elif key == "j" or key.code == self.term.KEY_DOWN:
-            self.explorer_layout.move_down(
-                self.term.explorer_panel_height, self.cached_obj
-            )
+            self.explorer.move_down()
 
-        elif key in ("l", " ") or key.code in (
+        elif key in ("l") or key.code in (
             self.term.KEY_ENTER,
             self.term.KEY_RIGHT,
             self.term.KEY,
         ):
-            new_cached_obj = self.explorer_layout.selected_object
-            # TODO abstract the following
-            if not is_selectable(new_cached_obj.obj):
-                return
-
-            self.explorer_layout = ExplorerLayout(cached_obj=new_cached_obj)
-            self.cached_obj = new_cached_obj
-            self.cached_obj.cache()
-            self.filter_layout.cancel_search(self.cached_obj)
-            self.stack.append(
-                StackFrame(
-                    cached_obj=self.cached_obj,
-                    explorer_layout=self.explorer_layout,
-                    overview_layout=self.overview_layout,
-                )
-            )
+            self.explorer.explore_selected_object()
 
         # Go back to parent
-        elif (key == "h" or key.code == self.term.KEY_LEFT) and self.stack.stack:
-            self.stack.pop()
-            self.cached_obj = self.stack[-1].cached_obj
-            self.filter_layout.clear_filters(self.cached_obj)
-            self.explorer_layout = self.stack[-1].explorer_layout
-            self.overview_layout = self.stack[-1].overview_layout
+        elif (
+            key == "h" or key.code == self.term.KEY_LEFT
+        ) and self.explorer.stack.stack:
+            self.explorer.explore_parent_obj()
 
         elif key == "g":
-            self.explorer_layout.move_top()
+            self.explorer.move_top()
 
         elif key == "G":
-            self.explorer_layout.move_bottom(
-                self.term.explorer_panel_height, self.cached_obj
-            )
+            self.explorer.move_bottom()
 
         # Overview ############################################################
 
         # Switch between public and private attributes
         elif key in ("[", "]"):
-            if self.explorer_layout.state == ExplorerState.public:
-                self.explorer_layout.state = ExplorerState.private
+            if self.explorer.state == ExplorerState.public:
+                self.explorer.state = ExplorerState.private
 
-            elif self.explorer_layout.state == ExplorerState.private:
-                self.explorer_layout.state = ExplorerState.public
+            elif self.explorer.state == ExplorerState.private:
+                self.explorer.state = ExplorerState.public
 
         elif key in ("{", "}"):
-            if not callable(self.explorer_layout.selected_object.obj):
+            if not callable(self.explorer.selected_object.obj):
                 return
 
-            if self.overview_layout.preview_state == PreviewState.repr:
-                self.overview_layout.preview_state = PreviewState.source
-            elif self.overview_layout.preview_state == PreviewState.source:
-                self.overview_layout.preview_state = PreviewState.repr
+            if self.overview.preview_state == PreviewState.repr:
+                self.overview.preview_state = PreviewState.source
+            elif self.overview.preview_state == PreviewState.source:
+                self.overview.preview_state = PreviewState.repr
 
         # Toggle docstring view
         elif key == "d":
-            self.overview_layout.state = (
+            self.overview.state = (
                 OverviewState.docstring
-                if self.overview_layout.state != OverviewState.docstring
+                if self.overview.state != OverviewState.docstring
                 else OverviewState.all
             )
 
         # Toggle value view
         elif key == "p":
-            self.overview_layout.state = (
+            self.overview.state = (
                 OverviewState.value
-                if self.overview_layout.state != OverviewState.value
+                if self.overview.state != OverviewState.value
                 else OverviewState.all
             )
 
@@ -352,16 +308,14 @@ class ObjExploreApp:
         elif key == "f":
             printable: Union[str, Syntax, Text]
 
-            if self.overview_layout.state == OverviewState.docstring:
-                printable = self.explorer_layout.selected_object.docstring
+            if self.overview.state == OverviewState.docstring:
+                printable = self.explorer.selected_object.docstring
 
-            elif self.overview_layout.preview_state == PreviewState.repr:
-                printable = self.explorer_layout.selected_object.obj
+            elif self.overview.preview_state == PreviewState.repr:
+                printable = self.explorer.selected_object.obj
 
-            elif self.overview_layout.preview_state == PreviewState.source:
-                printable = self.explorer_layout.selected_object.get_source(
-                    fullscreen=True
-                )
+            elif self.overview.preview_state == PreviewState.source:
+                printable = self.explorer.selected_object.get_source(fullscreen=True)
 
             with console.capture() as capture:
                 console.print(printable)
@@ -370,12 +324,12 @@ class ObjExploreApp:
             pydoc.pager(str_out)
 
         elif key == "H":
-            help(self.explorer_layout.selected_object.obj)
+            help(self.explorer.selected_object.obj)
 
         elif key == "i":
             with console.capture() as capture:
                 rich.inspect(
-                    self.explorer_layout.selected_object.obj,
+                    self.explorer.selected_object.obj,
                     console=console,
                     methods=True,
                 )
@@ -385,65 +339,26 @@ class ObjExploreApp:
         elif key == "I":
             with console.capture() as capture:
                 rich.inspect(
-                    self.explorer_layout.selected_object.obj, console=console, all=True
+                    self.explorer.selected_object.obj, console=console, all=True
                 )
             str_out = capture.get()
             pydoc.pager(str_out)
 
         # Other ################################################################
 
-        # Return selected object
-        elif key == "r":
-            return self.explorer_layout.selected_object.obj
-
-    def get_explorer_layout(self) -> Layout:
-        if self.stack.visible:
-            layout = Layout()
-            layout.split_column(
-                self.explorer_layout(
-                    term_width=self.term.width,
-                    term_height=self.term.height,
-                ),
-                self.stack(term_width=self.term.width),
-            )
-            return layout
-        elif self.filter_layout.visible:
-            layout = Layout()
-            layout.split_column(
-                self.explorer_layout(
-                    term_width=self.term.width,
-                    term_height=self.term.height,
-                ),
-                self.filter_layout(),
-            )
-            return layout
-        else:
-            return self.explorer_layout(
-                term_width=self.term.width,
-                term_height=self.term.height,
-            )
-
-    def get_overview_layout(self) -> Layout:
-        if self.help_layout.visible:
-            return self.help_layout()
-        else:
-            return self.overview_layout(
-                cached_obj=self.explorer_layout.selected_object,
-                term_height=self.term.height,
-                console=console,
-            )
-
     def draw(self, *args):
         """ Draw the application. the *args argument is due to resize events and are unused """
         print(self.term.home, end="")
         layout = Layout()
-
-        layout.split_row(self.get_explorer_layout(), self.get_overview_layout())
+        layout.split_row(
+            self.explorer.get_layout(),
+            self.overview.get_layout(self.explorer.selected_object),
+        )
 
         title = (
-            self.cached_obj.dotpath
+            self.explorer.cached_obj.dotpath
             + Text(" | ", style="white")
-            + self.cached_obj.typeof
+            + self.explorer.cached_obj.typeof
         )
 
         object_explorer = Panel(
@@ -451,7 +366,7 @@ class ObjExploreApp:
             title=title,
             subtitle=(
                 "[red][u]q[/u]:quit[/red] "
-                f"[cyan][u]?[/u]:{'exit ' if self.help_layout.visible else ''}help[/] "
+                f"[cyan][u]?[/u]:{'exit ' if self.overview.help_layout.visible else ''}help[/] "
                 "[bright_blue][u]o[/u]:stack [/bright_blue][bright_magenta][u]n[/u]:filter [/bright_magenta][aquamarine1][u]/[/u]:search [/aquamarine1][u]r[/u]:return"
             ),
             subtitle_align="left",

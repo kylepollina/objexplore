@@ -82,27 +82,26 @@ class CachedObject:
         self.plain_public_attributes = sorted(
             attr for attr in self.plain_attrs if not attr.startswith("_")
         )
+        self.num_public_attributes: int = len(self.plain_public_attributes)
         self.plain_private_attributes = sorted(
             attr for attr in self.plain_attrs if attr.startswith("_")
         )
+        self.num_private_attributes: int = len(self.plain_private_attributes)
 
         self.public_attributes: Dict[str, CachedObject] = {}
         self.private_attributes: Dict[str, CachedObject] = {}
         self.filtered_public_attributes: Dict[str, CachedObject] = {}
         self.filtered_private_attributes: Dict[str, CachedObject] = {}
-        # TODO display # of hidden items?
-        # self._hidden_public_attributes = {}
-        # self._hidden_private_attributes = {}
 
         try:
             self._source = inspect.getsource(self.obj)  # type: ignore
         except Exception:
             self._source = ""
 
-        self.length: Optional[str]
+        self.length: Optional[int]
 
         try:
-            self.length = str(len(self.obj))  # type: ignore
+            self.length = len(self.obj)  # type: ignore
         except TypeError:
             self.length = None
 
@@ -121,6 +120,8 @@ class CachedObject:
         self.docstring: Text = console.render_str(inspect.getdoc(self.obj) or "None")
         self.docstring_lines = self.docstring.split()
         self.repr = highlighter(repr(self.obj))
+        if "\n" in self.repr:
+            self.repr = self.repr.split("\n")[0]
         self.repr.overflow = "ellipsis"
         self.pretty = Pretty(self.obj)
 
@@ -130,7 +131,12 @@ class CachedObject:
             self.text.style = Style(color="blue")
         elif self.isclass:
             self.text.style = Style(color="magenta")
-        elif self.isfunction or self.ismethod or self.ismethoddescriptor:
+        elif (
+            self.isfunction
+            or self.ismethod
+            or self.ismethoddescriptor
+            or isinstance(self.obj, type("".capitalize))
+        ):
             self.text += Text("()", style=Style(color="white"))
         elif type(self.obj) == dict:
             self.text.style = Style(color="light_sea_green")
@@ -174,7 +180,6 @@ class CachedObject:
         return title
 
     def cache(self):
-        # TODO find some places to speed this up
         if not self.public_attributes:
             for attr in self.plain_public_attributes:
                 self.public_attributes[attr] = CachedObject(
@@ -213,6 +218,7 @@ class CachedObject:
                     if _filter(cached_obj):
                         self.filtered_public_attributes[attr] = cached_obj
                         break
+        self.num_filtered_public_attributes = len(self.filtered_public_attributes)
 
         self.filtered_private_attributes = {}
         for attr, cached_obj in self.private_attributes.items():
@@ -226,6 +232,7 @@ class CachedObject:
                     if _filter(cached_obj):
                         self.filtered_private_attributes[attr] = cached_obj
                         break
+        self.num_filtered_private_attributes = len(self.filtered_private_attributes)
 
         self.filtered_dict: Dict[str, Tuple[Text, CachedObject]] = {}
         if type(self.obj) == dict:
@@ -260,10 +267,10 @@ class CachedObject:
                             break
                 else:
                     self.filtered_dict[key] = (line, cached_obj)
+        self.num_filtered_dict_keys = len(self.filtered_dict)
 
         self.filtered_list: List[Tuple[Text, CachedObject]] = []
         if type(self.obj) in (list, tuple, set):
-
             for index, item in enumerate(self.obj):
                 line = (
                     Text(" [", style=Style(color="white"))
@@ -285,6 +292,7 @@ class CachedObject:
                             new_filtered_list.append((line, cached_obj))
                             break
                 self.filtered_list = new_filtered_list
+        self.num_filtered_list_items = len(self.filtered_list)
 
     def current_visible_attributes(self):
         if self.filtered_dict:
