@@ -102,10 +102,10 @@ class CachedObject:
         except Exception:
             self._source = ""
 
-        self.length: Optional[str]
+        self.length: int
 
         try:
-            self.length = str(len(self.obj))  # type: ignore
+            self.length = len(self.obj)  # type: ignore
         except TypeError:
             self.length = None
 

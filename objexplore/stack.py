@@ -112,6 +112,5 @@ class Stack:
         TODO more documentation
         """
         self.stack = self.stack[: self.index + 1]
-        if len(self.stack) > 1:
-            stack_frame = self.stack.pop()
-            return stack_frame
+        stack_frame = self.stack.pop()
+        return stack_frame

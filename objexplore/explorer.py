@@ -14,6 +14,8 @@ from .stack import Stack, StackFrame
 
 console = Console()
 
+highlighter = ReprHighlighter()
+
 
 # TODO hide filter/stack/explorere subtitle if screen too small
 
@@ -27,7 +29,18 @@ class ExplorerState:
     set = "ExplorerState.set"
 
 
-highlighter = ReprHighlighter()
+def get_state(cached_obj: CachedObject) -> ExplorerState:
+    _type = type(cached_obj.obj)
+    if _type == dict:
+        return ExplorerState.dict
+    elif _type == list:
+        return ExplorerState.list
+    elif _type == tuple:
+        return ExplorerState.tuple
+    elif _type == set:
+        return ExplorerState.set
+    else:
+        return ExplorerState.public
 
 
 class Explorer:
@@ -80,17 +93,7 @@ class Explorer:
         if state:
             self.state = state
         else:
-            _type = type(cached_obj.obj)
-            if _type == dict:
-                self.state = ExplorerState.dict
-            elif _type == list:
-                self.state = ExplorerState.list
-            elif _type == tuple:
-                self.state = ExplorerState.tuple
-            elif _type == set:
-                self.state = ExplorerState.set
-            else:
-                self.state = ExplorerState.public
+            self.state = get_state(self.cached_obj)
 
     def get_layout(self) -> Layout:
         """ Return the layout of the object explorer. This will be a list of lines representing the object attributes/keys/vals we are exploring """
@@ -133,7 +136,7 @@ class Explorer:
                 self.public_index = max(
                     0, len(self.cached_obj.filtered_public_attributes) - 1
                 )
-                self.public_window = max(0, self.public_index - self.height)
+                self.public_window = max(0, self.public_index - self.num_lines)
 
             for index, (attr, cached_obj) in enumerate(
                 self.cached_obj.filtered_public_attributes.items()
@@ -171,7 +174,7 @@ class Explorer:
                     Text("No public attributes", style=Style(color="red", italic=True))
                 )
 
-            lines = lines[self.public_window : self.public_window + self.height + 1]
+            lines = lines[self.public_window : self.public_window + self.num_lines + 1]
 
         elif self.state == ExplorerState.private:
             # Reset the private index / window in case applying a filter has now moved the index
@@ -180,7 +183,7 @@ class Explorer:
                 self.private_index = max(
                     0, len(self.cached_obj.filtered_private_attributes) - 1
                 )
-                self.private_window = max(0, self.private_index - self.height)
+                self.private_window = max(0, self.private_index - self.num_lines)
 
             for index, (attr, cached_obj) in enumerate(
                 self.cached_obj.filtered_private_attributes.items()
@@ -212,7 +215,7 @@ class Explorer:
                     Text("No private attributes", style=Style(color="red", italic=True))
                 )
 
-            lines = lines[self.private_window : self.private_window + self.height]
+            lines = lines[self.private_window : self.private_window + self.num_lines]
 
         if self.num_hidden_attributes:
             lines.append(
@@ -244,20 +247,20 @@ class Explorer:
         # farther down than it can access on the filtered attributes
         if self.dict_index >= len(self.cached_obj.filtered_dict):
             self.dict_index = max(0, len(self.cached_obj.filtered_dict) - 1)
-            self.dict_window = max(0, self.dict_index - self.height)
+            self.dict_window = max(0, self.dict_index - self.num_lines)
 
         lines = []
 
         if self.dict_window == 0:
             lines.append(Text("{"))
             start = 0
-            num_lines = self.height - 1
+            num_lines = self.num_lines - 1
         elif self.dict_window == 1:
             start = 0
-            num_lines = self.height
+            num_lines = self.num_lines
         else:
             start = self.dict_window - 1
-            num_lines = self.height
+            num_lines = self.num_lines
 
         end = start + num_lines
         index = start
@@ -347,6 +350,7 @@ class Explorer:
     def explore_selected_object(self) -> CachedObject:
         """ TODO """
         self.cached_obj = self.selected_object
+        self.state = get_state(self.cached_obj)
         self.cached_obj.cache()
         self.public_index = self.private_index = 0
         self.public_window = self.private_window = 0
@@ -371,6 +375,7 @@ class Explorer:
             self.list_index = explorer.list_index
 
             self.cached_obj = self.stack[-1].cached_obj
+            self.state = get_state(self.cached_obj)
         return self.cached_obj
 
     def explore_selected_stack_object(self):
@@ -379,6 +384,7 @@ class Explorer:
             explorer = stack_frame.explorer
             self.term = explorer.term
             self.cached_obj = explorer.cached_obj
+            self.state = get_state(self.cached_obj)
             self.filter = stack_frame.filter
             self.state = explorer.state
             self.public_index = explorer.public_index
@@ -434,8 +440,8 @@ class Explorer:
         return self.layout_width - 4
 
     @property
-    def height(self):
-        return self.term.height - 6
+    def num_lines(self):
+        return self.term.height - 5
 
     def move_up(self):
         """ Move the current selection up one """
@@ -472,7 +478,7 @@ class Explorer:
         if self.state == ExplorerState.public:
             if self.public_index < len(self.cached_obj.filtered_public_attributes) - 1:
                 self.public_index += 1
-                if self.public_index > self.public_window + self.height:
+                if self.public_index >= self.public_window + self.num_lines:
                     self.public_window += 1
 
         elif self.state == ExplorerState.private:
@@ -481,26 +487,26 @@ class Explorer:
                 < len(self.cached_obj.filtered_private_attributes) - 1
             ):
                 self.private_index += 1
-                if self.private_index > self.private_window + self.height:
+                if self.private_index >= self.private_window + self.num_lines:
                     self.private_window += 1
 
         elif self.state == ExplorerState.dict:
             if self.dict_index < len(self.cached_obj.filtered_dict.keys()) - 1:
                 self.dict_index += 1
-                if self.dict_index > self.dict_window + self.height - 1:
+                if self.dict_index >= self.dict_window + self.num_lines - 1:
                     self.dict_window += 1
             elif (
                 self.dict_window
-                == len(self.cached_obj.filtered_dict.keys()) - self.height
+                == self.cached_obj.length - self.num_lines
             ):
                 self.dict_window += 1
 
         elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
             if self.list_index < len(self.cached_obj.obj) - 1:
                 self.list_index += 1
-                if self.list_index > self.list_window + self.height - 1:
+                if self.list_index >= self.list_window + self.num_lines - 1:
                     self.list_window += 1
-            elif self.list_window == len(self.cached_obj.obj) - self.height:
+            elif self.list_window == self.cached_obj.length - self.num_lines:
                 self.list_window += 1
 
     def move_top(self):
@@ -521,19 +527,19 @@ class Explorer:
     def move_bottom(self):
         if self.state == ExplorerState.public:
             self.public_index = len(self.cached_obj.filtered_public_attributes) - 1
-            self.public_window = max(0, self.public_index - self.height)
+            self.public_window = max(0, self.public_index - self.num_lines)
 
         elif self.state == ExplorerState.private:
             self.private_index = len(self.cached_obj.filtered_private_attributes) - 1
-            self.private_window = max(0, self.private_index - self.height)
+            self.private_window = max(0, self.private_index - self.num_lines)
 
         elif self.state == ExplorerState.dict:
             self.dict_index = len(self.cached_obj.obj.keys()) - 1
-            self.dict_window = max(0, self.dict_index - self.height + 2)
+            self.dict_window = max(0, self.dict_index - self.num_lines + 2)
 
         elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
             self.list_index = len(self.cached_obj.obj) - 1
-            self.list_window = max(0, self.list_index - self.height + 2)
+            self.list_window = max(0, self.list_index - self.num_lines + 2)
 
     def copy(self):
         return Explorer(

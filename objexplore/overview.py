@@ -107,7 +107,7 @@ class Overview:
                 Layout(self.get_type_panel(cached_obj)),
                 Layout(
                     Panel(
-                        cached_obj.length,
+                        str(cached_obj.length),
                         title="[i][cyan]len[/cyan]()[/i]",
                         title_align="left",
                         style="white",
