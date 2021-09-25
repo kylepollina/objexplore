@@ -94,7 +94,7 @@ class Stack:
         if self.index > 0:
             self.index -= 1
 
-    def move_down(self, panel_height: int):
+    def move_down(self):
         if self.index < len(self.stack) - 1:
             self.index += 1
 

@@ -111,19 +111,22 @@ class Filter:
         if len(explorer.get_all_attributes()) < 130:
             cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
-    def backspace(self, cached_obj: CachedObject, explorer_layout: "Explorer"):
-        if self.cursor_pos == 0 and not self.search_filter:
-            self.cancel_search(cached_obj)
+    def backspace(self):
+        """ Delete the character before the cursor """
+        if self.cursor_pos == 0 and self.search_filter == '':
+            self.cancel_search()
+        # if the cursor is at the beginning but there is still text in the search, do nothing
         elif self.cursor_pos == 0 and self.search_filter:
             return
+
         self.search_filter = (
             self.search_filter[: self.cursor_pos - 1]
             + self.search_filter[self.cursor_pos :]
         )
         self.cursor_left()
 
-        if len(explorer_layout.get_all_attributes()) < 130:
-            cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
+        # if len(explorer_layout.get_all_attributes()) < 130:
+        #     cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
     def cancel_search(self, cached_obj: CachedObject):
         self.search_filter = ""

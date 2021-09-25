@@ -21,7 +21,6 @@ from .utils import is_selectable
 version = "1.4.10"
 
 # TODO object highlighted on stack view should be shown on the overview
-# TODO Backspace exit help
 # TODO support ctrl-a + (whatever emacs keybinding to go to end of line)
 #  https://www.gnu.org/software/bash/manual/html_node/Commands-For-Moving.html
 # TODO add () to text for builtin-methods
@@ -47,7 +46,6 @@ class ObjExploreApp:
         # Figure out all the attributes of the current obj's attributes
         cached_obj.cache()
 
-        self.cached_obj: CachedObject = cached_obj
         self.term = Terminal()
         self.explorer = Explorer(term=self.term, cached_obj=cached_obj)
         self.overview = Overview(term=self.term, version=version)
@@ -100,11 +98,11 @@ class ObjExploreApp:
 
         if self.explorer.filter.receiving_input:
             if key.code == self.term.KEY_BACKSPACE:
-                self.explorer.filter.backspace(self.cached_obj, self.explorer)
+                self.explorer.filter.backspace()
             elif key.code == self.term.KEY_ESCAPE:
-                self.explorer.filter.cancel_search(self.cached_obj)
+                self.explorer.filter.cancel_search()
             elif key.code == self.term.KEY_ENTER:
-                self.explorer.filter.end_search(self.cached_obj)
+                self.explorer.filter.end_search()
             elif key.code == self.term.KEY_LEFT:
                 self.explorer.filter.cursor_left()
             elif key.code == self.term.KEY_RIGHT:
@@ -112,9 +110,7 @@ class ObjExploreApp:
             elif key.code in (self.term.KEY_UP, self.term.KEY_DOWN):
                 return
             else:
-                self.explorer.filter.add_search_char(
-                    key, self.cached_obj, self.explorer
-                )
+                self.explorer.filter.add_search_char(key)
             return
 
         if key in ("q", "Q"):
@@ -181,12 +177,12 @@ class ObjExploreApp:
         elif (
             key == " " or key.code == self.term.KEY_ENTER
         ) and self.explorer.stack.layout.visible:
-            self.cached_obj = self.explorer.explore_selected_stack_object()
+            self.explorer.explore_selected_stack_object()
 
         elif (
             key == "j" or key.code == self.term.KEY_DOWN
         ) and self.explorer.stack.layout.visible:
-            self.explorer.stack.move_down(self.term.explorer_panel_height)
+            self.explorer.stack.move_down()
 
         elif (
             key == "k" or key.code == self.term.KEY_UP
@@ -198,6 +194,9 @@ class ObjExploreApp:
 
         elif key == "G" and self.explorer.stack.layout.visible:
             self.explorer.stack.move_bottom()
+
+        elif key in ("l", "[", "]", "{", "}") and self.explorer.stack.layout.visible:
+            return
 
         # Filter ##############################################################
 
@@ -218,7 +217,7 @@ class ObjExploreApp:
         elif (
             key == " " or key.code == self.term.KEY_ENTER
         ) and self.explorer.filter.layout.visible:
-            self.explorer.filter.toggle(cached_obj=self.cached_obj)
+            self.explorer.filter.toggle()
 
         elif (
             key.code in (self.term.KEY_ESCAPE, self.term.KEY_BACKSPACE)
@@ -242,7 +241,7 @@ class ObjExploreApp:
             self.explorer.filter.move_bottom()
 
         elif key == "c":
-            self.explorer.filter.clear_filters(self.cached_obj)
+            self.explorer.filter.clear_filters()
 
         # Explorer ############################################################
 
@@ -250,14 +249,14 @@ class ObjExploreApp:
             self.explorer.move_up()
 
         elif key == "j" or key.code == self.term.KEY_DOWN:
-            self.explorer.move_down(self.cached_obj)
+            self.explorer.move_down()
 
         elif key in ("l") or key.code in (
             self.term.KEY_ENTER,
             self.term.KEY_RIGHT,
             self.term.KEY,
         ):
-            self.cached_obj = self.explorer.explore_selected_object()
+            self.explorer.explore_selected_object()
 
         # Go back to parent
         elif (
@@ -269,7 +268,7 @@ class ObjExploreApp:
             self.explorer.move_top()
 
         elif key == "G":
-            self.explorer.move_bottom(self.cached_obj)
+            self.explorer.move_bottom()
 
         # Overview ############################################################
 
@@ -333,7 +332,7 @@ class ObjExploreApp:
         elif key == "i":
             with console.capture() as capture:
                 rich.inspect(
-                    self.explorer.layout.selected_object.obj,
+                    self.explorer.selected_object.obj,
                     console=console,
                     methods=True,
                 )
@@ -343,7 +342,7 @@ class ObjExploreApp:
         elif key == "I":
             with console.capture() as capture:
                 rich.inspect(
-                    self.explorer.layout.selected_object.obj, console=console, all=True
+                    self.explorer.selected_object.obj, console=console, all=True
                 )
             str_out = capture.get()
             pydoc.pager(str_out)
@@ -353,43 +352,6 @@ class ObjExploreApp:
         # Return selected object
         elif key == "r":
             return self.explorer.layout.selected_object.obj
-
-    # def get_explorer_layout(self) -> Layout:
-    #     if self.explorer.stack.layout.visible:
-    #         layout = Layout()
-    #         layout.split_column(
-    #             self.explorer.layout(
-    #                 term_width=self.term.width,
-    #                 term_height=self.term.height,
-    #             ),
-    #             self.explorer.stack(term_width=self.term.width),
-    #         )
-    #         return layout
-    #     elif self.explorer.filter.layout.visible:
-    #         layout = Layout()
-    #         layout.split_column(
-    #             self.explorer.layout(
-    #                 term_width=self.term.width,
-    #                 term_height=self.term.height,
-    #             ),
-    #             self.explorer.filter(),
-    #         )
-    #         return layout
-    #     else:
-    #         return self.explorer.layout(
-    #             term_width=self.term.width,
-    #             term_height=self.term.height,
-    #         )
-
-    # def get_overview_layout(self) -> Layout:
-    #     if self.overview.help_layout.visible:
-    #         return self.overview.help_layout()
-    #     else:
-    #         return self.overview.layout(
-    #             cached_obj=self.explorer.layout.selected_object,
-    #             term_height=self.term.height,
-    #             console=console,
-    #         )
 
     def draw(self, *args):
         """ Draw the application. the *args argument is due to resize events and are unused """
@@ -401,9 +363,9 @@ class ObjExploreApp:
         )
 
         title = (
-            self.cached_obj.dotpath
+            self.explorer.cached_obj.dotpath
             + Text(" | ", style="white")
-            + self.cached_obj.typeof
+            + self.explorer.cached_obj.typeof
         )
 
         object_explorer = Panel(

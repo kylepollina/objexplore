@@ -47,8 +47,8 @@ class Explorer:
 
     def __init__(
         self,
+        cached_obj: CachedObject,
         term: Terminal,
-        current_obj: CachedObject,
         filter: Optional[Filter] = None,
         stack: Optional[Stack] = None,
         state: Optional[ExplorerState] = None,
@@ -61,10 +61,11 @@ class Explorer:
         list_index: int = 0,
         list_window: int = 0,
     ):
+        self.cached_obj = cached_obj
         self.term = term
         self.filter = Filter(term=self.term) if not filter else filter
         self.stack = (
-            Stack(head_obj=current_obj, explorer=self, filter=self.filter)
+            Stack(head_obj=cached_obj, explorer=self, filter=self.filter)
             if not stack
             else stack
         )
@@ -460,34 +461,34 @@ class Explorer:
             elif self.list_window == 1:
                 self.list_window -= 1
 
-    def move_down(self, cached_obj: CachedObject):
+    def move_down(self):
         """ Move the current selection down one """
         if self.state == ExplorerState.public:
-            if self.public_index < len(cached_obj.filtered_public_attributes) - 1:
+            if self.public_index < len(self.cached_obj.filtered_public_attributes) - 1:
                 self.public_index += 1
                 if self.public_index > self.public_window + self.height:
                     self.public_window += 1
 
         elif self.state == ExplorerState.private:
-            if self.private_index < len(cached_obj.filtered_private_attributes) - 1:
+            if self.private_index < len(self.cached_obj.filtered_private_attributes) - 1:
                 self.private_index += 1
                 if self.private_index > self.private_window + self.height:
                     self.private_window += 1
 
         elif self.state == ExplorerState.dict:
-            if self.dict_index < len(cached_obj.filtered_dict.keys()) - 1:
+            if self.dict_index < len(self.cached_obj.filtered_dict.keys()) - 1:
                 self.dict_index += 1
                 if self.dict_index > self.dict_window + self.height - 1:
                     self.dict_window += 1
-            elif self.dict_window == len(cached_obj.filtered_dict.keys()) - self.height:
+            elif self.dict_window == len(self.cached_obj.filtered_dict.keys()) - self.height:
                 self.dict_window += 1
 
         elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
-            if self.list_index < len(cached_obj.obj) - 1:
+            if self.list_index < len(self.cached_obj.obj) - 1:
                 self.list_index += 1
                 if self.list_index > self.list_window + self.height - 1:
                     self.list_window += 1
-            elif self.list_window == len(cached_obj.obj) - self.height:
+            elif self.list_window == len(self.cached_obj.obj) - self.height:
                 self.list_window += 1
 
     def move_top(self):
@@ -505,21 +506,21 @@ class Explorer:
         elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
             self.list_index = self.list_window = 0
 
-    def move_bottom(self, cached_obj: CachedObject):
+    def move_bottom(self):
         if self.state == ExplorerState.public:
-            self.public_index = len(cached_obj.filtered_public_attributes) - 1
+            self.public_index = len(self.cached_obj.filtered_public_attributes) - 1
             self.public_window = max(0, self.public_index - self.height)
 
         elif self.state == ExplorerState.private:
-            self.private_index = len(cached_obj.filtered_private_attributes) - 1
+            self.private_index = len(self.cached_obj.filtered_private_attributes) - 1
             self.private_window = max(0, self.private_index - self.height)
 
         elif self.state == ExplorerState.dict:
-            self.dict_index = len(cached_obj.obj.keys()) - 1
+            self.dict_index = len(self.cached_obj.obj.keys()) - 1
             self.dict_window = max(0, self.dict_index - self.height + 2)
 
         elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
-            self.list_index = len(cached_obj.obj) - 1
+            self.list_index = len(self.cached_obj.obj) - 1
             self.list_window = max(0, self.list_index - self.height + 2)
 
     def copy(self):
