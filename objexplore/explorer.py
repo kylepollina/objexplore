@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Optional
 
 from blessed import Terminal
 from rich.console import Console
@@ -8,10 +8,10 @@ from rich.panel import Panel
 from rich.style import Style
 from rich.text import Text
 
-from .utils import is_selectable
 from .cached_object import CachedObject
 from .filter import Filter
 from .stack import Stack, StackFrame
+from .utils import is_selectable
 
 console = Console()
 
@@ -30,7 +30,7 @@ class ExplorerState:
     set = "ExplorerState.set"
 
 
-def get_state(cached_obj: CachedObject) -> ExplorerState:
+def get_state(cached_obj: CachedObject):
     _type = type(cached_obj.obj)
     if _type == dict:
         return ExplorerState.dict
@@ -64,7 +64,7 @@ class Explorer:
         term: Terminal,
         filter: Optional[Filter] = None,
         stack: Optional[Stack] = None,
-        state: Optional[ExplorerState] = None,
+        state: Optional[str] = None,
         public_index: int = 0,
         public_window: int = 0,
         private_index: int = 0,
@@ -77,11 +77,7 @@ class Explorer:
         self.cached_obj = cached_obj
         self.term = term
         self.filter = Filter(term=self.term) if not filter else filter
-        self.stack = (
-            Stack(head_obj=cached_obj)
-            if not stack
-            else stack
-        )
+        self.stack = Stack(head_obj=cached_obj) if not stack else stack
         self.public_index = public_index
         self.public_window = public_window
         self.private_index = private_index
@@ -118,7 +114,10 @@ class Explorer:
         elif self.stack.layout.visible:
             combined_layout = Layout()
             combined_layout.split_column(
-                top_panel, self.stack.get_layout(width=self.text_width, current_obj=self.cached_obj)
+                top_panel,
+                self.stack.get_layout(
+                    width=self.text_width, current_obj=self.cached_obj
+                ),
             )
             explorer_layout.update(combined_layout)
         else:
@@ -220,8 +219,14 @@ class Explorer:
 
         if self.num_hidden_attributes:
             num_filtered_line = (
-                Text(f"+", style=Style(color="white", dim=True, italic=True, underline=True))
-                + Text(str(self.num_hidden_attributes), style=Style(color="cyan", dim=True, italic=True))
+                Text(
+                    "+",
+                    style=Style(color="white", dim=True, italic=True, underline=True),
+                )
+                + Text(
+                    str(self.num_hidden_attributes),
+                    style=Style(color="cyan", dim=True, italic=True),
+                )
                 + Text(" filtered", style=Style(color="white", dim=True, italic=True))
             )
             num_filtered_line.truncate(self.text_width)
@@ -285,13 +290,18 @@ class Explorer:
             lines.append(Text("}"))
         if self.num_hidden_attributes:
             num_filtered_line = (
-                Text(f"+", style=Style(color="white", dim=True, italic=True, underline=True))
-                + Text(str(self.num_hidden_attributes), style=Style(color="cyan",  dim=True, italic=True))
+                Text(
+                    "+",
+                    style=Style(color="white", dim=True, italic=True, underline=True),
+                )
+                + Text(
+                    str(self.num_hidden_attributes),
+                    style=Style(color="cyan", dim=True, italic=True),
+                )
                 + Text(" filtered", style=Style(color="white", dim=True, italic=True))
             )
             num_filtered_line.truncate(self.text_width)
             lines.append(num_filtered_line)
-
 
         text = Text("\n").join(lines)
 
@@ -310,9 +320,7 @@ class Explorer:
         # farther down than it can access on the filtered attributes
         if self.list_index >= len(self.cached_obj.filtered_list):
             self.list_index = max(0, len(self.cached_obj.filtered_list) - 1)
-            self.list_window = max(
-                0, self.list_index - self.num_lines
-            )
+            self.list_window = max(0, self.list_index - self.num_lines)
 
         lines = []
 
@@ -353,8 +361,14 @@ class Explorer:
 
         if self.num_hidden_attributes:
             num_filtered_line = (
-                Text(f"+", style=Style(color="white", dim=True, italic=True, underline=True))
-                + Text(str(self.num_hidden_attributes), style=Style(color="cyan",  dim=True, italic=True))
+                Text(
+                    "+",
+                    style=Style(color="white", dim=True, italic=True, underline=True),
+                )
+                + Text(
+                    str(self.num_hidden_attributes),
+                    style=Style(color="cyan", dim=True, italic=True),
+                )
                 + Text(" filtered", style=Style(color="white", dim=True, italic=True))
             )
             num_filtered_line.truncate(self.text_width)
@@ -371,10 +385,11 @@ class Explorer:
             style="white",
         )
 
-    def explore_selected_object(self) -> CachedObject:
+    def explore_selected_object(self) -> Optional[CachedObject]:
         """ TODO """
         if not is_selectable(self.selected_object.obj):
             return self.cached_obj
+        return None
 
         # Save current stack as a frame
         current_frame = StackFrame(
@@ -388,7 +403,7 @@ class Explorer:
             dict_index=self.dict_index,
             dict_window=self.dict_window,
             list_index=self.list_index,
-            list_window=self.list_window
+            list_window=self.list_window,
         )
         self.stack.push(current_frame)
 
@@ -492,10 +507,7 @@ class Explorer:
                 self.dict_index += 1
                 if self.dict_index >= self.dict_window + self.num_lines - 1:
                     self.dict_window += 1
-            elif (
-                self.dict_window
-                == self.cached_obj.length - self.num_lines
-            ):
+            elif self.dict_window == self.cached_obj.length - self.num_lines:
                 self.dict_window += 1
 
         elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
@@ -522,17 +534,32 @@ class Explorer:
             self.list_index = self.list_window = 0
 
     def move_bottom(self):
-        """ Move all the way to the bottom. If there are hidden attributes, make sure to show that line by
-        increasing the window index by 1 """
+        """Move all the way to the bottom. If there are hidden attributes, make sure to show that line by
+        increasing the window index by 1"""
         if self.state == ExplorerState.public:
             self.public_index = self.num_filtered_attributes - 1
-            self.public_window = max(0, self.public_index - self.num_lines + (1 if not self.num_hidden_attributes else 2))
+            self.public_window = max(
+                0,
+                self.public_index
+                - self.num_lines
+                + (1 if not self.num_hidden_attributes else 2),
+            )
         elif self.state == ExplorerState.private:
             self.private_index = self.num_filtered_attributes - 1
-            self.private_window = max(0, self.private_index - self.num_lines + (1 if not self.num_hidden_attributes else 2))
+            self.private_window = max(
+                0,
+                self.private_index
+                - self.num_lines
+                + (1 if not self.num_hidden_attributes else 2),
+            )
         else:
             self.dict_index = self.num_filtered_attributes - 1
-            self.dict_window = max(0, self.dict_index - self.num_lines + (3 if not self.num_hidden_attributes else 2))
+            self.dict_window = max(
+                0,
+                self.dict_index
+                - self.num_lines
+                + (3 if not self.num_hidden_attributes else 2),
+            )
 
     def copy(self):
         return Explorer(
@@ -559,7 +586,7 @@ class Explorer:
         elif self.state == ExplorerState.private:
             return self.cached_obj.num_private_attributes
         else:
-            return self.cached_obj.length
+            return self.cached_obj.length or 0
 
     @property
     def num_filtered_attributes(self) -> int:

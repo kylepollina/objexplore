@@ -9,7 +9,6 @@ from rich.text import Text
 from rich.tree import Tree
 
 from .cached_object import CachedObject
-from .overview import Overview
 from .filter import Filter
 
 
@@ -17,9 +16,10 @@ from .filter import Filter
 @dataclass
 class StackFrame:
     """ Datastructure to store a frame in the object stack """
+    # flake8: noqa
     cached_obj: CachedObject
     filter: Filter
-    state: "ExplorerState"
+    state: "ExplorerState"  # type: ignore
     public_index: int
     public_window: int
     private_index: int
@@ -90,11 +90,7 @@ class Stack:
                 style = Style(reverse=True)
             else:
                 style = Style()
-            label = (
-                Text(current_obj.attr_name)
-                + Text(": ")
-                + current_obj.typeof
-            )
+            label = Text(current_obj.attr_name) + Text(": ") + current_obj.typeof
             label.overflow = "ellipsis"
             label.truncate(width - 4)
             stack_tree.add(
@@ -140,3 +136,4 @@ class Stack:
             self.stack = self.stack[: self.index + 1]
             if self.stack:
                 return self.stack.pop()
+        return None

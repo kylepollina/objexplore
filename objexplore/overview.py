@@ -1,16 +1,15 @@
 from typing import Union
 
+from blessed import Terminal
 from rich.layout import Layout
-from rich.style import Style
 from rich.panel import Panel
-from rich.text import Text
 from rich.pretty import Pretty
+from rich.style import Style
 from rich.syntax import Syntax
+from rich.text import Text
 
 from .cached_object import CachedObject
-from blessed import Terminal
-
-from .help_layout import HelpLayout, HelpState, random_error_quote
+from .help_layout import HelpLayout
 
 
 class OverviewState:
@@ -41,7 +40,7 @@ class Overview:
             return self.help_layout()
 
         elif self.state == OverviewState.docstring:
-            self.update(
+            self.layout.update(
                 self.get_docstring_panel(
                     cached_obj=cached_obj,
                     term_height=self.term.height,

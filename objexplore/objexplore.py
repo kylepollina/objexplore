@@ -16,7 +16,6 @@ from .cached_object import CachedObject
 from .explorer import Explorer, ExplorerState
 from .help_layout import HelpState, random_error_quote
 from .overview import Overview, OverviewState, PreviewState
-from .utils import is_selectable
 
 version = "1.4.10"
 
@@ -203,7 +202,9 @@ class ObjExploreApp:
             self.explorer.stack.move_bottom()
 
         # disable these keys when the stack explorer is visible
-        elif key in ("l", "[", "]", "{", "}", "h") and self.explorer.stack.layout.visible:
+        elif (
+            key in ("l", "[", "]", "{", "}", "h") and self.explorer.stack.layout.visible
+        ):
             return
 
         # Filter ##############################################################
@@ -299,17 +300,17 @@ class ObjExploreApp:
 
         # Toggle docstring view
         elif key == "d":
-            self.overview.layout.state = (
+            self.overview.state = (
                 OverviewState.docstring
-                if self.overview.layout.state != OverviewState.docstring
+                if self.overview.state != OverviewState.docstring
                 else OverviewState.all
             )
 
         # Toggle value view
         elif key == "p":
-            self.overview.layout.state = (
+            self.overview.state = (
                 OverviewState.value
-                if self.overview.layout.state != OverviewState.value
+                if self.overview.state != OverviewState.value
                 else OverviewState.all
             )
 
@@ -317,14 +318,14 @@ class ObjExploreApp:
         elif key == "f":
             printable: Union[str, Syntax, Text]
 
-            if self.overview.layout.state == OverviewState.docstring:
-                printable = self.explorer.layout.selected_object.docstring
+            if self.overview.state == OverviewState.docstring:
+                printable = self.explorer.selected_object.docstring
 
             elif self.overview.preview_state == PreviewState.repr:
-                printable = self.explorer.layout.selected_object.obj
+                printable = self.explorer.selected_object.obj
 
             elif self.overview.preview_state == PreviewState.source:
-                printable = self.explorer.layout.selected_object.get_source(
+                printable = self.explorer.selected_object.get_source(
                     fullscreen=True
                 )
 
@@ -335,7 +336,7 @@ class ObjExploreApp:
             pydoc.pager(str_out)
 
         elif key == "H":
-            help(self.explorer.layout.selected_object.obj)
+            help(self.explorer.selected_object.obj)
 
         elif key == "i":
             with console.capture() as capture:
@@ -359,7 +360,7 @@ class ObjExploreApp:
 
         # Return selected object
         elif key == "r":
-            return self.explorer.layout.selected_object.obj
+            return self.explorer.selected_object.obj
 
     def draw(self, *args):
         """ Draw the application. the *args argument is due to resize events and are unused """

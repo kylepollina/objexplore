@@ -99,7 +99,7 @@ class CachedObject:
         except Exception:
             self._source = ""
 
-        self.length: int
+        self.length: Optional[int]
 
         try:
             self.length = len(self.obj)  # type: ignore
@@ -121,8 +121,8 @@ class CachedObject:
         self.docstring: Text = console.render_str(inspect.getdoc(self.obj) or "None")
         self.docstring_lines = self.docstring.split()
         self.repr = highlighter(repr(self.obj))
-        if '\n' in self.repr:
-            self.repr = self.repr.split('\n')[0]
+        if "\n" in self.repr:
+            self.repr = self.repr.split("\n")[0]
         self.repr.overflow = "ellipsis"
         self.pretty = Pretty(self.obj)
 
@@ -164,7 +164,7 @@ class CachedObject:
             )
 
         if not is_selectable(self.obj):
-            self.text.style += Style(dim=True)
+            self.text.style += Style(dim=True)  # type: ignore
 
     @property
     def title(self):

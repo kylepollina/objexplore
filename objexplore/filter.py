@@ -1,5 +1,4 @@
-import types
-from typing import Dict, List, Union
+from typing import List
 
 import blessed
 import rich
@@ -23,7 +22,7 @@ class Filter:
     def __init__(self, term: Terminal):
         self.term = term
         self.layout = Layout(visible=False)
-        self.filters: Dict[str, List[Union[bool, types.FunctionType]]] = {
+        self.filters = {
             "class": [False, lambda cached_obj: cached_obj.isclass],
             "function": [False, lambda cached_obj: cached_obj.isfunction],
             "method": [False, lambda cached_obj: cached_obj.ismethod],
@@ -42,7 +41,7 @@ class Filter:
         self.receiving_input = False
         self.search_filter = ""
         self.cursor_pos = 0
-        self.key_history = []
+        self.key_history: List[blessed.keyboard.Keystroke] = []
 
     def move_down(self):
         if self.index < len(self.filters) - 1:
@@ -58,7 +57,7 @@ class Filter:
     def move_bottom(self):
         self.index = len(self.filters) - 1
 
-    def get_enabled_filters(self) -> List[types.FunctionType]:
+    def get_enabled_filters(self):
         return [
             method
             for name, (enabled, method) in self.filters.items()
