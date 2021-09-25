@@ -132,7 +132,7 @@ class CachedObject:
             self.text.style = Style(color="blue")
         elif self.isclass:
             self.text.style = Style(color="magenta")
-        elif self.isfunction or self.ismethod or self.ismethoddescriptor:
+        elif self.isfunction or self.ismethod or self.ismethoddescriptor or type(self.obj) == type(''.capitalize):
             self.text += Text("()", style=Style(color="white"))
         elif type(self.obj) == dict:
             self.text.style = Style(color="light_sea_green")

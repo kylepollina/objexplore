@@ -22,12 +22,10 @@ version = "1.4.10"
 # TODO object highlighted on stack view should be shown on the overview
 # TODO support ctrl-a + (whatever emacs keybinding to go to end of line)
 #  https://www.gnu.org/software/bash/manual/html_node/Commands-For-Moving.html
-# TODO add () to text for builtin-methods
 # TODO truncate public/private -> pub priv -> just public/private
 # TODO truncate explorer subtitle as well
 # TODO +-_= to change the size of the explorer window
 # TODO builtin frame/stack explorer? from objexplore import stackexplore
-# TODO filter color the filters the same as the explorer
 
 console = Console()
 
