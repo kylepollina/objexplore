@@ -16,6 +16,7 @@ from .filter import Filter
 @dataclass
 class StackFrame:
     """ Datastructure to store a frame in the object stack """
+
     # flake8: noqa
     cached_obj: CachedObject
     filter: Filter
