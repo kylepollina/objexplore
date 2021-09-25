@@ -1,15 +1,16 @@
 import types
 from typing import Dict, List, Union
 
+import blessed
+import rich
+from blessed import Terminal
 from rich.highlighter import ReprHighlighter
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.style import Style
 from rich.text import Text
-import rich
 
 from .cached_object import CachedObject
-from blessed import Terminal
 
 highlighter = ReprHighlighter()
 
@@ -63,10 +64,15 @@ class Filter:
             if enabled is True
         ]
 
+    @property
+    def selected_filter(self):
+        return list(self.filters.keys())[self.index]
+
     def toggle(self, cached_obj: CachedObject):
         """ Toggle the selected filter on or off and update the cached_obj filters with the new filters """
-        filter_name = list(self.filters.keys())[self.index]
-        self.filters[filter_name][0] = not self.filters[filter_name][0]
+        self.filters[self.selected_filter][0] = not self.filters[self.selected_filter][
+            0
+        ]
         cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
     def clear_filters(self, cached_obj: CachedObject):
@@ -99,7 +105,12 @@ class Filter:
 
         return lines
 
-    def add_search_char(self, key: str, cached_obj: CachedObject, explorer: "Explorer"):
+    def add_search_char(
+        self,
+        key: blessed.keyboard.Keystroke,
+        cached_obj: CachedObject,
+        live_update: bool,
+    ):
         self.key_history.append(key)
         self.search_filter = (
             self.search_filter[: self.cursor_pos]
@@ -108,13 +119,19 @@ class Filter:
         )
         self.cursor_pos += 1
 
-        if len(explorer.get_all_attributes()) < 130:
+        if live_update:
             cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
-    def backspace(self):
-        """ Delete the character before the cursor """
-        if self.cursor_pos == 0 and self.search_filter == '':
-            self.cancel_search()
+    def backspace(self, cached_obj: CachedObject, live_update: bool):
+        """Delete the character before the cursor.
+        Args:
+            cached_obj: The current object being explored.
+            live_update: True/False value whether to update the cached_obj
+                filters. If there are too many attributes then updating the
+                filters will slow down.
+        """
+        if self.cursor_pos == 0 and self.search_filter == "":
+            self.cancel_search(cached_obj)
         # if the cursor is at the beginning but there is still text in the search, do nothing
         elif self.cursor_pos == 0 and self.search_filter:
             return
@@ -125,8 +142,8 @@ class Filter:
         )
         self.cursor_left()
 
-        # if len(explorer_layout.get_all_attributes()) < 130:
-        #     cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
+        if live_update:
+            cached_obj.set_filters(self.get_enabled_filters(), self.search_filter)
 
     def cancel_search(self, cached_obj: CachedObject):
         self.search_filter = ""

@@ -109,21 +109,27 @@ class Explorer:
         if self.filter.layout.visible:
             combined_layout = Layout()
             combined_layout.split_column(
-                top_panel,
-                self.filter.get_layout(self.text_width)
+                top_panel, self.filter.get_layout(self.text_width)
             )
             explorer_layout.update(combined_layout)
         elif self.stack.layout.visible:
             combined_layout = Layout()
             combined_layout.split_column(
-                top_panel,
-                self.stack.get_layout(self.text_width)
+                top_panel, self.stack.get_layout(self.text_width)
             )
             explorer_layout.update(combined_layout)
         else:
             explorer_layout.update(top_panel)
 
         return explorer_layout
+
+    @property
+    def live_update(self) -> bool:
+        """True/False value wheter to live update the filters of the cached object
+        If the number of visible attributes is over a threshold we do not live update
+        the search filter
+        """
+        return self.num_attributes < 130
 
     @property
     def dir_panel(self):
@@ -473,7 +479,10 @@ class Explorer:
                     self.public_window += 1
 
         elif self.state == ExplorerState.private:
-            if self.private_index < len(self.cached_obj.filtered_private_attributes) - 1:
+            if (
+                self.private_index
+                < len(self.cached_obj.filtered_private_attributes) - 1
+            ):
                 self.private_index += 1
                 if self.private_index > self.private_window + self.height:
                     self.private_window += 1
@@ -483,7 +492,10 @@ class Explorer:
                 self.dict_index += 1
                 if self.dict_index > self.dict_window + self.height - 1:
                     self.dict_window += 1
-            elif self.dict_window == len(self.cached_obj.filtered_dict.keys()) - self.height:
+            elif (
+                self.dict_window
+                == len(self.cached_obj.filtered_dict.keys()) - self.height
+            ):
                 self.dict_window += 1
 
         elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
@@ -543,11 +555,12 @@ class Explorer:
             list_window=self.list_window,
         )
 
-    # TODO refactor this
-    def get_all_attributes(self) -> Union[Dict[str, CachedObject], Any]:
+    @property
+    def num_attributes(self) -> int:
+        """ Return the number of visible attributes """
         if self.state == ExplorerState.public:
-            return self.cached_obj.public_attributes
+            return self.cached_obj.num_public_attributes
         elif self.state == ExplorerState.private:
-            return self.cached_obj.private_attributes
+            return self.cached_obj.num_private_attributes
         else:
-            return self.cached_obj.obj
+            return self.cached_obj.length

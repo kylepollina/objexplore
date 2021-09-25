@@ -98,11 +98,14 @@ class ObjExploreApp:
 
         if self.explorer.filter.receiving_input:
             if key.code == self.term.KEY_BACKSPACE:
-                self.explorer.filter.backspace()
+                self.explorer.filter.backspace(
+                    cached_obj=self.explorer.cached_obj,
+                    live_update=self.explorer.live_update,
+                )
             elif key.code == self.term.KEY_ESCAPE:
-                self.explorer.filter.cancel_search()
+                self.explorer.filter.cancel_search(self.explorer.cached_obj)
             elif key.code == self.term.KEY_ENTER:
-                self.explorer.filter.end_search()
+                self.explorer.filter.end_search(cached_obj=self.explorer.cached_obj)
             elif key.code == self.term.KEY_LEFT:
                 self.explorer.filter.cursor_left()
             elif key.code == self.term.KEY_RIGHT:
@@ -110,7 +113,11 @@ class ObjExploreApp:
             elif key.code in (self.term.KEY_UP, self.term.KEY_DOWN):
                 return
             else:
-                self.explorer.filter.add_search_char(key)
+                self.explorer.filter.add_search_char(
+                    key=key,
+                    cached_obj=self.explorer.cached_obj,
+                    live_update=self.explorer.live_update,
+                )
             return
 
         if key in ("q", "Q"):
@@ -217,7 +224,7 @@ class ObjExploreApp:
         elif (
             key == " " or key.code == self.term.KEY_ENTER
         ) and self.explorer.filter.layout.visible:
-            self.explorer.filter.toggle()
+            self.explorer.filter.toggle(self.explorer.cached_obj)
 
         elif (
             key.code in (self.term.KEY_ESCAPE, self.term.KEY_BACKSPACE)
@@ -241,7 +248,7 @@ class ObjExploreApp:
             self.explorer.filter.move_bottom()
 
         elif key == "c":
-            self.explorer.filter.clear_filters()
+            self.explorer.filter.clear_filters(self.explorer.cached_obj)
 
         # Explorer ############################################################
 

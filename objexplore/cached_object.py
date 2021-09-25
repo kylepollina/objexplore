@@ -83,9 +83,11 @@ class CachedObject:
         self.plain_public_attributes = sorted(
             attr for attr in self.plain_attrs if not attr.startswith("_")
         )
+        self.num_public_attributes: int = len(self.plain_public_attributes)
         self.plain_private_attributes = sorted(
             attr for attr in self.plain_attrs if attr.startswith("_")
         )
+        self.num_private_attributes: int = len(self.plain_private_attributes)
 
         self.public_attributes: Dict[str, CachedObject] = {}
         self.private_attributes: Dict[str, CachedObject] = {}
