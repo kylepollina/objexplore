@@ -330,8 +330,11 @@ class ObjExploreApp:
             elif self.overview.preview_state == PreviewState.repr:
                 printable = self.explorer.selected_object.obj
 
-            elif self.overview.preview_state == PreviewState.source:
+            elif self.overview.preview_state == PreviewState.source and self.explorer.selected_object._source:
                 printable = self.explorer.selected_object.get_source(fullscreen=True)
+
+            else:
+                printable = self.explorer.selected_object.obj
 
             with console.capture() as capture:
                 console.print(printable)
