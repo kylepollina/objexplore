@@ -112,7 +112,7 @@ class CachedObject:
         self.ismethod = inspect.ismethod(self.obj)
         self.ismethoddescriptor = inspect.ismethoddescriptor(self.obj)
         self.ismodule = inspect.ismodule(self.obj)
-        self.filters: List[Union[bool, Callable[[Any], Any]]]
+        self.filters: List[Union[bool, Callable[[Any], Any]]] = []
         self.search_filter: str = ""
 
         # Highlighted attributes

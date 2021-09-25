@@ -269,8 +269,6 @@ class ObjExploreApp:
         elif key == "G":
             self.explorer.move_bottom()
 
-        # Overview ############################################################
-
         # Switch between public and private attributes
         elif key in ("[", "]"):
             if self.explorer.state == ExplorerState.public:
@@ -278,6 +276,17 @@ class ObjExploreApp:
 
             elif self.explorer.state == ExplorerState.private:
                 self.explorer.state = ExplorerState.public
+
+        elif key == "+":
+            self.explorer.increase_width()
+
+        elif key in ("_", "-"):
+            self.explorer.decrease_width()
+
+        elif key == "=":
+            self.explorer.extra_width = 0
+
+        # Overview ############################################################
 
         elif key in ("{", "}"):
             if not callable(self.explorer.selected_object.obj):
@@ -343,8 +352,6 @@ class ObjExploreApp:
                 )
             str_out = capture.get()
             pydoc.pager(str_out)
-
-        # Other ################################################################
 
     def draw(self, *args):
         """ Draw the application. the *args argument is due to resize events and are unused """

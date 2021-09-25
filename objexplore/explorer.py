@@ -86,6 +86,7 @@ class Explorer:
         self.dict_window = dict_window
         self.list_index = list_index
         self.list_window = list_window
+        self.extra_width = 0
 
         if state:
             self.state = state
@@ -657,9 +658,21 @@ class Explorer:
 
     @property
     def layout_width(self):
-        return (self.term.width - 2) // 4
+        layout_width = (self.term.width - 2) // 4 + self.extra_width
+        if layout_width > self.term.width - 20:
+            layout_width = self.term.width - 20
+            self.extra_width = 0
+        return layout_width
 
     @property
     def text_width(self):
         """ Return the width of text allowed within the panel """
         return self.layout_width - 4
+
+    def increase_width(self):
+        if self.layout_width < self.term.width - 20:
+            self.extra_width += 1
+
+    def decrease_width(self):
+        if self.layout_width + self.extra_width > 11:
+            self.extra_width -= 1
