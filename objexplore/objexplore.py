@@ -341,7 +341,7 @@ class ObjExploreApp:
         elif key == "O":
             try:
                 path = inspect.getabsfile(self.explorer.selected_object.obj)
-                subprocess.call([EDITOR, path])
+                subprocess.call([EDITOR, path])  # type: ignore
                 # Re-hide the cursor
                 print("\x1b[?25l", end="")
             except Exception:
@@ -400,7 +400,7 @@ class ObjExploreApp:
     def error(self):
         self.main_style = Style(color="red")
         self.draw()
-        time.sleep(.25)
+        time.sleep(0.25)
         self.main_style = Style(color="blue")
 
 

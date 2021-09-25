@@ -18,7 +18,7 @@ class HelpLayout(Layout):
     def __call__(self, height: int):
         lines = self.text.splitlines()
         if len(lines) > height - 6:
-            lines = lines[:height - 6] + ["        ..."]
+            lines = lines[: height - 6] + ["        ..."]
 
         text = "\n".join(lines)
         self.update(
