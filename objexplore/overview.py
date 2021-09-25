@@ -101,7 +101,7 @@ class Overview:
         )
 
     def get_info_layout(self, cached_obj: CachedObject):
-        if cached_obj.length:
+        if cached_obj.length is not None:
             layout = Layout(size=3)
             layout.split_row(
                 Layout(self.get_type_panel(cached_obj)),
