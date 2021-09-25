@@ -388,7 +388,7 @@ class ObjExploreApp:
             title=title,
             subtitle=(
                 "[red][u]q[/u]:quit[/red] "
-                f"[cyan][u]?[/u]:{'exit ' if self.overview.help_layout.visible else ''}help[/] "
+                f"[cyan][u]?[/u]:help[/] "
                 "[bright_blue][u]o[/u]:stack [/bright_blue][bright_magenta][u]n[/u]:filter [/bright_magenta][aquamarine1][u]/[/u]:search [/aquamarine1][u]r[/u]:return"
             ),
             subtitle_align="left",
