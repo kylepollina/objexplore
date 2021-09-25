@@ -69,7 +69,6 @@ class Explorer:
             if not stack
             else stack
         )
-        self.layout = Layout()
         self.public_index = public_index
         self.public_window = public_window
         self.private_index = private_index
@@ -96,32 +95,38 @@ class Explorer:
 
     def get_layout(self) -> Layout:
         """ Return the layout of the object explorer. This will be a list of lines representing the object attributes/keys/vals we are exploring """
+        explorer_layout = Layout(size=self.layout_width)
 
         if self.state == ExplorerState.dict:
-            explorer_layout = self.dict_layout(self.term.width, self.term.height)
+            top_panel = self.dict_panel
 
         elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
-            explorer_layout = self.list_layout(self.term.width, self.term.height)
+            top_panel = self.list_panel
 
         else:
-            explorer_layout = self.dir_layout()
+            top_panel = self.dir_panel
 
         if self.filter.layout.visible:
-            layout = Layout()
-            layout.split_column(
-                explorer_layout, self.filter.get_layout(width=self.width)
+            combined_layout = Layout()
+            combined_layout.split_column(
+                top_panel,
+                self.filter.get_layout(self.text_width)
             )
-            return layout
+            explorer_layout.update(combined_layout)
         elif self.stack.layout.visible:
-            layout = Layout()
-            layout.split_column(
-                explorer_layout, self.stack.get_layout(width=self.width)
+            combined_layout = Layout()
+            combined_layout.split_column(
+                top_panel,
+                self.stack.get_layout(self.text_width)
             )
-            return layout
+            explorer_layout.update(combined_layout)
         else:
-            return explorer_layout
+            explorer_layout.update(top_panel)
 
-    def dir_layout(self) -> Layout:
+        return explorer_layout
+
+    @property
+    def dir_panel(self):
         lines = []
 
         if self.state == ExplorerState.public:
@@ -148,7 +153,7 @@ class Explorer:
                 #     + dim_typeof
                 # )
 
-                line.truncate(self.width)
+                line.truncate(self.text_width)
                 lines.append(line)
 
             title = "[i][cyan]dir[/cyan]()[/i] | [u]public[/u] [dim]private[/dim]"
@@ -159,7 +164,7 @@ class Explorer:
             )
             if (
                 len(console.render_str(subtitle_help + subtitle_index))
-                >= self.width - 2
+                >= self.text_width - 2
             ):
                 subtitle = subtitle_index
             else:
@@ -198,7 +203,7 @@ class Explorer:
                 #     + dim_typeof
                 # )
 
-                line.truncate(self.width)
+                line.truncate(self.text_width)
                 lines.append(line)
 
             title = "[i][cyan]dir[/cyan]()[/i] | [dim]public[/dim] [u]private[/u]"
@@ -217,22 +222,19 @@ class Explorer:
             )
 
         # If terminal is too small don't show the 'dir()' part of the title
-        if self.width < len(console.render_str(title)) + 3:
+        if self.text_width < len(console.render_str(title)) + 3:
             title = title.split("|")[-1].strip()
 
-        self.layout.update(
-            Panel(
-                renderable,
-                title=title,
-                title_align="right",
-                subtitle=subtitle,
-                subtitle_align="right",
-                style="white",
-            )
+        return Panel(
+            renderable,
+            title=title,
+            title_align="right",
+            subtitle=subtitle,
+            subtitle_align="right",
+            style="white",
         )
-        return self.layout
 
-    def dict_layout(self) -> Layout:
+    def dict_panel(self) -> Panel:
         """ Return the dictionary explorer layout """
 
         # Reset the dict index / window in case applying a filter has now moved the index
@@ -264,7 +266,7 @@ class Explorer:
             if index == self.dict_index:
                 new_line.style = Style(reverse=True)
 
-            new_line.truncate(self.width)
+            new_line.truncate(self.text_width)
             lines.append(new_line)
             index += 1
 
@@ -272,17 +274,14 @@ class Explorer:
 
         text = Text("\n").join(lines)
 
-        self.layout.update(
-            Panel(
-                text,
-                title="[i][cyan]dict[/cyan]()",
-                title_align="right",
-                subtitle=f"([magenta]{self.dict_index + 1}[/magenta]/[magenta]{len(self.cached_obj.filtered_dict)}[/magenta])",
-                subtitle_align="right",
-                style="white",
-            )
+        return Panel(
+            text,
+            title="[i][cyan]dict[/cyan]()",
+            title_align="right",
+            subtitle=f"([magenta]{self.dict_index + 1}[/magenta]/[magenta]{len(self.cached_obj.filtered_dict)}[/magenta])",
+            subtitle_align="right",
+            style="white",
         )
-        return self.layout
 
     def list_layout(self, term_width: int, term_height: int) -> Layout:
         # Reset the list index / window in case applying a filter has now moved the index
@@ -322,7 +321,7 @@ class Explorer:
             if index == self.list_index:
                 new_line.style = Style(reverse=True)
 
-            new_line.truncate(self.width)
+            new_line.truncate(self.text_width)
             lines.append(new_line)
             index += 1
 
@@ -423,9 +422,13 @@ class Explorer:
             return CachedObject(None)
 
     @property
-    def width(self):
+    def layout_width(self):
+        return (self.term.width - 2) // 4
+
+    @property
+    def text_width(self):
         """ Return the width of text allowed within the panel """
-        return (self.term.width - 2) // 4 - 4
+        return self.layout_width - 4
 
     @property
     def height(self):

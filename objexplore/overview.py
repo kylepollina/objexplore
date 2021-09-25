@@ -29,6 +29,10 @@ class Overview:
         self.state = OverviewState.all
         self.preview_state = PreviewState.repr
 
+    @property
+    def layout_width(self):
+        return (self.term.width - 2) // 4 * 3
+
     def get_layout(self, cached_obj: CachedObject):
         """
         :param cached_obj: The selected cached object given by the explorer layout
@@ -50,7 +54,7 @@ class Overview:
             return self.layout
 
         elif self.state == OverviewState.all:
-            layout = Layout(ratio=3)
+            layout = Layout()
             layout.split_column(
                 Layout(self.get_value_panel(cached_obj)),
                 self.get_info_layout(cached_obj),
