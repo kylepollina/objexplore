@@ -389,7 +389,6 @@ class Explorer:
         """ TODO """
         if not is_selectable(self.selected_object.obj):
             return self.cached_obj
-        return None
 
         # Save current stack as a frame
         current_frame = StackFrame(
@@ -419,6 +418,8 @@ class Explorer:
         self.dict_window = 0
         self.list_index = 0
         self.list_window = 0
+
+        return None
 
     def explore_parent_obj(self):
         """ Go back to exploring the parent obj of the current obj """
