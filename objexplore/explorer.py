@@ -8,6 +8,7 @@ from rich.panel import Panel
 from rich.style import Style
 from rich.text import Text
 
+from .utils import is_selectable
 from .cached_object import CachedObject
 from .filter import Filter
 from .stack import Stack, StackFrame
@@ -77,7 +78,7 @@ class Explorer:
         self.term = term
         self.filter = Filter(term=self.term) if not filter else filter
         self.stack = (
-            Stack(head_obj=cached_obj, explorer=self, filter=self.filter)
+            Stack(head_obj=cached_obj)
             if not stack
             else stack
         )
@@ -117,7 +118,7 @@ class Explorer:
         elif self.stack.layout.visible:
             combined_layout = Layout()
             combined_layout.split_column(
-                top_panel, self.stack.get_layout(self.text_width)
+                top_panel, self.stack.get_layout(width=self.text_width, current_obj=self.cached_obj)
             )
             explorer_layout.update(combined_layout)
         else:
@@ -349,99 +350,72 @@ class Explorer:
 
     def explore_selected_object(self) -> CachedObject:
         """ TODO """
-        self.cached_obj = self.selected_object
-        self.state = get_state(self.cached_obj)
-        self.cached_obj.cache()
-        self.public_index = self.private_index = 0
-        self.public_window = self.private_window = 0
-        self.filter = Filter(term=self.term)
-        self.stack.push(
-            cached_obj=self.cached_obj, explorer=self.copy(), filter=self.filter
+        if not is_selectable(self.selected_object.obj):
+            return self.cached_obj
+
+        # Save current stack as a frame
+        current_frame = StackFrame(
+            cached_obj=self.cached_obj,
+            filter=self.filter,
+            state=self.state,
+            public_index=self.public_index,
+            public_window=self.public_window,
+            private_index=self.private_index,
+            private_window=self.private_window,
+            dict_index=self.dict_index,
+            dict_window=self.dict_window,
+            list_index=self.list_index,
+            list_window=self.list_window
         )
-        return self.cached_obj
+        self.stack.push(current_frame)
+
+        self.cached_obj = self.selected_object
+        self.cached_obj.cache()
+        self.state = get_state(self.cached_obj)
+        self.filter = Filter(term=self.term)
+        self.public_index = 0
+        self.public_window = 0
+        self.private_index = 0
+        self.private_window = 0
+        self.dict_index = 0
+        self.dict_window = 0
+        self.list_index = 0
+        self.list_window = 0
 
     def explore_parent_obj(self):
         """ Go back to exploring the parent obj of the current obj """
         stack_frame = self.stack.pop()
         if stack_frame:
-            explorer = stack_frame.explorer
+            self.cached_obj = stack_frame.cached_obj
             self.filter = stack_frame.filter
-            self.state = explorer.state
-            self.public_index = explorer.public_index
-            self.private_index = explorer.private_index
-            self.public_window = explorer.public_window
-            self.private_window = explorer.private_window
-            self.dict_index = explorer.dict_index
-            self.list_index = explorer.list_index
+            self.state = stack_frame.state
+            self.public_index = stack_frame.public_index
+            self.public_window = stack_frame.public_window
+            self.private_index = stack_frame.private_index
+            self.private_window = stack_frame.private_window
+            self.dict_index = stack_frame.dict_index
+            self.dict_window = stack_frame.dict_window
+            self.list_index = stack_frame.list_index
+            self.list_window = stack_frame.list_window
 
-            self.cached_obj = self.stack[-1].cached_obj
-            self.state = get_state(self.cached_obj)
         return self.cached_obj
 
     def explore_selected_stack_object(self):
         stack_frame = self.stack.select()
         if stack_frame:
-            explorer = stack_frame.explorer
-            self.term = explorer.term
-            self.cached_obj = explorer.cached_obj
-            self.state = get_state(self.cached_obj)
+            self.cached_obj = stack_frame.cached_obj
             self.filter = stack_frame.filter
-            self.state = explorer.state
-            self.public_index = explorer.public_index
-            self.private_index = explorer.private_index
-            self.public_window = explorer.public_window
-            self.private_window = explorer.private_window
-            self.dict_index = explorer.dict_index
-            self.list_index = explorer.list_index
-
-            self.stack.push(
-                cached_obj=self.cached_obj, explorer=self.copy(), filter=self.filter
-            )
+            self.state = stack_frame.state
+            self.public_index = stack_frame.public_index
+            self.public_window = stack_frame.public_window
+            self.private_index = stack_frame.private_index
+            self.private_window = stack_frame.private_window
+            self.dict_index = stack_frame.dict_index
+            self.dict_window = stack_frame.dict_window
+            self.list_index = stack_frame.list_index
+            self.list_window = stack_frame.list_window
 
         return self.cached_obj
-
-    @property
-    def selected_object(self) -> CachedObject:  # type: ignore
-        """ Return the currently selected cached object """
-        try:
-            if self.state == ExplorerState.public:
-                attr = list(self.cached_obj.filtered_public_attributes.keys())[
-                    self.public_index
-                ]
-                return self.cached_obj.filtered_public_attributes[attr]
-
-            elif self.state == ExplorerState.private:
-                attr = list(self.cached_obj.filtered_private_attributes.keys())[
-                    self.private_index
-                ]
-                return self.cached_obj.filtered_private_attributes[attr]
-
-            elif self.state == ExplorerState.dict:
-                attr = list(self.cached_obj.filtered_dict)[self.dict_index]
-                return self.cached_obj.filtered_dict[attr][1]
-
-            elif self.state in (
-                ExplorerState.list,
-                ExplorerState.tuple,
-                ExplorerState.set,
-            ):
-                return self.cached_obj.filtered_list[self.list_index][1]
-
-        except (KeyError, IndexError):
-            return CachedObject(None)
-
-    @property
-    def layout_width(self):
-        return (self.term.width - 2) // 4
-
-    @property
-    def text_width(self):
-        """ Return the width of text allowed within the panel """
-        return self.layout_width - 4
-
-    @property
-    def num_lines(self):
-        return self.term.height - 5
 
     def move_up(self):
         """ Move the current selection up one """
@@ -525,21 +499,12 @@ class Explorer:
             self.list_index = self.list_window = 0
 
     def move_bottom(self):
-        if self.state == ExplorerState.public:
-            self.public_index = len(self.cached_obj.filtered_public_attributes) - 1
-            self.public_window = max(0, self.public_index - self.num_lines)
-
-        elif self.state == ExplorerState.private:
-            self.private_index = len(self.cached_obj.filtered_private_attributes) - 1
-            self.private_window = max(0, self.private_index - self.num_lines)
-
-        elif self.state == ExplorerState.dict:
-            self.dict_index = len(self.cached_obj.obj.keys()) - 1
-            self.dict_window = max(0, self.dict_index - self.num_lines + 2)
-
-        elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
-            self.list_index = len(self.cached_obj.obj) - 1
-            self.list_window = max(0, self.list_index - self.num_lines + 2)
+        if self.state in (ExplorerState.public, ExplorerState.private):
+            self.public_index = self.num_filtered_attributes - 1
+            self.public_window = max(0, self.public_index - self.num_lines + 1)
+        else:
+            self.dict_index = self.num_filtered_attributes - 1
+            self.dict_window = max(0, self.dict_index - self.num_lines + 3)
 
     def copy(self):
         return Explorer(
@@ -585,6 +550,10 @@ class Explorer:
         return self.num_attributes - self.num_filtered_attributes
 
     @property
+    def num_lines(self):
+        return self.term.height - 5
+
+    @property
     def live_update(self) -> bool:
         """True/False value wheter to live update the filters of the cached object
         If the number of visible attributes is over a threshold we do not live update
@@ -592,3 +561,41 @@ class Explorer:
         """
         return self.num_attributes < 130
 
+    @property
+    def selected_object(self) -> CachedObject:  # type: ignore
+        """ Return the currently selected cached object """
+        try:
+            if self.state == ExplorerState.public:
+                attr = list(self.cached_obj.filtered_public_attributes.keys())[
+                    self.public_index
+                ]
+                return self.cached_obj.filtered_public_attributes[attr]
+
+            elif self.state == ExplorerState.private:
+                attr = list(self.cached_obj.filtered_private_attributes.keys())[
+                    self.private_index
+                ]
+                return self.cached_obj.filtered_private_attributes[attr]
+
+            elif self.state == ExplorerState.dict:
+                attr = list(self.cached_obj.filtered_dict)[self.dict_index]
+                return self.cached_obj.filtered_dict[attr][1]
+
+            elif self.state in (
+                ExplorerState.list,
+                ExplorerState.tuple,
+                ExplorerState.set,
+            ):
+                return self.cached_obj.filtered_list[self.list_index][1]
+
+        except (KeyError, IndexError):
+            return CachedObject(None)
+
+    @property
+    def layout_width(self):
+        return (self.term.width - 2) // 4
+
+    @property
+    def text_width(self):
+        """ Return the width of text allowed within the panel """
+        return self.layout_width - 4
