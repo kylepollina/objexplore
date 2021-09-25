@@ -17,7 +17,7 @@ from .explorer import Explorer, ExplorerState
 from .help_layout import HelpState, random_error_quote
 from .overview import Overview, OverviewState, PreviewState
 
-version = "1.5.0"
+version = "1.5.1"
 
 # TODO object highlighted on stack view should be shown on the overview
 # TODO support ctrl-a + (whatever emacs keybinding to go to end of line)
