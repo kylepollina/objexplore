@@ -176,7 +176,6 @@ class CachedObject:
         return title
 
     def cache(self):
-        # TODO find some places to speed this up
         if not self.public_attributes:
             for attr in self.plain_public_attributes:
                 self.public_attributes[attr] = CachedObject(

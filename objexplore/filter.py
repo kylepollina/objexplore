@@ -14,7 +14,6 @@ from .cached_object import CachedObject
 highlighter = ReprHighlighter()
 
 # TODO scroll search if input longer than panel width
-# TODO show the amount of each type?? [ ] int (12) [x] list (4) etc.
 
 
 @rich.repr.auto
