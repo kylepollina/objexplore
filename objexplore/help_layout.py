@@ -15,10 +15,15 @@ class HelpLayout(Layout):
         self.version = version
         self.state = HelpState.keybindings
 
-    def __call__(self):
+    def __call__(self, height: int):
+        lines = self.text.splitlines()
+        if len(lines) > height - 6:
+            lines = lines[:height - 6] + ["        ..."]
+
+        text = "\n".join(lines)
         self.update(
             Panel(
-                self.text,
+                text,
                 title=(
                     "[i white]help[/i white] | [u]key bindings[/u] [dim]about"
                     if self.state == HelpState.keybindings
@@ -59,6 +64,7 @@ class HelpLayout(Layout):
                         + - [cyan]increase explorer layout[/cyan]
                         - - [cyan]decrease explorer layout[/cyan]
                         = - [cyan]return explorer layout size to default[/cyan]
+                        O - [cyan]open source file in [i u]$EDITOR[/i u][/cyan]
                         H - [cyan]open help page on selected attribute[/cyan]
                         i - [cyan]run [magenta]rich[/magenta][white].[/white][magenta]inspect[/magenta][white](<[/white][bright_magenta]OBJECT[/bright_magenta]>, [yellow]methods[/yellow]=[italic bright_green]True[/italic bright_green][white])[/white][/cyan]
                         I - [cyan]run [magenta]rich[/magenta][white].[/white][magenta]inspect[/magenta][white](<[/white][bright_magenta]OBJECT[/bright_magenta]>, [yellow]all[/yellow]=[italic bright_green]True[/italic bright_green][white])[/white][/cyan]

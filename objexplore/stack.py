@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 import rich
+from rich.console import Console
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.style import Style
@@ -10,6 +11,8 @@ from rich.tree import Tree
 
 from .cached_object import CachedObject
 from .filter import Filter
+
+console = Console()
 
 
 @rich.repr.auto
@@ -99,12 +102,16 @@ class Stack:
                 style=style,
             )
 
+        subtitle = "[dim][u]space[/u]:select"
+        if len(console.render_str(subtitle)) > width:
+            subtitle = ""
+
         self.layout.update(
             Panel(
                 stack_tree,
                 title="\[stack]",
                 title_align="right",
-                subtitle="[dim][u]space[/u]:select",
+                subtitle=subtitle,
                 subtitle_align="right",
                 style="bright_blue",
             )

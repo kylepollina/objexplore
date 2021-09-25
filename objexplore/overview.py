@@ -37,7 +37,7 @@ class Overview:
         :param cached_obj: The selected cached object given by the explorer layout
         """
         if self.help_layout.visible:
-            return self.help_layout()
+            return self.help_layout(self.term.height)
 
         elif self.state == OverviewState.docstring:
             self.layout.update(

@@ -1,6 +1,9 @@
 import inspect
+import os
 import pydoc
 import signal
+import subprocess
+import time
 from typing import Any, Optional, Union
 
 import blessed
@@ -9,6 +12,7 @@ from blessed import Terminal
 from rich.console import Console
 from rich.layout import Layout
 from rich.panel import Panel
+from rich.style import Style
 from rich.syntax import Syntax
 from rich.text import Text
 
@@ -17,17 +21,15 @@ from .explorer import Explorer, ExplorerState
 from .help_layout import HelpState, random_error_quote
 from .overview import Overview, OverviewState, PreviewState
 
-version = "1.5.1"
-
 # TODO object highlighted on stack view should be shown on the overview
 # TODO support ctrl-a + (whatever emacs keybinding to go to end of line)
 #  https://www.gnu.org/software/bash/manual/html_node/Commands-For-Moving.html
-# TODO truncate public/private -> pub priv -> just public/private
-# TODO truncate explorer subtitle as well
-# TODO +-_= to change the size of the explorer window
 # TODO builtin frame/stack explorer? from objexplore import stackexplore
 
+
+version = "1.5.1"
 console = Console()
+EDITOR = os.environ.get("EDITOR")
 
 
 class ObjExploreApp:
@@ -41,6 +43,7 @@ class ObjExploreApp:
         self.term = Terminal()
         self.explorer = Explorer(term=self.term, cached_obj=cached_obj)
         self.overview = Overview(term=self.term, version=version)
+        self.main_style = Style(color="blue")
 
         # Run self.draw() whenever the win change signal is caught
         try:
@@ -79,6 +82,9 @@ class ObjExploreApp:
                     # Otherwise it is a new error. Raise
                     else:
                         raise err
+
+        # Unhide the cursor
+        print("\x1b[?25h", end="")
 
         return res
 
@@ -332,6 +338,15 @@ class ObjExploreApp:
             str_out = capture.get()
             pydoc.pager(str_out)
 
+        elif key == "O":
+            try:
+                path = inspect.getabsfile(self.explorer.selected_object.obj)
+                subprocess.call([EDITOR, path])
+                # Re-hide the cursor
+                print("\x1b[?25l", end="")
+            except Exception:
+                self.error()
+
         elif key == "H":
             help(self.explorer.selected_object.obj)
 
@@ -378,9 +393,15 @@ class ObjExploreApp:
             ),
             subtitle_align="left",
             height=self.term.height - 1,
-            style="blue",
+            style=self.main_style,
         )
         rich.print(object_explorer, end="")
+
+    def error(self):
+        self.main_style = Style(color="red")
+        self.draw()
+        time.sleep(.25)
+        self.main_style = Style(color="blue")
 
 
 def explore(obj: Any) -> Any:

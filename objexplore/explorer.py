@@ -18,9 +18,6 @@ console = Console()
 highlighter = ReprHighlighter()
 
 
-# TODO hide filter/stack/explorere subtitle if screen too small
-
-
 class ExplorerState:
     public = "ExplorerState.public"
     private = "ExplorerState.private"
@@ -238,6 +235,11 @@ class Explorer:
         # If terminal is too small don't show the 'dir()' part of the title
         if self.text_width < len(console.render_str(title)) + 3:
             title = title.split("|")[-1].strip()
+        if len(console.render_str(title)) > self.text_width:
+            if self.state == ExplorerState.public:
+                title = "[u]public"
+            elif self.state == ExplorerState.private:
+                title = "[u]private"
 
         return Panel(
             renderable,

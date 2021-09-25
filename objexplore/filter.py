@@ -7,10 +7,12 @@ from rich.highlighter import ReprHighlighter
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.style import Style
+from rich.console import Console
 from rich.text import Text
 
 from .cached_object import CachedObject
 
+console = Console()
 highlighter = ReprHighlighter()
 
 # TODO scroll search if input longer than panel width
@@ -173,6 +175,8 @@ class Filter:
         subtitle = "[dim][u]c[/u]:clear [u]space[/u]:select"
         if width <= 25:
             subtitle = "[dim][u]space[/u]:select"
+        if len(console.render_str(subtitle)) > width:
+            subtitle = ""
 
         lines = self.get_lines()
         self.layout.update(
