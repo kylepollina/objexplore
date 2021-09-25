@@ -492,34 +492,45 @@ class Explorer:
     def move_down(self):
         """ Move the current selection down one """
         if self.state == ExplorerState.public:
-            if self.public_index < len(self.cached_obj.filtered_public_attributes) - 1:
+            if self.public_index < self.num_filtered_attributes - 1:
                 self.public_index += 1
                 if self.public_index >= self.public_window + self.num_lines:
                     self.public_window += 1
+            elif self.public_window == self.num_filtered_attributes - self.num_lines:
+                self.public_window += 1
 
         elif self.state == ExplorerState.private:
-            if (
-                self.private_index
-                < len(self.cached_obj.filtered_private_attributes) - 1
-            ):
+            if self.private_index < self.num_filtered_attributes - 1:
                 self.private_index += 1
                 if self.private_index >= self.private_window + self.num_lines:
                     self.private_window += 1
+            elif self.private_window == self.num_filtered_attributes - self.num_lines:
+                self.private_window += 1
 
         elif self.state == ExplorerState.dict:
-            if self.dict_index < len(self.cached_obj.filtered_dict.keys()) - 1:
+            if self.dict_index < self.num_filtered_attributes - 1:
                 self.dict_index += 1
                 if self.dict_index >= self.dict_window + self.num_lines - 1:
                     self.dict_window += 1
-            elif self.dict_window == self.cached_obj.length - self.num_lines:
+            elif self.dict_window == self.num_filtered_attributes - self.num_lines + 1:
+                self.dict_window += 1
+            elif (
+                self.dict_window == self.num_filtered_attributes - self.num_lines + 2
+                and self.num_hidden_attributes > 0
+            ):
                 self.dict_window += 1
 
         elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
-            if self.list_index < len(self.cached_obj.obj) - 1:
+            if self.list_index < self.num_filtered_attributes - 1:
                 self.list_index += 1
                 if self.list_index >= self.list_window + self.num_lines - 1:
                     self.list_window += 1
-            elif self.list_window == self.cached_obj.length - self.num_lines:
+            elif self.list_window == self.num_filtered_attributes - self.num_lines + 1:
+                self.list_window += 1
+            elif (
+                self.list_window == self.num_filtered_attributes - self.num_lines + 2
+                and self.num_hidden_attributes > 0
+            ):
                 self.list_window += 1
 
     def move_top(self):
@@ -589,6 +600,28 @@ class Explorer:
             list_index=self.list_index,
             list_window=self.list_window,
         )
+
+    def reset_index(self):
+        if self.public_index >= self.num_filtered_attributes:
+            self.public_index = self.num_filtered_attributes - 1
+            self.public_window = max(0, self.public_index - self.num_lines + 2)
+        elif self.public_index < 0:
+            self.public_index = 0
+        if self.private_index >= self.num_filtered_attributes:
+            self.private_index = self.num_filtered_attributes - 1
+            self.private_window = max(0, self.private_index - self.num_lines + 2)
+        elif self.private_index < 0:
+            self.private_index = 0
+        if self.dict_index >= self.num_filtered_attributes:
+            self.dict_index = self.num_filtered_attributes - 1
+            self.dict_window = max(0, self.dict_index - self.num_lines + 4)
+        elif self.dict_index < 0:
+            self.dict_index = 0
+        if self.list_index >= self.num_filtered_attributes:
+            self.list_index = self.num_filtered_attributes - 1
+            self.list_window = max(0, self.list_index - self.num_lines + 4)
+        elif self.list_index < 0:
+            self.list_index = 0
 
     @property
     def num_attributes(self) -> int:

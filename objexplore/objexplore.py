@@ -27,7 +27,7 @@ from .overview import Overview, OverviewState, PreviewState
 # TODO builtin frame/stack explorer? from objexplore import stackexplore
 
 
-version = "1.5.2"
+version = "1.5.3"
 console = Console()
 EDITOR = os.environ.get("EDITOR")
 
@@ -69,7 +69,7 @@ class ObjExploreApp:
                     res = self.process_key_event(key)
 
                     # If the object is returned as a response then close the explorer and return the selected object
-                    if res:
+                    if res is not None:
                         break
 
                 except RuntimeError as err:
@@ -223,6 +223,7 @@ class ObjExploreApp:
             key == " " or key.code == self.term.KEY_ENTER
         ) and self.explorer.filter.layout.visible:
             self.explorer.filter.toggle(self.explorer.cached_obj)
+            self.explorer.reset_index()
 
         elif (
             key.code in (self.term.KEY_ESCAPE, self.term.KEY_BACKSPACE)
@@ -388,7 +389,7 @@ class ObjExploreApp:
             title=title,
             subtitle=(
                 "[red][u]q[/u]:quit[/red] "
-                f"[cyan][u]?[/u]:help[/] "
+                "[cyan][u]?[/u]:help[/] "
                 "[bright_blue][u]o[/u]:stack [/bright_blue][bright_magenta][u]n[/u]:filter [/bright_magenta][aquamarine1][u]/[/u]:search [/aquamarine1][u]r[/u]:return"
             ),
             subtitle_align="left",
