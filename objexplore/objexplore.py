@@ -23,16 +23,11 @@ version = "1.4.10"
 # TODO support ctrl-a + (whatever emacs keybinding to go to end of line)
 #  https://www.gnu.org/software/bash/manual/html_node/Commands-For-Moving.html
 # TODO add () to text for builtin-methods
-# TODO add a "searching..." title to search filter
-# TODO move stack/filter into the explorer object
-# TODO move help into the overview layout
 # TODO truncate public/private -> pub priv -> just public/private
 # TODO truncate explorer subtitle as well
 # TODO +-_= to change the size of the explorer window
-# TODO auto return on q or r
 # TODO builtin frame/stack explorer? from objexplore import stackexplore
 # TODO filter color the filters the same as the explorer
-# TODO Fix window when searching, then G, window does not move all the way to the bottom
 
 console = Console()
 
@@ -87,9 +82,6 @@ class ObjExploreApp:
                     else:
                         raise err
 
-                except StopIteration:
-                    return None
-
         return res
 
     def process_key_event(self, key: blessed.keyboard.Keystroke) -> Any:
@@ -120,7 +112,7 @@ class ObjExploreApp:
             return
 
         if key in ("q", "Q"):
-            raise StopIteration
+            return self.explorer.selected_object.obj
 
         # Help page ###########################################################
 

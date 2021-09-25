@@ -543,7 +543,7 @@ class Explorer:
                 0,
                 self.public_index
                 - self.num_lines
-                + (1 if not self.num_hidden_attributes else 2),
+                + (1 if self.num_hidden_attributes == 0 else 2),
             )
         elif self.state == ExplorerState.private:
             self.private_index = self.num_filtered_attributes - 1
@@ -551,7 +551,7 @@ class Explorer:
                 0,
                 self.private_index
                 - self.num_lines
-                + (1 if not self.num_hidden_attributes else 2),
+                + (1 if self.num_hidden_attributes == 0 else 2),
             )
         else:
             self.dict_index = self.num_filtered_attributes - 1
@@ -559,7 +559,7 @@ class Explorer:
                 0,
                 self.dict_index
                 - self.num_lines
-                + (3 if not self.num_hidden_attributes else 2),
+                + (3 if self.num_hidden_attributes == 0 else 4),
             )
 
     def copy(self):
