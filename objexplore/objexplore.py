@@ -17,7 +17,7 @@ from .explorer import Explorer, ExplorerState
 from .help_layout import HelpState, random_error_quote
 from .overview import Overview, OverviewState, PreviewState
 
-version = "1.4.10"
+version = "1.5.0"
 
 # TODO object highlighted on stack view should be shown on the overview
 # TODO support ctrl-a + (whatever emacs keybinding to go to end of line)
@@ -109,7 +109,7 @@ class ObjExploreApp:
                 )
             return
 
-        if key in ("q", "Q"):
+        if key in ("q", "Q", "r"):
             return self.explorer.selected_object.obj
 
         # Help page ###########################################################
@@ -345,10 +345,6 @@ class ObjExploreApp:
             pydoc.pager(str_out)
 
         # Other ################################################################
-
-        # Return selected object
-        elif key == "r":
-            return self.explorer.selected_object.obj
 
     def draw(self, *args):
         """ Draw the application. the *args argument is due to resize events and are unused """

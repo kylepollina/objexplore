@@ -553,11 +553,19 @@ class Explorer:
                 - self.num_lines
                 + (1 if self.num_hidden_attributes == 0 else 2),
             )
-        else:
+        elif self.state == ExplorerState.dict:
             self.dict_index = self.num_filtered_attributes - 1
             self.dict_window = max(
                 0,
                 self.dict_index
+                - self.num_lines
+                + (3 if self.num_hidden_attributes == 0 else 4),
+            )
+        elif self.state in (ExplorerState.list, ExplorerState.tuple, ExplorerState.set):
+            self.list_index = self.num_filtered_attributes - 1
+            self.list_window = max(
+                0,
+                self.list_index
                 - self.num_lines
                 + (3 if self.num_hidden_attributes == 0 else 4),
             )

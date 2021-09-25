@@ -46,7 +46,7 @@ class Overview:
                     term_height=self.term.height,
                 )
             )
-            return self
+            return self.layout
 
         elif self.state == OverviewState.value:
             self.layout.update(self.get_value_panel(cached_obj))
