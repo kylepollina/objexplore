@@ -39,10 +39,10 @@ explore(rich)
 - [Search filters](#search-filters)
 - [Stack view](#stack-view)
 - [Exploring and returning](#exploring-and-returning)
+- [Open the source file in `$EDITOR`](#open-source-file-in-editor)
 
 
 ### Exploring
-
 
 https://user-images.githubusercontent.com/13981456/133946740-7bbb2039-24ce-41a8-9589-0888918f9bd8.mov
 
@@ -67,7 +67,6 @@ https://user-images.githubusercontent.com/13981456/133947144-dbed8d99-1ae8-4e50-
 https://user-images.githubusercontent.com/13981456/133946981-3bf5cfda-6eac-4514-abb3-e073dd3fb6b2.mov
 
 ### Open source file in `$EDITOR`
-
 
 https://user-images.githubusercontent.com/13981456/134768632-1d3d22a8-7554-4085-b25b-94fee2528df4.mov
 
