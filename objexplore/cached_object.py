@@ -121,6 +121,8 @@ class CachedObject:
         self.docstring: Text = console.render_str(inspect.getdoc(self.obj) or "None")
         self.docstring_lines = self.docstring.split()
         self.repr = highlighter(repr(self.obj))
+        if '\n' in self.repr:
+            self.repr = self.repr.split('\n')[0]
         self.repr.overflow = "ellipsis"
         self.pretty = Pretty(self.obj)
 

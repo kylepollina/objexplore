@@ -220,8 +220,8 @@ class Explorer:
 
         if self.num_hidden_attributes:
             num_filtered_line = (
-                Text(f"+", style=Style(color="white", dim=True, italic=True))
-                + Text(str(self.num_hidden_attributes), style=Style(underline=True, dim=True, italic=True))
+                Text(f"+", style=Style(color="white", dim=True, italic=True, underline=True))
+                + Text(str(self.num_hidden_attributes), style=Style(color="cyan", dim=True, italic=True))
                 + Text(" filtered", style=Style(color="white", dim=True, italic=True))
             )
             num_filtered_line.truncate(self.text_width)
@@ -279,7 +279,19 @@ class Explorer:
             lines.append(new_line)
             index += 1
 
-        lines.append(Text("}"))
+        if len(lines) == 1:
+            lines[0] = Text("{}")
+        else:
+            lines.append(Text("}"))
+        if self.num_hidden_attributes:
+            num_filtered_line = (
+                Text(f"+", style=Style(color="white", dim=True, italic=True, underline=True))
+                + Text(str(self.num_hidden_attributes), style=Style(color="cyan",  dim=True, italic=True))
+                + Text(" filtered", style=Style(color="white", dim=True, italic=True))
+            )
+            num_filtered_line.truncate(self.text_width)
+            lines.append(num_filtered_line)
+
 
         text = Text("\n").join(lines)
 
@@ -292,16 +304,16 @@ class Explorer:
             style="white",
         )
 
-    def list_layout(self, term_width: int, term_height: int) -> Layout:
+    @property
+    def list_panel(self) -> Panel:
         # Reset the list index / window in case applying a filter has now moved the index
         # farther down than it can access on the filtered attributes
         if self.list_index >= len(self.cached_obj.filtered_list):
             self.list_index = max(0, len(self.cached_obj.filtered_list) - 1)
             self.list_window = max(
-                0, self.list_index - self.get_panel_height(term_height)
+                0, self.list_index - self.num_lines
             )
 
-        panel_height = self.get_panel_height(term_height)
         lines = []
 
         bracket_map = {
@@ -313,13 +325,13 @@ class Explorer:
         if self.list_window == 0:
             lines.append(Text(bracket_map[self.state][0]))
             start = 0
-            num_lines = panel_height - 1
+            num_lines = self.num_lines - 1
         elif self.list_window == 1:
             start = 0
-            num_lines = panel_height
+            num_lines = self.num_lines
         else:
             start = self.list_window - 1
-            num_lines = panel_height
+            num_lines = self.num_lines
 
         end = start + num_lines
         index = start
@@ -334,21 +346,30 @@ class Explorer:
             lines.append(new_line)
             index += 1
 
-        lines.append(Text(bracket_map[self.state][1]))
+        if len(lines) == 1:
+            lines[0] = Text("".join(bracket_map[self.state][:-1]))
+        else:
+            lines.append(Text(bracket_map[self.state][1]))
+
+        if self.num_hidden_attributes:
+            num_filtered_line = (
+                Text(f"+", style=Style(color="white", dim=True, italic=True, underline=True))
+                + Text(str(self.num_hidden_attributes), style=Style(color="cyan",  dim=True, italic=True))
+                + Text(" filtered", style=Style(color="white", dim=True, italic=True))
+            )
+            num_filtered_line.truncate(self.text_width)
+            lines.append(num_filtered_line)
 
         text = Text("\n").join(lines)
 
-        self.layout.update(
-            Panel(
-                text,
-                title=f"[i][cyan]{bracket_map[self.state][2]}[/cyan]()",
-                title_align="right",
-                subtitle=f"([magenta]{self.list_index + 1}[/magenta]/[magenta]{len(self.cached_obj.filtered_list)}[/magenta])",
-                subtitle_align="right",
-                style="white",
-            )
+        return Panel(
+            text,
+            title=f"[i][cyan]{bracket_map[self.state][2]}[/cyan]()",
+            title_align="right",
+            subtitle=f"([magenta]{self.list_index + 1}[/magenta]/[magenta]{len(self.cached_obj.filtered_list)}[/magenta])",
+            subtitle_align="right",
+            style="white",
         )
-        return self.layout
 
     def explore_selected_object(self) -> CachedObject:
         """ TODO """

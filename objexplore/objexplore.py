@@ -202,7 +202,8 @@ class ObjExploreApp:
         elif key == "G" and self.explorer.stack.layout.visible:
             self.explorer.stack.move_bottom()
 
-        elif key in ("l", "[", "]", "{", "}") and self.explorer.stack.layout.visible:
+        # disable these keys when the stack explorer is visible
+        elif key in ("l", "[", "]", "{", "}", "h") and self.explorer.stack.layout.visible:
             return
 
         # Filter ##############################################################
