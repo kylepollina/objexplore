@@ -66,11 +66,7 @@ class ObjExploreApp:
                 try:
                     self.draw()
                     key = self.term.inkey()
-                    res = self.process_key_event(key)
-
-                    # If the object is returned as a response then close the explorer and return the selected object
-                    if res is not None:
-                        break
+                    self.process_key_event(key)
 
                 except RuntimeError as err:
                     # Some kind of error during resizing events. Ignore and continue
@@ -82,6 +78,9 @@ class ObjExploreApp:
                     # Otherwise it is a new error. Raise
                     else:
                         raise err
+                except StopIteration:
+                    res = self.explorer.selected_object
+                    break
 
         # Unhide the cursor
         print("\x1b[?25h", end="")
@@ -116,7 +115,7 @@ class ObjExploreApp:
             return
 
         if key in ("q", "Q", "r"):
-            return self.explorer.selected_object.obj
+            raise StopIteration
 
         # Help page ###########################################################
 
