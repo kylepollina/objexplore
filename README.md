@@ -40,6 +40,8 @@ explore(rich)
 - [Exploring and returning](#exploring-and-returning)
 - [Open the source file in `$EDITOR`](#open-source-file-in-editor)
 
+Plus more
+
 
 ### Type Filters
 
