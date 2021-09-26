@@ -40,6 +40,7 @@ explore(rich)
 - [Exploring and returning](#exploring-and-returning)
 - [Open the source file in `$EDITOR`](#open-source-file-in-editor)
 
+Press `?` in the app to view more features.
 
 ### Type Filters
 

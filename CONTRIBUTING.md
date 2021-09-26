@@ -1,7 +1,5 @@
 # Contributing
 
-> Beware: This codebase is still raw and needs to be cleaned up and documented. It'll get done!
-
 ## Running the [makefile](https://github.com/kylepollina/objexplore/blob/main/Makefile)
 
 ### `make pytest`
