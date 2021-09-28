@@ -496,7 +496,9 @@ class Explorer:
                 self.public_index += 1
                 if self.public_index >= self.public_window + self.num_lines:
                     self.public_window += 1
-            elif self.public_window == self.num_filtered_attributes - self.num_lines + 1:
+            elif (
+                self.public_window == self.num_filtered_attributes - self.num_lines + 1
+            ):
                 self.public_window += 1
 
         elif self.state == ExplorerState.private:
@@ -504,7 +506,9 @@ class Explorer:
                 self.private_index += 1
                 if self.private_index >= self.private_window + self.num_lines:
                     self.private_window += 1
-            elif self.private_window == self.num_filtered_attributes - self.num_lines + 1:
+            elif (
+                self.private_window == self.num_filtered_attributes - self.num_lines + 1
+            ):
                 self.private_window += 1
 
         elif self.state == ExplorerState.dict:

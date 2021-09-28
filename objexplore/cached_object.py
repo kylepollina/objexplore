@@ -35,7 +35,7 @@ class CachedObject:
         parent_path: Text = None,
         attr_name: str = None,
         index: Any = None,
-        hidden: bool = False
+        hidden: bool = False,
     ):
         self.obj = obj
         self.is_callable = callable(obj)
