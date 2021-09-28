@@ -35,10 +35,10 @@ class CachedObject:
         parent_path: Text = None,
         attr_name: str = None,
         index: Any = None,
+        hidden: bool = False
     ):
         self.obj = obj
         self.is_callable = callable(obj)
-        self.selected_cached_obj: CachedObject
         self.attr_name = attr_name if attr_name else repr(self.obj)
 
         self.isbuiltin: bool = inspect.isbuiltin(self.obj)
@@ -170,6 +170,9 @@ class CachedObject:
             )
 
         if not is_selectable(self.obj):
+            self.text.style += Style(dim=True, strike=True)  # type: ignore
+
+        if hidden:
             self.text.style += Style(dim=True)  # type: ignore
 
     @property
@@ -214,11 +217,11 @@ class CachedObject:
 
                 if not name.startswith("_"):
                     self.public_attributes[name] = CachedObject(
-                        module, parent_path=self.dotpath, attr_name=name
+                        module, parent_path=self.dotpath, attr_name=name, hidden=True
                     )
                 else:
                     self.private_attributes[name] = CachedObject(
-                        module, parent_path=self.dotpath, attr_name=name
+                        module, parent_path=self.dotpath, attr_name=name, hidden=True
                     )
 
         self.num_public_attributes: int = len(self.public_attributes)
