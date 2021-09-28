@@ -1,5 +1,7 @@
+import importlib
 import inspect
-from typing import Any, Dict, List, Optional, Tuple, Union, Callable
+import pkgutil
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
@@ -33,11 +35,11 @@ class CachedObject:
         parent_path: Text = None,
         attr_name: str = None,
         index: Any = None,
+        hidden: bool = False,
     ):
         self.obj = obj
         self.is_callable = callable(obj)
-        self.selected_cached_obj: CachedObject
-        self.plain_attrs = dir(self.obj)
+        self.attr_name = attr_name if attr_name else repr(self.obj)
 
         if self.obj is None:
             self.dotpath = highlighter("None")
@@ -73,7 +75,7 @@ class CachedObject:
         else:
             raise ValueError("Need to specify an attribute name or an index")
 
-        self.attr_name = attr_name if attr_name else repr(self.obj)
+        self.plain_attrs = dir(self.obj)
 
         if "__weakref__" in self.plain_attrs:
             # Ignore weakrefs
@@ -82,11 +84,9 @@ class CachedObject:
         self.plain_public_attributes = sorted(
             attr for attr in self.plain_attrs if not attr.startswith("_")
         )
-        self.num_public_attributes: int = len(self.plain_public_attributes)
         self.plain_private_attributes = sorted(
             attr for attr in self.plain_attrs if attr.startswith("_")
         )
-        self.num_private_attributes: int = len(self.plain_private_attributes)
 
         self.public_attributes: Dict[str, CachedObject] = {}
         self.private_attributes: Dict[str, CachedObject] = {}
@@ -105,13 +105,13 @@ class CachedObject:
         except TypeError:
             self.length = None
 
-        self.isbuiltin = inspect.isbuiltin(self.obj)
-        self.isclass = inspect.isclass(self.obj)
-        self.isclass = inspect.isclass(self.obj)
-        self.isfunction = inspect.isfunction(self.obj)
-        self.ismethod = inspect.ismethod(self.obj)
-        self.ismethoddescriptor = inspect.ismethoddescriptor(self.obj)
-        self.ismodule = inspect.ismodule(self.obj)
+        self.isbuiltin: bool = inspect.isbuiltin(self.obj)
+        self.isclass: bool = inspect.isclass(self.obj)
+        self.isfunction: bool = inspect.isfunction(self.obj)
+        self.ismethod: bool = inspect.ismethod(self.obj)
+        self.ismethoddescriptor: bool = inspect.ismethoddescriptor(self.obj)
+        self.ismodule: bool = inspect.ismodule(self.obj)
+
         self.filters: List[Union[bool, Callable[[Any], Any]]] = []
         self.search_filter: str = ""
 
@@ -168,6 +168,9 @@ class CachedObject:
             )
 
         if not is_selectable(self.obj):
+            self.text.style += Style(dim=True, strike=True)  # type: ignore
+
+        if hidden:
             self.text.style += Style(dim=True)  # type: ignore
 
     @property
@@ -180,6 +183,7 @@ class CachedObject:
         return title
 
     def cache(self):
+
         if not self.public_attributes:
             for attr in self.plain_public_attributes:
                 self.public_attributes[attr] = CachedObject(
@@ -195,6 +199,34 @@ class CachedObject:
                     parent_path=self.dotpath,
                     attr_name=attr,
                 )
+
+        # Sometimes a module will have submodules that are not referenced from a call to `dir()`
+        # This check will look through all submodules that are not referenced by `dir()` and add
+        # them to the cached attributes
+        if self.ismodule:
+            prefix = safegetattr(self.obj, "__name__") + "."
+            path = safegetattr(self.obj, "__path__")
+            for importer, full_module_name, ispkg in pkgutil.iter_modules(path, prefix):
+                name = full_module_name.rsplit(".")[-1]
+                if name in self.public_attributes or name in self.private_attributes:
+                    continue
+
+                try:
+                    module = importlib.import_module(full_module_name)
+                except Exception:
+                    continue
+
+                if not name.startswith("_"):
+                    self.public_attributes[name] = CachedObject(
+                        module, parent_path=self.dotpath, attr_name=name, hidden=True
+                    )
+                else:
+                    self.private_attributes[name] = CachedObject(
+                        module, parent_path=self.dotpath, attr_name=name, hidden=True
+                    )
+
+        self.num_public_attributes: int = len(self.public_attributes)
+        self.num_private_attributes: int = len(self.private_attributes)
 
         self.filter()
 
