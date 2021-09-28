@@ -79,7 +79,8 @@ class ObjExploreApp:
                     else:
                         raise err
                 except StopIteration:
-                    res = self.explorer.selected_object
+                    if key == "r":
+                        res = self.explorer.selected_object.obj
                     break
 
         # Unhide the cursor
