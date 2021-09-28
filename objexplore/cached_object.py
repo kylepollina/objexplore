@@ -41,13 +41,6 @@ class CachedObject:
         self.is_callable = callable(obj)
         self.attr_name = attr_name if attr_name else repr(self.obj)
 
-        self.isbuiltin: bool = inspect.isbuiltin(self.obj)
-        self.isclass: bool = inspect.isclass(self.obj)
-        self.isfunction: bool = inspect.isfunction(self.obj)
-        self.ismethod: bool = inspect.ismethod(self.obj)
-        self.ismethoddescriptor: bool = inspect.ismethoddescriptor(self.obj)
-        self.ismodule: bool = inspect.ismodule(self.obj)
-
         if self.obj is None:
             self.dotpath = highlighter("None")
 
@@ -82,8 +75,6 @@ class CachedObject:
         else:
             raise ValueError("Need to specify an attribute name or an index")
 
-        # breakpoint()
-
         self.plain_attrs = dir(self.obj)
 
         if "__weakref__" in self.plain_attrs:
@@ -113,6 +104,13 @@ class CachedObject:
             self.length = len(self.obj)  # type: ignore
         except TypeError:
             self.length = None
+
+        self.isbuiltin: bool = inspect.isbuiltin(self.obj)
+        self.isclass: bool = inspect.isclass(self.obj)
+        self.isfunction: bool = inspect.isfunction(self.obj)
+        self.ismethod: bool = inspect.ismethod(self.obj)
+        self.ismethoddescriptor: bool = inspect.ismethoddescriptor(self.obj)
+        self.ismodule: bool = inspect.ismodule(self.obj)
 
         self.filters: List[Union[bool, Callable[[Any], Any]]] = []
         self.search_filter: str = ""
@@ -202,6 +200,9 @@ class CachedObject:
                     attr_name=attr,
                 )
 
+        # Sometimes a module will have submodules that are not referenced from a call to `dir()`
+        # This check will look through all submodules that are not referenced by `dir()` and add
+        # them to the cached attributes
         if self.ismodule:
             prefix = safegetattr(self.obj, "__name__") + "."
             path = safegetattr(self.obj, "__path__")
