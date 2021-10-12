@@ -136,6 +136,7 @@ def random_error_quote():
         "Computer over.",
         "Virus = very yes.",
         "Oh Child!",
+        "I used objexplore and all I got was this lousy error message.",
     ]
     q1 = choice(quotes)
     quotes.remove(q1)
