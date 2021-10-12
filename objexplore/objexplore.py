@@ -27,7 +27,7 @@ from .overview import Overview, OverviewState, PreviewState
 # TODO builtin frame/stack explorer? from objexplore import stackexplore
 
 
-version = "1.5.6"
+version = "1.5.7"
 console = Console()
 EDITOR = os.environ.get("EDITOR")
 

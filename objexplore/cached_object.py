@@ -137,6 +137,7 @@ class CachedObject:
             or self.ismethoddescriptor
             or isinstance(self.obj, type("".capitalize))
         ):
+            self.text.style = Style(color="cyan", italic=True)
             self.text += Text("()", style=Style(color="white"))
         elif type(self.obj) == dict:
             self.text.style = Style(color="light_sea_green")
