@@ -666,7 +666,7 @@ class Explorer:
         return self.num_attributes < 130
 
     @property
-    def selected_object(self) -> CachedObject:  # type: ignore
+    def selected_object(self) -> CachedObject:
         """ Return the currently selected cached object """
         try:
             if self.state == ExplorerState.public:
@@ -691,6 +691,8 @@ class Explorer:
                 ExplorerState.set,
             ):
                 return self.cached_obj.filtered_list[self.list_index][1]
+            else:
+                raise ValueError("Unexpected explorer state")
 
         except (KeyError, IndexError):
             return CachedObject(None)

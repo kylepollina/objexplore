@@ -4,5 +4,6 @@ ignore =
     E501,   # line too long
     E203,   # Whitepsace before ':'
     E241,   # Multiple spaces after ':'
+    E221,   # Multiple spaces before operator
     W605,   # Invalid escape sequence
     W503,   # Line break before binary operator

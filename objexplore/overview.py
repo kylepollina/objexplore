@@ -32,7 +32,7 @@ class Overview:
     def layout_width(self):
         return (self.term.width - 2) // 4 * 3
 
-    def get_layout(self, cached_obj: CachedObject):
+    def get_layout(self, cached_obj: CachedObject) -> Layout:
         """
         :param cached_obj: The selected cached object given by the explorer layout
         """
@@ -64,6 +64,8 @@ class Overview:
                 ),
             )
             return layout
+        else:
+            raise ValueError("Unexpected overview state")
 
     def get_value_panel(self, cached_obj: CachedObject):
         renderable: Union[str, Pretty, Syntax]

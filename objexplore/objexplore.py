@@ -6,9 +6,9 @@ import subprocess
 import time
 from typing import Any, Optional, Union
 
-import blessed
 import rich
 from blessed import Terminal
+from blessed.keyboard import Keystroke
 from rich.console import Console
 from rich.layout import Layout
 from rich.panel import Panel
@@ -35,15 +35,17 @@ EDITOR = os.environ.get("EDITOR")
 class ObjExploreApp:
     """ Main Application class """
 
-    def __init__(self, obj: Any, name_of_obj: str):
-        cached_obj = CachedObject(obj, attr_name=name_of_obj)
+    error_style = Style(color="red")
+    main_style  = Style(color="blue")
+    term = Terminal()
+
+    def __init__(self, obj: Any, name: str):
+        cached_obj = CachedObject(obj, attr_name=name)
         # Figure out all the attributes of the current obj's attributes
         cached_obj.cache()
 
-        self.term = Terminal()
         self.explorer = Explorer(term=self.term, cached_obj=cached_obj)
         self.overview = Overview(term=self.term, version=version)
-        self.main_style = Style(color="blue")
 
         # Run self.draw() whenever the win change signal is caught
         try:
@@ -69,7 +71,7 @@ class ObjExploreApp:
                     self.process_key_event(key)
 
                 except RuntimeError as err:
-                    # Some kind of error during resizing events. Ignore and continue
+                    # Some kind of error thrown during resizing events. Ignore and continue
                     if (
                         err.args[0]
                         == "reentrant call inside <_io.BufferedWriter name='<stdout>'>"
@@ -88,7 +90,7 @@ class ObjExploreApp:
 
         return res
 
-    def process_key_event(self, key: blessed.keyboard.Keystroke) -> Any:
+    def process_key_event(self, key: Keystroke) -> Any:
         """ Process the incoming key """
 
         if self.explorer.filter.receiving_input:
@@ -339,9 +341,9 @@ class ObjExploreApp:
             else:
                 printable = self.explorer.selected_object.obj
 
+
             with console.capture() as capture:
                 console.print(printable)
-
             str_out = capture.get()
             pydoc.pager(str_out)
 
@@ -375,8 +377,8 @@ class ObjExploreApp:
             str_out = capture.get()
             pydoc.pager(str_out)
 
-    def draw(self, *args):
-        """ Draw the application. the *args argument is due to resize events and are unused """
+    def draw(self, *_):
+        """ Draw the application. the *_ argument is due to resize events and are unused """
         print(self.term.home, end="")
         layout = Layout()
         layout.split_row(
@@ -405,24 +407,27 @@ class ObjExploreApp:
         rich.print(object_explorer, end="")
 
     def error(self):
-        self.main_style = Style(color="red")
+        """ Color the outside red and pause for a split second """
+        self.main_style = self.error_style
         self.draw()
         time.sleep(0.25)
-        self.main_style = Style(color="blue")
+        self.main_style = self.main_style
 
 
 def explore(obj: Any) -> Any:
     """ Run the explorer on the given object """
+
     # Get the name of the variable sent to this function
     # If someone calls this function like:
     # >>> df = pandas.DataFrame()
     # >>> explore(df)
-    # Then we want to extract `name` == 'df'
+    # Then we want to extract the string 'df' to the variable `name`
     frame = inspect.currentframe()
     name = frame.f_back.f_code.co_names[1]  # type: ignore
-    app = ObjExploreApp(obj, name_of_obj=name)
+    app = ObjExploreApp(obj, name=name)
     try:
         return app.explore()
+
     except Exception as err:
         print(app.term.move_down(app.term.height))
         console.print_exception(show_locals=True)
