@@ -1,13 +1,15 @@
-from typing import List
+from types import FunctionType
+from typing import List, Tuple, Dict
 
 import blessed
 import rich
 from blessed import Terminal
+from blessed.keyboard import Keystroke
+from rich.console import Console
 from rich.highlighter import ReprHighlighter
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.style import Style
-from rich.console import Console
 from rich.text import Text
 
 from .cached_object import CachedObject
@@ -18,31 +20,72 @@ highlighter = ReprHighlighter()
 # TODO scroll search if input longer than panel width
 
 
+def isclass(cached_obj: CachedObject):
+    return cached_obj.isclass
+
+def isfunction(cached_obj: CachedObject):
+    return cached_obj.isfunction
+
+def ismethod(cached_obj: CachedObject):
+    return cached_obj.ismethod
+
+def ismodule(cached_obj: CachedObject):
+    return cached_obj.ismodule
+
+def isbuiltin(cached_obj: CachedObject):
+    return cached_obj.isbuiltin
+
+def isint(cached_obj: CachedObject):
+    return type(cached_obj.obj) == int
+
+def isstr(cached_obj: CachedObject):
+    return type(cached_obj.obj) == str
+
+def isfloat(cached_obj: CachedObject):
+    return type(cached_obj.obj) == float
+
+def isbool(cached_obj: CachedObject):
+    return type(cached_obj.obj) == bool
+
+def isdict(cached_obj: CachedObject):
+    return type(cached_obj.obj) == dict
+
+def islist(cached_obj: CachedObject):
+    return type(cached_obj.obj) == list
+
+def istuple(cached_obj: CachedObject):
+    return type(cached_obj.obj) == tuple
+
+def isset(cached_obj: CachedObject):
+    return type(cached_obj.obj) == set
+
+
 @rich.repr.auto
 class Filter:
     def __init__(self, term: Terminal):
         self.term = term
         self.layout = Layout(visible=False)
-        self.filters = {
-            "class": [False, lambda cached_obj: cached_obj.isclass],
-            "function": [False, lambda cached_obj: cached_obj.isfunction],
-            "method": [False, lambda cached_obj: cached_obj.ismethod],
-            "module": [False, lambda cached_obj: cached_obj.ismodule],
-            "int": [False, lambda cached_obj: type(cached_obj.obj) == int],
-            "str": [False, lambda cached_obj: type(cached_obj.obj) == str],
-            "float": [False, lambda cached_obj: type(cached_obj.obj) == float],
-            "bool": [False, lambda cached_obj: type(cached_obj.obj) == bool],
-            "dict": [False, lambda cached_obj: type(cached_obj.obj) == dict],
-            "list": [False, lambda cached_obj: type(cached_obj.obj) == list],
-            "tuple": [False, lambda cached_obj: type(cached_obj.obj) == tuple],
-            "set": [False, lambda cached_obj: type(cached_obj.obj) == set],
-            "builtin": [False, lambda cached_obj: cached_obj.isbuiltin],
+
+        self.filters: Dict[str, Tuple[bool, FunctionType]] = {
+            "class":    [False, isclass],
+            "function": [False, isfunction],
+            "method":   [False, ismethod],
+            "module":   [False, ismodule],
+            "int":      [False, isint],
+            "str":      [False, isstr],
+            "float":    [False, isfloat],
+            "bool":     [False, isbool],
+            "dict":     [False, isdict],
+            "list":     [False, islist],
+            "tuple":    [False, istuple],
+            "set":      [False, isset],
+            "builtin":  [False, isbuiltin],
         }
         self.index = 0
         self.receiving_input = False
         self.search_filter = ""
         self.cursor_pos = 0
-        self.key_history: List[blessed.keyboard.Keystroke] = []
+        self.key_history: List[Keystroke] = []
 
     def move_down(self):
         if self.index < len(self.filters) - 1:
@@ -58,10 +101,10 @@ class Filter:
     def move_bottom(self):
         self.index = len(self.filters) - 1
 
-    def get_enabled_filters(self):
+    def get_enabled_filters(self) -> List[FunctionType]:
         return [
-            method
-            for name, (enabled, method) in self.filters.items()
+            function
+            for name, (enabled, function) in self.filters.items()
             if enabled is True
         ]
 
