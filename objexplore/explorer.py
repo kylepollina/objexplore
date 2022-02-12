@@ -11,7 +11,6 @@ from rich.text import Text
 from .cached_object import CachedObject
 from .filter import Filter
 from .stack import Stack, StackFrame
-from .utils import is_empty
 
 console = Console()
 

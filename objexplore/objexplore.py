@@ -341,7 +341,6 @@ class ObjExploreApp:
             else:
                 printable = self.explorer.selected_object.obj
 
-
             with console.capture() as capture:
                 console.print(printable)
             str_out = capture.get()
@@ -416,7 +415,7 @@ class ObjExploreApp:
 
 def explore(obj: Any) -> Any:
     """
-    Run the explorer on the given object 
+    Run the explorer on the given object
 
     Get the name of the variable sent to this function
     If someone calls this function like:

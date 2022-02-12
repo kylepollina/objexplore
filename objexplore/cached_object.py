@@ -2,8 +2,7 @@ from dataclasses import dataclass
 import importlib
 import inspect
 import pkgutil
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
-from pygments.token import Token
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
@@ -29,9 +28,10 @@ def safegetattr(obj, attr):
     except Exception:
         return None
 
+
 class CachedObject:
     """ Internal representation of every object that is being inspected/explored by objexplore
-    
+
     TODO add documentation on all the attributes of this object
     TODO look up how other libraries document thier attributes
     """
@@ -135,7 +135,7 @@ class CachedObject:
         self.pretty = Pretty(self.obj)
 
         self.text = Text(self.attr_name, style=Style(), overflow="ellipsis")
-        
+
         if self.ismodule:
             self.text.style = Style(color="blue")
         elif self.isclass:
@@ -373,6 +373,7 @@ class CachedObject:
                 line_range=(0, term_height),
                 background_color="default",
             )
+
 
 @dataclass
 class FilteredDictKey:

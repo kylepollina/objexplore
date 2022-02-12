@@ -1,5 +1,4 @@
-from types import FunctionType
-from typing import List, Tuple, Dict
+from typing import List
 
 import blessed
 import rich
@@ -23,38 +22,50 @@ highlighter = ReprHighlighter()
 def isclass(cached_obj: CachedObject):
     return cached_obj.isclass
 
+
 def isfunction(cached_obj: CachedObject):
     return cached_obj.isfunction
+
 
 def ismethod(cached_obj: CachedObject):
     return cached_obj.ismethod
 
+
 def ismodule(cached_obj: CachedObject):
     return cached_obj.ismodule
+
 
 def isbuiltin(cached_obj: CachedObject):
     return cached_obj.isbuiltin
 
+
 def isint(cached_obj: CachedObject):
     return type(cached_obj.obj) == int
+
 
 def isstr(cached_obj: CachedObject):
     return type(cached_obj.obj) == str
 
+
 def isfloat(cached_obj: CachedObject):
     return type(cached_obj.obj) == float
+
 
 def isbool(cached_obj: CachedObject):
     return type(cached_obj.obj) == bool
 
+
 def isdict(cached_obj: CachedObject):
     return type(cached_obj.obj) == dict
+
 
 def islist(cached_obj: CachedObject):
     return type(cached_obj.obj) == list
 
+
 def istuple(cached_obj: CachedObject):
     return type(cached_obj.obj) == tuple
+
 
 def isset(cached_obj: CachedObject):
     return type(cached_obj.obj) == set
@@ -66,7 +77,7 @@ class Filter:
         self.term = term
         self.layout = Layout(visible=False)
 
-        self.filters: Dict[str, Tuple[bool, FunctionType]] = {
+        self.filters = {
             "class":    [False, isclass],
             "function": [False, isfunction],
             "method":   [False, ismethod],
@@ -101,7 +112,7 @@ class Filter:
     def move_bottom(self):
         self.index = len(self.filters) - 1
 
-    def get_enabled_filters(self) -> List[FunctionType]:
+    def get_enabled_filters(self) -> list:
         return [
             function
             for name, (enabled, function) in self.filters.items()

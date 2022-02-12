@@ -6,12 +6,12 @@ from unittest.mock import MagicMock
 #         self.a = 'a'
 #         self.b = 'b'
 #         self.c = 'c'
-        
+
 #     def __iter__(self):
 #         yield self.a
 #         yield self.b
 #         yield self.c
-        
+
 #     def __repr__(self) -> str:
 #         return f"MyIterable([{self.a}, {self.b}, {self.c})"
 
@@ -19,7 +19,7 @@ from unittest.mock import MagicMock
 class Wrapper:
     def __init__(self) -> None:
         self.thing = ...
-    
+
     def foo(self):
         print('foo')
 
