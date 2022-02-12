@@ -11,7 +11,7 @@ from rich.text import Text
 from .cached_object import CachedObject
 from .filter import Filter
 from .stack import Stack, StackFrame
-from .utils import is_selectable
+from .utils import is_empty
 
 console = Console()
 
@@ -28,14 +28,13 @@ class ExplorerState:
 
 
 def get_state(cached_obj: CachedObject):
-    _type = type(cached_obj.obj)
-    if _type == dict:
+    if isinstance(cached_obj.obj, dict):
         return ExplorerState.dict
-    elif _type == list:
+    elif isinstance(cached_obj.obj, list):
         return ExplorerState.list
-    elif _type == tuple:
+    elif isinstance(cached_obj.obj, tuple):
         return ExplorerState.tuple
-    elif _type == set:
+    elif isinstance(cached_obj.obj, set):
         return ExplorerState.set
     else:
         return ExplorerState.public
@@ -319,6 +318,7 @@ class Explorer:
 
     @property
     def list_panel(self) -> Panel:
+        """ TODO """
         # Reset the list index / window in case applying a filter has now moved the index
         # farther down than it can access on the filtered attributes
         if self.list_index >= len(self.cached_obj.filtered_list):
@@ -390,8 +390,6 @@ class Explorer:
 
     def explore_selected_object(self) -> Optional[CachedObject]:
         """ TODO """
-        if not is_selectable(self.selected_object.obj):
-            return self.cached_obj
 
         # Save current stack as a frame
         current_frame = StackFrame(
@@ -682,8 +680,9 @@ class Explorer:
                 return self.cached_obj.filtered_private_attributes[attr]
 
             elif self.state == ExplorerState.dict:
-                attr = list(self.cached_obj.filtered_dict)[self.dict_index]
-                return self.cached_obj.filtered_dict[attr][1]
+                # Get the currently selected key
+                key = list(self.cached_obj.filtered_dict)[self.dict_index]
+                return self.cached_obj.filtered_dict[key].cached_object
 
             elif self.state in (
                 ExplorerState.list,

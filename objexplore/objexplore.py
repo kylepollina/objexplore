@@ -55,7 +55,7 @@ class ObjExploreApp:
             pass
 
     def explore(self) -> Optional[Any]:
-        """ Open the interactive explorer """
+        """ Open the interactive explorer. This is the main running loop """
 
         key = None
         res = None
@@ -153,7 +153,7 @@ class ObjExploreApp:
             ):
                 # Continue on and process these keys as normal
                 self.overview.help_layout.visible = False
-
+                # Do not return so we can run the key action after the help window has closed
             else:
                 return
 
@@ -238,7 +238,7 @@ class ObjExploreApp:
             self.explorer.filter.move_down()
 
         elif (
-            key == "k" or key.code == self.term.KEY_CODE
+            key == "k" or key.code == self.term.KEY_UP
         ) and self.explorer.filter.layout.visible:
             self.explorer.filter.move_up()
 
@@ -415,13 +415,28 @@ class ObjExploreApp:
 
 
 def explore(obj: Any) -> Any:
-    """ Run the explorer on the given object """
+    """
+    Run the explorer on the given object 
 
-    # Get the name of the variable sent to this function
-    # If someone calls this function like:
-    # >>> df = pandas.DataFrame()
-    # >>> explore(df)
-    # Then we want to extract the string 'df' to the variable `name`
+    Get the name of the variable sent to this function
+    If someone calls this function like:
+    >>> df = pandas.DataFrame()
+    >>> explore(df)
+    Then we want to extract the string 'df' to the variable `name`
+    Depending on if explore is called from a script or from the REPL,
+    `name` may or may not refer to the correct object
+    If called from the REPL:
+    >>> x = 'hello'
+    >>> y = 'world'
+    >>> explore(x)
+    then name == 'x'
+    If called from a script:
+    python -c "x = 'hello'; y = 'world'; import objexplore; objexplore.explore(x)"
+    then name == 'y'
+
+    I dont know of any way to fix this
+    """
+
     frame = inspect.currentframe()
     name = frame.f_back.f_code.co_names[1]  # type: ignore
     app = ObjExploreApp(obj, name=name)

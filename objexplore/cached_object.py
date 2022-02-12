@@ -1,7 +1,9 @@
+from dataclasses import dataclass
 import importlib
 import inspect
 import pkgutil
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+from pygments.token import Token
 
 from rich.console import Console
 from rich.highlighter import ReprHighlighter
@@ -10,7 +12,7 @@ from rich.style import Style
 from rich.syntax import Syntax
 from rich.text import Text
 
-from .utils import is_selectable
+from .utils import is_empty
 
 highlighter = ReprHighlighter()
 
@@ -27,8 +29,13 @@ def safegetattr(obj, attr):
     except Exception:
         return None
 
-
 class CachedObject:
+    """ Internal representation of every object that is being inspected/explored by objexplore
+    
+    TODO add documentation on all the attributes of this object
+    TODO look up how other libraries document thier attributes
+    """
+
     def __init__(
         self,
         obj: Any,
@@ -42,6 +49,7 @@ class CachedObject:
         self.attr_name = attr_name if attr_name else repr(self.obj)
 
         if self.obj is None:
+            # TODO this doesn't seem like the right choice but removing it causes a crash. Investigate!
             self.dotpath = highlighter("None")
 
         elif attr_name is not None:
@@ -79,6 +87,7 @@ class CachedObject:
 
         if "__weakref__" in self.plain_attrs:
             # Ignore weakrefs
+            # Why??? I don't remember
             self.plain_attrs.remove("__weakref__")
 
         self.plain_public_attributes = sorted(
@@ -126,7 +135,7 @@ class CachedObject:
         self.pretty = Pretty(self.obj)
 
         self.text = Text(self.attr_name, style=Style(), overflow="ellipsis")
-
+        
         if self.ismodule:
             self.text.style = Style(color="blue")
         elif self.isclass:
@@ -135,6 +144,7 @@ class CachedObject:
             self.isfunction
             or self.ismethod
             or self.ismethoddescriptor
+            # builtin_function_or_method type. Don't know where this is defined
             or isinstance(self.obj, type("".capitalize))
         ):
             self.text.style = Style(color="cyan", italic=True)
@@ -168,7 +178,7 @@ class CachedObject:
                 + Text("}", style=Style(color="white"))
             )
 
-        if not is_selectable(self.obj):
+        if not is_empty(self.obj):
             self.text.style += Style(dim=True, strike=True)  # type: ignore
 
         if hidden:
@@ -176,6 +186,7 @@ class CachedObject:
 
     @property
     def title(self):
+        """ TODO """
         # for cases when the object is a huge dictionary we shouldnt try to render the whole dict
         if len(self.repr.plain) > console.width - 4:
             return Text(self.attr_name) + Text(" ") + self.typeof
@@ -184,6 +195,7 @@ class CachedObject:
         return title
 
     def cache(self):
+        """ Cache any attributes that are useful to this object for easy access later """
 
         if not self.public_attributes:
             for attr in self.plain_public_attributes:
@@ -210,9 +222,11 @@ class CachedObject:
             for importer, full_module_name, ispkg in pkgutil.iter_modules(path, prefix):
                 name = full_module_name.rsplit(".")[-1]
                 if name in self.public_attributes or name in self.private_attributes:
+                    # Skip over submodules that have already been indexed
                     continue
 
                 try:
+                    # If we have not encountered this module, try to import it
                     module = importlib.import_module(full_module_name)
                 except Exception:
                     continue
@@ -234,11 +248,13 @@ class CachedObject:
     def set_filters(
         self, filters: List[Union[bool, Callable[[Any], Any]]], search_filter: str = ""
     ):
+        """ Reset the filters associated with this object, and rerun the filtering process again with the new filters """
         self.filters = filters
         self.search_filter = search_filter.lower()
         self.filter()
 
     def filter(self):
+        """ Run the filters on all of this objects attributes """
         self.filtered_public_attributes = {}
         for attr, cached_obj in self.public_attributes.items():
             if self.search_filter not in attr.lower():
@@ -267,7 +283,7 @@ class CachedObject:
                         break
         self.num_filtered_private_attributes = len(self.filtered_private_attributes)
 
-        self.filtered_dict: Dict[str, Tuple[Text, CachedObject]] = {}
+        self.filtered_dict: Dict[str, FilteredDictKey] = {}
         if type(self.obj) == dict:
             for key, val in self.obj.items():
                 repr_key: Text
@@ -282,7 +298,7 @@ class CachedObject:
 
                 repr_val = highlighter(str(type(val)))
 
-                if not is_selectable(val):
+                if not is_empty(val):
                     repr_val.style += " dim"
                     repr_val.style = repr_val.style.strip()
 
@@ -296,14 +312,15 @@ class CachedObject:
                 if self.filters:
                     for _filter in self.filters:
                         if _filter(cached_obj):
-                            self.filtered_dict[key] = (line, cached_obj)
+                            self.filtered_dict[key] = FilteredDictKey(text=line, cached_object=cached_obj)
                             break
                 else:
-                    self.filtered_dict[key] = (line, cached_obj)
+                    self.filtered_dict[key] = FilteredDictKey(text=line, cached_object=cached_obj)
+
         self.num_filtered_dict_keys = len(self.filtered_dict)
 
         self.filtered_list: List[Tuple[Text, CachedObject]] = []
-        if type(self.obj) in (list, tuple, set):
+        if isinstance(self.obj, (list, tuple, set)):
             for index, item in enumerate(self.obj):
                 line = (
                     Text(" [", style=Style(color="white"))
@@ -311,7 +328,7 @@ class CachedObject:
                     + Text("] ", style=Style(color="white"))
                     + highlighter(str(type(item)))
                 )
-                if not is_selectable(item):
+                if not is_empty(item):
                     line.style += Style(dim=True)
 
                 self.filtered_list.append(
@@ -328,6 +345,7 @@ class CachedObject:
         self.num_filtered_list_items = len(self.filtered_list)
 
     def current_visible_attributes(self):
+        """ TODO """
         if self.filtered_dict:
             return self.filtered_dict
         elif self.filtered_list:
@@ -336,6 +354,7 @@ class CachedObject:
     def get_source(
         self, term_height: int = 0, fullscreen: bool = False
     ) -> Union[Syntax, str]:
+        """ TODO """
         if not fullscreen and not term_height:
             raise ValueError("Need a terminal height")
 
@@ -354,3 +373,14 @@ class CachedObject:
                 line_range=(0, term_height),
                 background_color="default",
             )
+
+@dataclass
+class FilteredDictKey:
+    """ TODO """
+    text: Text
+    cached_object: CachedObject
+
+    def __iter__(self):
+        # return [self.text, self.cached_object]
+        yield self.text
+        yield self.cached_object

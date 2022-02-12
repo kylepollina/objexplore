@@ -1,3 +1,6 @@
+
+export PYTHONPATH=$PYTHONPATH:$(pwd)
+
 all: check format
 
 check:
@@ -17,3 +20,5 @@ test:
 	python3 -c "import objexplore; import rich; objexplore.explore(rich)"
 test-pandas:
 	python3 -c "import objexplore; import pandas; objexplore.explore(pandas.DataFrame())"
+test-iter:
+	python3 tests/test_iterables.py

@@ -1,7 +1,7 @@
-from objexplore.utils import is_selectable
+from objexplore.utils import is_empty
 import pandas as pd
 
 
 def test_dataframe():
     df = pd.DataFrame()
-    assert is_selectable(df)
+    assert is_empty(df)
