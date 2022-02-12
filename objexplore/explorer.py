@@ -11,6 +11,7 @@ from rich.text import Text
 from .cached_object import CachedObject
 from .filter import Filter
 from .stack import Stack, StackFrame
+from .config import box_type
 
 console = Console()
 
@@ -246,6 +247,7 @@ class Explorer:
             subtitle=subtitle,
             subtitle_align="right",
             style="white",
+            box=box_type
         )
 
     @property
@@ -313,6 +315,7 @@ class Explorer:
             subtitle=f"([magenta]{self.dict_index + 1}[/magenta]/[magenta]{len(self.cached_obj.filtered_dict)}[/magenta])",
             subtitle_align="right",
             style="white",
+            box=box_type
         )
 
     @property
@@ -385,6 +388,7 @@ class Explorer:
             subtitle=f"([magenta]{self.list_index + 1}[/magenta]/[magenta]{len(self.cached_obj.filtered_list)}[/magenta])",
             subtitle_align="right",
             style="white",
+            box=box_type
         )
 
     def explore_selected_object(self) -> Optional[CachedObject]:

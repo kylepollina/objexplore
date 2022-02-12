@@ -20,6 +20,7 @@ from .cached_object import CachedObject
 from .explorer import Explorer, ExplorerState
 from .help_layout import HelpState, random_error_quote
 from .overview import Overview, OverviewState, PreviewState
+from .config import box_type
 
 # TODO object highlighted on stack view should be shown on the overview
 # TODO support ctrl-a + (whatever emacs keybinding to go to end of line)
@@ -402,6 +403,7 @@ class ObjExploreApp:
             subtitle_align="left",
             height=self.term.height - 1,
             style=self.main_style,
+            box=box_type
         )
         rich.print(object_explorer, end="")
 

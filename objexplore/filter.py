@@ -12,6 +12,7 @@ from rich.style import Style
 from rich.text import Text
 
 from .cached_object import CachedObject
+from .config import box_type
 
 console = Console()
 highlighter = ReprHighlighter()
@@ -241,6 +242,7 @@ class Filter:
                 subtitle=subtitle,
                 subtitle_align="right",
                 style="bright_magenta",
+                box=box_type
             )
         )
         self.layout.size = len(lines) + 2
@@ -278,6 +280,7 @@ class Filter:
                 subtitle="[dim][u]esc[/u]:cancel",
                 subtitle_align="right",
                 style=Style(color="aquamarine1"),
+                box=box_type
             )
         )
         self.layout.size = 3
