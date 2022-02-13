@@ -28,7 +28,7 @@ from .config import box_type
 # TODO builtin frame/stack explorer? from objexplore import stackexplore
 
 
-version = "1.6.0"
+version = "1.6.1"
 console = Console()
 EDITOR = os.environ.get("EDITOR")
 
