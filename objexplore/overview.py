@@ -100,7 +100,7 @@ class Overview:
             subtitle=subtitle,
             subtitle_align="left",
             style=Style(color="white"),
-            box=box_type
+            box=box_type,
         )
 
     def get_info_layout(self, cached_obj: CachedObject):
@@ -114,7 +114,7 @@ class Overview:
                         title="[i][cyan]len[/cyan]()[/i]",
                         title_align="left",
                         style="white",
-                        box=box_type
+                        box=box_type,
                     )
                 ),
             )
@@ -130,7 +130,7 @@ class Overview:
                 title="[i][cyan]type[/cyan]()[/i]",
                 title_align="left",
                 style="white",
-                box=box_type
+                box=box_type,
             ),
             size=3,
         )
@@ -154,5 +154,5 @@ class Overview:
             subtitle=subtitle,
             subtitle_align="left",
             style="white",
-            box=box_type
+            box=box_type,
         )

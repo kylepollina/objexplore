@@ -79,19 +79,19 @@ class Filter:
         self.layout = Layout(visible=False)
 
         self.filters = {
-            "class":    [False, isclass],
+            "class": [False, isclass],
             "function": [False, isfunction],
-            "method":   [False, ismethod],
-            "module":   [False, ismodule],
-            "int":      [False, isint],
-            "str":      [False, isstr],
-            "float":    [False, isfloat],
-            "bool":     [False, isbool],
-            "dict":     [False, isdict],
-            "list":     [False, islist],
-            "tuple":    [False, istuple],
-            "set":      [False, isset],
-            "builtin":  [False, isbuiltin],
+            "method": [False, ismethod],
+            "module": [False, ismodule],
+            "int": [False, isint],
+            "str": [False, isstr],
+            "float": [False, isfloat],
+            "bool": [False, isbool],
+            "dict": [False, isdict],
+            "list": [False, islist],
+            "tuple": [False, istuple],
+            "set": [False, isset],
+            "builtin": [False, isbuiltin],
         }
         self.index = 0
         self.receiving_input = False
@@ -242,7 +242,7 @@ class Filter:
                 subtitle=subtitle,
                 subtitle_align="right",
                 style="bright_magenta",
-                box=box_type
+                box=box_type,
             )
         )
         self.layout.size = len(lines) + 2
@@ -280,7 +280,7 @@ class Filter:
                 subtitle="[dim][u]esc[/u]:cancel",
                 subtitle_align="right",
                 style=Style(color="aquamarine1"),
-                box=box_type
+                box=box_type,
             )
         )
         self.layout.size = 3

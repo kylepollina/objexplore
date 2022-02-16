@@ -37,7 +37,7 @@ class ObjExploreApp:
     """ Main Application class """
 
     error_style = Style(color="red")
-    main_style  = Style(color="blue")
+    main_style = Style(color="blue")
     term = Terminal()
 
     def __init__(self, obj: Any, name: str):
@@ -403,7 +403,7 @@ class ObjExploreApp:
             subtitle_align="left",
             height=self.term.height - 1,
             style=self.main_style,
-            box=box_type
+            box=box_type,
         )
         rich.print(object_explorer, end="")
 

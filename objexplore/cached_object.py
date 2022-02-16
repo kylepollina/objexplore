@@ -30,7 +30,7 @@ def safegetattr(obj, attr):
 
 
 class CachedObject:
-    """ Internal representation of every object that is being inspected/explored by objexplore
+    """Internal representation of every object that is being inspected/explored by objexplore
 
     TODO add documentation on all the attributes of this object
     TODO look up how other libraries document thier attributes
@@ -312,10 +312,14 @@ class CachedObject:
                 if self.filters:
                     for _filter in self.filters:
                         if _filter(cached_obj):
-                            self.filtered_dict[key] = FilteredDictKey(text=line, cached_object=cached_obj)
+                            self.filtered_dict[key] = FilteredDictKey(
+                                text=line, cached_object=cached_obj
+                            )
                             break
                 else:
-                    self.filtered_dict[key] = FilteredDictKey(text=line, cached_object=cached_obj)
+                    self.filtered_dict[key] = FilteredDictKey(
+                        text=line, cached_object=cached_obj
+                    )
 
         self.num_filtered_dict_keys = len(self.filtered_dict)
 
@@ -378,6 +382,7 @@ class CachedObject:
 @dataclass
 class FilteredDictKey:
     """ TODO """
+
     text: Text
     cached_object: CachedObject
 

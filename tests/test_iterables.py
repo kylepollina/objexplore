@@ -1,4 +1,3 @@
-
 from unittest.mock import MagicMock
 
 # class MyIterable(list):
@@ -21,17 +20,18 @@ class Wrapper:
         self.thing = ...
 
     def foo(self):
-        print('foo')
+        print("foo")
 
 
 if __name__ == "__main__":
     import objexplore
+
     abc = Wrapper()
     abc.foo = MagicMock()
-    abc.foo('hello', 'world')
-    abc.foo('goodbye', 'world')
+    abc.foo("hello", "world")
+    abc.foo("goodbye", "world")
     wrapper = Wrapper()
     wrapper.foo = MagicMock()
-    wrapper.foo('hello', 'world')
-    wrapper.foo('goodbye', 'world')
+    wrapper.foo("hello", "world")
+    wrapper.foo("goodbye", "world")
     objexplore.explore(abc)
