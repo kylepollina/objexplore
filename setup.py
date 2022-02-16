@@ -28,5 +28,5 @@ setup(
     ],
     packages=["objexplore"],
     include_package_data=True,
-    install_requires=["blessed==1.17.12", "rich==10.9.0"],
+    install_requires=["blessed==1.17.12", "rich==11.2.0"],
 )
