@@ -164,7 +164,7 @@ class ObjExploreApp:
 
         # Stack ###############################################################
 
-        if key == "o":
+        if key == "o" or key == "s":
             if self.explorer.stack.layout.visible:
                 self.explorer.stack.layout.visible = False
             elif self.explorer.filter.layout.visible:
@@ -260,6 +260,14 @@ class ObjExploreApp:
         elif key == "j" or key.code == self.term.KEY_DOWN:
             self.explorer.move_down()
 
+        elif key.code == self.term.KEY_PGUP:
+            for i in range(self.term.height - 5):
+                self.explorer.move_up()
+
+        elif key.code == self.term.KEY_PGDOWN:
+            for i in range(self.term.height - 5):
+                self.explorer.move_down()
+
         elif key in ("l") or key.code in (
             self.term.KEY_ENTER,
             self.term.KEY_RIGHT,
@@ -273,10 +281,16 @@ class ObjExploreApp:
         ) and self.explorer.stack.stack:
             self.explorer.explore_parent_obj()
 
-        elif key == "g":
+        elif key == "g" or key.code in (
+            self.term.KEY_HOME,
+            self.term.KEY_FIND,
+        ):
             self.explorer.move_top()
 
-        elif key == "G":
+        elif key == "G" or key.code in (
+                self.term.KEY_END,
+                self.term.KEY_SELECT,
+        ):
             self.explorer.move_bottom()
 
         # Switch between public and private attributes
